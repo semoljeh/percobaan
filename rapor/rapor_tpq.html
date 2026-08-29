@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Rapor TK RA</title>
+	
+	<!-- Favicon -->
+    <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+	
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = { theme: { extend: { colors: { emerald: { 600: '#059669', 700: '#047857' } }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+    
+<style>
+        body { background-color: #f3f4f6; -webkit-font-smoothing: antialiased; }
+        *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+        table { border-collapse: collapse; width: 100%; }
+        table th, table td { border: 1.5px solid #000; padding: 8px; }
+        .no-border th, .no-border td { border: none !important; padding: 4px 0; }
+        
+        @media print {
+            @page { margin: 10mm; } 
+            body { background-color: #fff !important; margin: 0; padding: 0 !important; }
+            .no-print { display: none !important; }
+            #kertasRapor { box-shadow: none !important; margin: 0 auto !important; width: 100% !important; min-height: auto !important; padding: 0 !important; }
+        }
+
+        #loadingState {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 text-gray-800">
+
+    <div id="loadingState">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-600 mb-4"></div>
+        <h2 id="teksLoading" class="text-xl font-bold text-gray-800">Memuat Sistem...</h2>
+        <p class="text-gray-500">Mohon tunggu sebentar.</p>
+    </div>
+
+  <!-- PANEL KONTROL PILIHAN KELAS (Otomatis hilang saat diprint) -->
+    <div class="max-w-[215mm] mx-auto bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 no-print" id="panelKontrol">
+        <div class="flex items-center gap-4 mb-4">
+            
+            <!-- TOMBOL KEMBALI DITAMBAHKAN DI SINI -->
+           <button onclick="window.history.length > 1 ? window.history.back() : window.close()" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 transition-all flex items-center justify-center shadow-sm shrink-0" title="Tutup Rapor & Kembali">
+    <i class="fas fa-times"></i>
+</button>
+            
+            <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-child"></i></div>
+            <div>
+                <h1 class="text-xl font-heading font-bold text-gray-800">Sistem Cetak Rapor TK</h1>
+                <p class="text-sm text-gray-500">Madrasah Darussalam</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">1. Pilih Kelas TK</label>
+				
+				<select id="raporKelas" onchange="populateSantriRapor()" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-white font-medium">
+    <option value="" disabled selected>-- Pilih Kelas TK --</option>
+</select>
+				
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">2. Pilih Santri</label>
+                <select id="raporSantri" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-white font-medium disabled:bg-gray-100" disabled>
+                    <option value="" disabled selected>-- Pilih Santri --</option>
+                </select>
+            </div>
+           <div class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button onclick="lihatRaporTKLangsung()" class="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm font-bold text-sm transition-all"><i class="fas fa-eye mr-1"></i> Nilai</button>
+                    <button onclick="cetakRaporTKLangsung()" class="w-full py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm font-bold text-sm transition-all"><i class="fas fa-print mr-1"></i> Cetak</button>
+                </div>
+                <!-- TOMBOL GABUNGAN SAMPUL & BIODATA TK -->
+                <button onclick="cetakSampulBiodataTK()" class="w-full py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 shadow-sm font-bold text-sm transition-all"><i class="fas fa-file-invoice mr-1"></i> Cetak Sampul & Biodata</button>
+            </div>
+        </div>
+    </div>
+
+   <div id="kertasRapor" class="bg-white mx-auto shadow-2xl relative box-border hidden" style="width: 215mm; min-height: 330mm; padding: 10mm 15mm;">
+        
+        <div class="flex items-center justify-between pb-2 border-b-[3px] border-black mb-1 relative">
+            <!-- Kode img val_stempel sudah bersih dari sini -->
+            
+            <div class="w-20 text-center">
+                <img src="../asset/logo.png" class="w-[70px] h-[70px] object-contain mx-auto" onerror="this.outerHTML='<div class=\\'w-[70px] h-[70px] rounded-full border-2 border-emerald-800 flex items-center justify-center text-emerald-800 text-2xl font-bold bg-gray-50\\'><i class=\\'fas fa-mosque\\'></i></div>'" alt="Logo TK">
+            </div>
+                
+            <div class="flex-1 text-center relative z-10">
+                <h1 class="text-lg font-heading font-bold text-emerald-800 uppercase tracking-widest mb-1">TK - RA (RAUDLATUL ATHFAL)</h1>
+                <h2 class="text-2xl font-black uppercase tracking-widest text-black mb-1">DARUSSALAM</h2>
+                <p class="text-[10px] font-medium text-gray-600 leading-tight">
+                    Bhetoran Batukessel, Bandang Laok, Kokop, Bangkalan, Kode Pos 69155<br>
+                    Website: www.madasa.ponpes.id | Email: madasaponpes@gmail.com
+                </p>
+            </div>
+            <div class="w-20"></div>
+        </div>
+        <div class="w-full border-b border-black mb-4 mt-[2px]"></div>
+
+        <h3 class="text-center text-[14px] font-bold uppercase mb-3 tracking-widest underline underline-offset-4">PENCAPAIAN KOMPETENSI SANTRI</h3>
+
+<div class="flex justify-between items-start mb-4 text-[12px] font-bold">
+            <div class="w-[48%]">
+                <table class="w-full no-border">
+                    <tr class="align-top"><td class="w-28">Nama Santri</td><td class="w-3">:</td><td id="val_nama" class="uppercase text-emerald-700">...</td></tr>
+                    <tr class="align-top"><td>Nomor Induk / NIS</td><td>:</td><td id="val_nis">...</td></tr>
+                    <tr class="align-top"><td>Alamat</td><td>:</td><td id="val_alamat">...</td></tr>
+                </table>
+            </div>
+            <div class="w-[48%]">
+                <table class="w-full no-border">
+                    <tr class="align-top"><td class="w-28">Kelas</td><td class="w-3">:</td><td id="val_kelas">...</td></tr>
+                    <tr class="align-top"><td>Semester</td><td>:</td><td id="val_semester">...</td></tr>
+                    <tr class="align-top"><td>Tahun Pelajaran</td><td>:</td><td id="val_tahun">...</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <table class="w-full text-left text-[11px]" style="table-layout: fixed;">
+            <colgroup>
+                <col style="width: 5%;">  
+                <col style="width: 25%;"> 
+                <col style="width: 10%;"> 
+                <col style="width: 10%;"> 
+                <col style="width: 50%;"> 
+            </colgroup>
+            <thead>
+                <tr class="bg-gray-100 font-bold text-center">
+                    <th class="py-2">No</th>
+                    <th class="py-2">Mata Pelajaran</th>
+                    <th class="py-2">Nilai<br>Angka</th>
+                    <th class="py-2">Predikat</th>
+                    <th class="py-2">Deskripsi Kemampuan Santri</th>
+                </tr>
+            </thead>
+            <tbody id="bodyTabelNilai">
+                </tbody>
+        </table>
+
+        <!-- TABEL KEPRIBADIAN & KETIDAKHADIRAN -->
+        <div class="flex justify-between items-start mt-2 text-[10px] w-full">
+            <div class="w-[48%]">
+                <table class="w-full h-full">
+                    <thead>
+                        <!-- PERBAIKAN: Tinggi judul (header) diperbesar menjadi 28px -->
+                        <tr class="bg-gray-100 font-bold" style="height: 28px;"><th colspan="2" class="text-center py-0">KEPRIBADIAN</th></tr>
+                    </thead>
+                    <tbody class="font-bold">
+                        <!-- PERBAIKAN: Tinggi 4 baris data diperkecil dari 20px menjadi 16px -->
+                        <tr style="height: 16px;"><td class="w-1/2 px-2 py-0">Akhlaq</td><td class="px-2 text-center w-1/2" id="val_akhlaq">...</td></tr>
+                        <tr style="height: 16px;"><td class="px-2 py-0">Kerajinan</td><td class="px-2 text-center" id="val_rajin">...</td></tr>
+                        <tr style="height: 16px;"><td class="px-2 py-0">Kedisiplinan</td><td class="px-2 text-center" id="val_disiplin">...</td></tr>
+                        <tr style="height: 16px;"><td class="px-2 py-0">Kerapihan</td><td class="px-2 text-center" id="val_rapi">...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="w-[48%]">
+                <table class="w-full h-full">
+                    <thead>
+                        <!-- PERBAIKAN: Tinggi judul (header) diperbesar menjadi 28px -->
+                        <tr class="bg-gray-100 font-bold" style="height: 28px;"><th colspan="2" class="text-center py-0">KETIDAKHADIRAN</th></tr>
+                    </thead>
+                    <tbody class="font-bold">
+                        <!-- PERBAIKAN: Tinggi 4 baris data diperkecil dari 20px menjadi 16px -->
+                        <tr style="height: 16px;"><td class="w-1/2 px-2 py-0">Sakit</td><td class="px-2 text-center w-1/2"><span id="val_sakit">...</span> Hari</td></tr>
+                        <tr style="height: 16px;"><td class="px-2 py-0">Izin</td><td class="px-2 text-center"><span id="val_izin">...</span> Hari</td></tr>
+                        <tr style="height: 16px;"><td class="px-2 py-0">Tanpa Keterangan</td><td class="px-2 text-center"><span id="val_alpa">...</span> Hari</td></tr>
+                        <tr class="bg-gray-50" style="height: 16px;"><td class="px-2 py-0 text-center uppercase tracking-wider">Jumlah</td><td class="px-2 text-center text-emerald-700"><span id="val_jumlah_absen">0</span> Hari</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+      <!-- TABEL CATATAN WALI KELAS -->
+        <table class="w-full mt-2 text-[10px] font-bold">
+            <tr style="height: 32px;">
+                <!-- PERBAIKAN: Tinggi baris diperbesar (32px) dan ditambahkan py-1.5 agar lebih lega -->
+                <td class="w-[15%] bg-gray-100 text-center py-1.5 px-1 whitespace-nowrap">Catatan Wali Kelas</td>
+                <td class="py-1.5 px-4 italic text-gray-700" id="val_catatan">...</td>
+            </tr>
+            <tr style="height: 28px;">
+                <td class="bg-gray-100 text-center py-1.5 px-1 whitespace-nowrap">Keputusan</td>
+                <td class="py-1.5 px-4 text-emerald-700 uppercase" id="val_keputusan">...</td>
+            </tr>
+        </table>
+
+<!-- BAGIAN TANDA TANGAN (FIX Z-INDEX LAYER) -->
+        <div class="flex justify-between text-center font-bold text-black mt-5 text-[12px] relative z-10">
+            
+            <!-- 1. TTD Orang Tua -->
+            <div class="w-1/3 flex flex-col justify-between items-center" style="height: 95px;">
+                <div class="w-full relative z-10"><p>Mengetahui,</p><p>Orang Tua / Wali</p></div>
+                <div class="w-full relative z-10"><div class="border-b border-black w-[150px] mx-auto pb-0.5"></div></div>
+            </div>
+            
+            <!-- 2. TTD Wali Kelas -->
+            <div class="w-1/3 flex flex-col justify-between items-center relative" style="height: 95px;">
+                <div class="w-full relative z-10"><p>&nbsp;</p><p>Wali Kelas</p></div>
+                <!-- Wadah TTD Wali z-30 (Paling Atas) -->
+                <div class="absolute inset-0 flex items-center justify-center z-30 pt-4 pointer-events-none">
+                    <img id="img_wali" class="relative z-20 h-20 object-contain mix-blend-multiply hidden" alt="TTD Wali">
+                </div>
+                <div class="w-full relative z-10"><div class="border-b border-black w-[150px] mx-auto pb-0.5" id="val_wali">...</div></div>
+            </div>
+           
+            <!-- 3. TTD Kepala TK-RA -->
+            <div class="w-1/3 flex flex-col justify-between items-center relative" style="height: 95px;">
+                <!-- Teks Atas (Z-10) -->
+                <div class="w-full relative z-10"><p id="val_tanggal">Bangkalan, ...</p><p>Kepala TK-RA</p></div>
+                
+                <!-- WADAH GAMBAR TTD & STEMPEL z-30 (Di Atas Teks) -->
+                <div class="absolute inset-0 flex items-center justify-center z-30 pt-4 pointer-events-none">
+                    <!-- Tanda Tangan (Z-20: Di Bawah Stempel) -->
+                    <img id="img_kepala" class="relative z-20 h-20 object-contain mix-blend-multiply hidden" alt="TTD Kepala">
+                    <!-- Stempel (Z-30: Paling Depan) -->
+                    <img id="val_stempel" class="absolute z-30 h-24 opacity-85 object-contain mix-blend-multiply -ml-8 mt-2 hidden" alt="Stempel">
+                </div>
+                
+                <!-- Teks Nama (Z-10) -->
+                <div class="w-full relative z-10"><div class="border-b border-black w-[150px] mx-auto pb-0.5" id="val_kepala">...</div></div>
+            </div>
+		   
+        </div>
+
+    </div>
+
+
+      <script src="../config.js?v=16"></script>
+		
+<script>
+
+function showLoading(show, teks="Memproses...") { 
+    // Pastikan ID 'loadingState' atau 'loadingScreen' sesuai dengan HTML Anda
+    let loadingEl = document.getElementById('loadingState') || document.getElementById('loadingScreen');
+    let teksEl = document.getElementById('teksLoading');
+    
+    if(loadingEl) {
+        loadingEl.style.display = show ? 'flex' : 'none'; 
+    }
+    if(teksEl) {
+        teksEl.innerText = teks;
+    }
+}
+
+
+    let GLOBAL_DATA_SANTRI = [];
+
+window.onload = async () => {
+    document.getElementById('teksLoading').innerText = "Memuat Database Santri...";
+    document.getElementById('loadingState').style.display = 'flex';
+
+    try {
+        const formData = new URLSearchParams(); 
+        formData.append('action', 'getSantri');
+        formData.append('token', sessionStorage.getItem('tokenMadasa'));
+        
+        const res = await gasFetch( { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if(data.status === 'success') {
+            GLOBAL_DATA_SANTRI = data.data;
+            
+            // ---> TAMBAHKAN BARIS INI DI SINI <---
+            buatOpsiKelasOtomatis();
+        }
+    } catch (e) {
+        console.log("Gagal memuat list santri");
+    }
+    
+    document.getElementById('loadingState').style.display = 'none';
+
+    // (Kode lanjutan Anda lainnya)
+    const urlParams = new URLSearchParams(window.location.search);
+    const nisCari = urlParams.get('nis');
+    if(nisCari) {
+        muatDataRapor(nisCari);
+    }
+};
+
+        function populateSantriRapor() {
+            const kelasPilih = document.getElementById('raporKelas').value;
+            const selectSantri = document.getElementById('raporSantri');
+            selectSantri.innerHTML = '<option value="" disabled selected>-- Pilih Santri --</option>';
+            const santriKelasIni = GLOBAL_DATA_SANTRI.filter(s => s.kelas === kelasPilih);
+            santriKelasIni.forEach(s => { 
+                selectSantri.innerHTML += `<option value="${s.nis}">${s.nis} - ${s.nama}</option>`; 
+            });
+            selectSantri.disabled = false;
+        }
+
+     function lihatRaporTKLangsung() {
+            const nisPilih = document.getElementById('raporSantri').value;
+            if(!nisPilih) {
+                // Menggunakan SweetAlert2 sebagai pengganti alert()
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Belum Lengkap',
+                    text: 'Silakan pilih Kelas dan Nama Santri terlebih dahulu!',
+                    confirmButtonColor: '#059669', // Warna emerald-600 dari tema Anda
+                    confirmButtonText: '<i class="fas fa-check mr-1"></i> Mengerti',
+                    customClass: {
+                        popup: 'rounded-2xl font-sans'
+                    }
+                });
+                return;
+            }
+            muatDataRapor(nisPilih);
+        }
+		
+		function cetakRaporTKLangsung() {
+            const nisPilih = document.getElementById('raporSantri').value;
+            if(!nisPilih) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tidak Bisa Mencetak',
+                    text: 'Silakan pilih Kelas dan Nama Santri terlebih dahulu!',
+                    confirmButtonColor: '#059669',
+                    confirmButtonText: '<i class="fas fa-check mr-1"></i> Mengerti',
+                    customClass: { popup: 'rounded-2xl font-sans' }
+                });
+                return;
+            }
+            
+            const kertas = document.getElementById('kertasRapor');
+            if(kertas.classList.contains('hidden')) {
+                return Swal.fire('Perhatian', 'Silakan klik tombol "Nilai" terlebih dahulu sebelum mencetak.', 'warning');
+            }
+
+            const santriInfo = GLOBAL_DATA_SANTRI.find(x => x.nis == nisPilih);
+            const nama = santriInfo ? santriInfo.nama : 'Santri';
+
+            // Trik Ubah Nama File PDF
+            const judulAsli = document.title;
+            document.title = "Rapor_TK_" + nisPilih + "_" + nama;
+
+            setTimeout(() => {
+                window.print();
+                document.title = judulAsli;
+            }, 500);
+        }
+
+function terbilang(angka) {
+            // Pisahkan angka utama dan angka di belakang koma (jika ada)
+            let strAngka = angka.toString();
+            let bagianKoma = "";
+            let angkaUtama = Math.floor(parseFloat(angka));
+
+            if (strAngka.includes('.')) {
+                bagianKoma = strAngka.split('.')[1];
+            }
+
+            // Fungsi baca utama (tanpa Math.round di dalamnya)
+            function baca(n) {
+                const bilangan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+                if (n === 0) return "Nol"; 
+                if (n < 12) return bilangan[n]; 
+                if (n < 20) return baca(n - 10) + " Belas";
+                if (n < 100) return baca(Math.floor(n / 10)) + " Puluh " + (n % 10 > 0 ? " " + baca(n % 10) : "");
+                if (n === 100) return "Seratus";
+                if (n < 200) return "Seratus " + baca(n - 100);
+                if (n < 1000) return baca(Math.floor(n / 100)) + " Ratus " + (n % 100 > 0 ? " " + baca(n % 100) : "");
+                if (n === 1000) return "Seribu";
+                if (n < 2000) return "Seribu " + baca(n - 1000);
+                if (n < 1000000) return baca(Math.floor(n / 1000)) + " Ribu " + (n % 1000 > 0 ? " " + baca(n % 1000) : "");
+                return n.toString();
+            }
+
+            let hasil = baca(angkaUtama);
+
+            // Jika ada koma, tambahkan kata "Koma" dan baca angkanya
+            if (bagianKoma !== "") {
+                hasil += " Koma";
+                for (let i = 0; i < bagianKoma.length; i++) {
+                    let digit = parseInt(bagianKoma[i]);
+                    if (digit === 0) hasil += " Nol";
+                    else {
+                        const bilanganKoma = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan"];
+                        hasil += " " + bilanganKoma[digit];
+                    }
+                }
+            }
+
+            return hasil;
+        }
+
+        function konversiHuruf(predikatHuruf) {
+            if (!predikatHuruf) return '-';
+            let p = predikatHuruf.toString().toUpperCase().trim(); 
+            if(p === 'A') return 'Sangat Baik (A)';
+            if(p === 'B') return 'Baik (B)';
+            if(p === 'C') return 'Cukup (C)';
+            if(p === 'D') return 'Kurang (D)';
+            return predikatHuruf; 
+        }
+
+        // DESKRIPSI SUDAH DIPERBARUI MENJADI VERSI ISLAMI 100%
+        function generateK13Logic(mapel, angka) {
+            let predikat = ""; let deskripsi = "";
+            if (angka >= 90) { 
+                predikat = "A"; 
+                deskripsi = `Alhamdulillah, ananda sangat baik dan menguasai materi <b>${mapel}</b>. Masya Allah, mampu mempraktekkan dengan sempurna tanpa bimbingan. Barakallah fiik.`; 
+            } 
+            else if (angka >= 80) { 
+                predikat = "B"; 
+                deskripsi = `Insya Allah ananda sudah baik dalam memahami materi <b>${mapel}</b>. Tetap istiqomah, pertahankan semangat belajar, dan tingkatkan lagi di rumah.`; 
+            } 
+            else if (angka >= 70) { 
+                predikat = "C"; 
+                deskripsi = `Ananda cukup mampu mengikuti materi <b>${mapel}</b>. Membutuhkan sedikit bimbingan dan pembiasaan agar kelak menjadi lebih baik, bi idznillah.`; 
+            } 
+            else { 
+                predikat = "D"; 
+                deskripsi = `Ananda masih membutuhkan pendampingan khusus dalam materi <b>${mapel}</b>. Semoga Allah mudahkan ananda untuk lebih giat belajar dan terus berlatih.`; 
+            }
+            return { predikat, deskripsi };
+        }
+
+      async function muatDataRapor(nisSantri) {
+            document.getElementById('teksLoading').innerText = "Menarik Data Rapor...";
+            document.getElementById('loadingState').style.display = 'flex';
+            document.getElementById('kertasRapor').classList.add('hidden');
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action', 'getRaporTK');
+                formData.append('nis', nisSantri);
+
+                const response = await gasFetch( { method: 'POST', body: formData });
+                const dataRes = await response.json();
+
+                if(dataRes.status === 'success') {
+                    let peringkatKelas = "-";
+                    let totalSantri = 0; // Tambahan: Penampung jumlah total siswa
+                    try {
+                        const fdRank = new URLSearchParams();
+                        fdRank.append('action', 'getRankingKelas');
+                        fdRank.append('kelas', dataRes.biodata.kelas);
+                        const resRank = await gasFetch( { method: 'POST', body: fdRank });
+                        const dataRank = await resRank.json();
+                        
+                        if(dataRank.status === 'success') {
+                            const cariRank = dataRank.data.find(s => s.nis.toString() === nisSantri.toString());
+                            if(cariRank) peringkatKelas = (cariRank.lengkap && cariRank.rank) ? cariRank.rank : '-';
+                            totalSantri = dataRank.data.length; // Tambahan: Menghitung total siswa unik dari data server
+                        }
+                    } catch(e) { console.log("Gagal menarik data ranking"); }
+
+                    renderRapor(dataRes, peringkatKelas, totalSantri); // Perubahan: Mengirimkan data total siswa
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('kertasRapor').classList.remove('hidden');
+                    
+                    // Update judul halaman untuk nama file PDF
+                    document.title = `Rapor_TK_${dataRes.biodata.nama.replace(/\s+/g,"_")}`;
+                } else {
+                    document.getElementById('loadingState').style.display = 'none';
+                    alert("Gagal memuat data rapor dari database.");
+                }
+            } catch (error) {
+                document.getElementById('loadingState').style.display = 'none';
+                alert("Koneksi gagal.");
+            }
+        }
+
+      function renderRapor(d, peringkat, totalSantri) {
+            // PERBAIKAN: Menambahkan fallback "{}" agar tidak error jika d.detail belum diisi di database
+            let det = d.detail || {}; 
+            
+            document.getElementById('val_nama').innerText = d.biodata.nama;
+            document.getElementById('val_nis').innerText = d.biodata.nis;
+            document.getElementById('val_alamat').innerText = d.biodata.alamat;
+            document.getElementById('val_kelas').innerText = d.biodata.kelas;
+
+            document.getElementById('val_semester').innerText = d.pengaturan.semester || '-';
+            document.getElementById('val_tahun').innerText = d.pengaturan.tahun || '-';
+            document.getElementById('val_tanggal').innerText = d.pengaturan.tanggal || 'Bangkalan, ........................';
+            document.getElementById('val_wali').innerText = d.pengaturan.wali || '&nbsp;';
+            document.getElementById('val_kepala').innerText = d.pengaturan.kepala || '&nbsp;';
+
+            function pasangGambar(idElemen, urlGambar) {
+                const imgEl = document.getElementById(idElemen);
+                if (urlGambar && urlGambar.trim() !== '' && urlGambar.includes('http')) {
+                    imgEl.src = urlGambar; imgEl.classList.remove('hidden');
+                    imgEl.onerror = function() { this.classList.add('hidden'); };
+                } else { imgEl.classList.add('hidden'); }
+            }
+
+            pasangGambar('val_stempel', d.pengaturan.url_stempel);
+            pasangGambar('img_wali', d.pengaturan.url_wali);
+            pasangGambar('img_kepala', d.pengaturan.url_kepala);
+
+            document.getElementById('val_akhlaq').innerText = konversiHuruf(det.akhlaq);
+            document.getElementById('val_rajin').innerText = konversiHuruf(det.kerajinan);
+            document.getElementById('val_disiplin').innerText = konversiHuruf(det.disiplin);
+            document.getElementById('val_rapi').innerText = konversiHuruf(det.rapi);
+            
+            // Ambil nilai dan ubah jadi angka (jika kosong/strip, otomatis jadi 0)
+            let jmlSakit = parseInt(det.sakit) || 0;
+            let jmlIzin  = parseInt(det.izin) || 0;
+            let jmlAlpa  = parseInt(det.alpa) || 0;
+            let totalAbsen = jmlSakit + jmlIzin + jmlAlpa;
+
+            document.getElementById('val_sakit').innerText = det.sakit || '-';
+            document.getElementById('val_izin').innerText = det.izin || '-';
+            document.getElementById('val_alpa').innerText = det.alpa || '-';
+            
+            // Masukkan total ke elemen yang baru kita buat
+            document.getElementById('val_jumlah_absen').innerText = totalAbsen;
+            
+           let teksCatatan = (det.catatan || '').trim();
+            if (teksCatatan === '-' || teksCatatan === '') { document.getElementById('val_catatan').innerText = '-'; } 
+            else { document.getElementById('val_catatan').innerText = teksCatatan; }
+            
+            let isGenap = (d.pengaturan.semester || '').toLowerCase().includes('genap');
+            let teksKeputusan = isGenap 
+                ? `${det.keputusan || `Naik Kelas`}`
+                : `- Hanya diisi pada akhir tahun pelajaran (Genap) -`;
+            
+            if (!isGenap) {
+                document.getElementById('val_keputusan').classList.remove('text-emerald-700', 'uppercase', 'font-bold');
+                document.getElementById('val_keputusan').classList.add('text-gray-500', 'font-normal', 'italic');
+            } else {
+                // Mengembalikan style aslinya jika semester genap
+                document.getElementById('val_keputusan').classList.remove('text-gray-500', 'font-normal', 'italic');
+                document.getElementById('val_keputusan').classList.add('text-emerald-700', 'uppercase', 'font-bold');
+            }
+            document.getElementById('val_keputusan').innerText = teksKeputusan;
+
+            const tbody = document.getElementById('bodyTabelNilai');
+            tbody.innerHTML = '';
+            let totalNilai = 0;
+            let barisDiisi = 0; 
+
+        // LOGIKA 12 BARIS STATIS (Disesuaikan agar muat 1 halaman Folio/Legal)
+for (let i = 0; i < 12; i++) {
+    if (d.nilai && d.nilai[i]) {
+        const item = d.nilai[i];
+        const k13 = generateK13Logic(item.mapel, item.nilai);
+        
+        // Pengecekan NaN agar aman dari nilai kosong
+        let parsedNilai = parseFloat(item.nilai);
+        if (!isNaN(parsedNilai)) {
+            totalNilai += parsedNilai;
+            barisDiisi++;
+        }
+
+        let warnaPredikat = k13.predikat === 'A' ? "text-emerald-600" : k13.predikat === 'B' ? "text-blue-600" : k13.predikat === 'C' ? "text-orange-500" : "text-red-600";
+        
+        // PERBAIKAN: Gunakan div dengan line-clamp-2 agar teks mapel maksimal 2 baris dan aman
+        tbody.innerHTML += `
+            <tr style="height: 34px; overflow: hidden;">
+                <td class="text-center font-bold p-0 align-middle">${i + 1}</td>
+                <td class="px-2 py-0.5 align-middle">
+                    <div class="font-bold text-gray-800 text-[10px] leading-tight line-clamp-2 break-words" title="${item.mapel}">${item.mapel}</div>
+                </td>
+                <td class="text-center font-bold text-[13px] p-0 align-middle">${item.nilai}</td>
+                <td class="text-center font-black text-[14px] ${warnaPredikat} p-0 align-middle">${k13.predikat}</td>
+                <td class="text-justify px-2 py-0.5 leading-tight text-[10px] align-middle overflow-hidden">${k13.deskripsi}</td>
+            </tr>
+        `;
+    } else {
+        // Baris kosong (height disamakan menjadi 34px)
+        tbody.innerHTML += `
+            <tr style="height: 34px; overflow: hidden;">
+                <td class="text-center font-bold p-0 align-middle">${i + 1}</td>
+                <td class="px-2 py-0 align-middle">&nbsp;</td>
+                <td class="p-0 align-middle">&nbsp;</td>
+                <td class="p-0 align-middle">&nbsp;</td>
+                <td class="p-0 align-middle">&nbsp;</td>
+            </tr>
+        `;
+    }
+}
+
+           let rataRata = barisDiisi > 0 ? (totalNilai / barisDiisi).toFixed(2) : 0;
+            let fixTotal = totalNilai % 1 === 0 ? totalNilai : totalNilai.toFixed(1);
+            let fixRata = rataRata % 1 === 0 ? parseInt(rataRata) : parseFloat(rataRata);
+
+            // PERBAIKAN: Menghapus class border kustom agar ketebalan garis seragam semua
+            tbody.innerHTML += `
+                <tr class="font-bold" style="height: 26px;">
+                    <td colspan="2" class="text-right px-4 py-0 align-middle uppercase tracking-widest text-gray-700">Jumlah Nilai</td>
+                    <td class="text-center text-[13px] p-0 align-middle text-emerald-800">${fixTotal}</td>
+                    <td colspan="2" class="px-4 text-[10px] py-0 align-middle uppercase text-gray-700 italic truncate">${terbilang(fixTotal)}</td>
+                </tr>
+                <tr class="font-bold" style="height: 26px;">
+                    <td colspan="2" class="text-right px-4 py-0 align-middle uppercase tracking-widest text-gray-700">Rata-Rata</td>
+                    <td class="text-center text-[13px] p-0 align-middle text-blue-700">${fixRata}</td>
+                    <td colspan="2" class="px-4 text-[10px] py-0 align-middle uppercase text-gray-700 italic truncate">${terbilang(fixRata)}</td>
+                </tr>
+               <tr class="font-bold" style="height: 26px;">
+                    <td colspan="2" class="text-right px-4 py-0 align-middle uppercase tracking-widest text-gray-700">Peringkat Kelas</td>
+                    <td class="text-center text-[14px] p-0 align-middle text-purple-700">${peringkat}</td>
+                    <td colspan="2" class="px-4 text-[10px] py-0 align-middle uppercase text-gray-700 italic truncate">Dari ${totalSantri} Santri Di Kelas Ini</td>
+                </tr>
+            `;
+        }
+		
+		
+// =========================================================
+// FUNGSI CETAK SAMPUL & BIODATA KHUSUS TK (DINAMIS & FIX Z-INDEX)
+// =========================================================
+function cetakSampulBiodataTK() {
+    const nis = document.getElementById('raporSantri').value;
+    const kelasLengkap = document.getElementById('raporKelas').value;
+    
+    if(!nis || !kelasLengkap) return Swal.fire('Perhatian', 'Pilih kelas dan nama santri terlebih dahulu.', 'warning');
+
+    const santriInfo = GLOBAL_DATA_SANTRI.find(x => x.nis == nis);
+    if(!santriInfo) return Swal.fire('Error', 'Data santri tidak ditemukan.', 'error');
+
+    // 1. Tarik Pengaturan dari Server
+    showLoading(true, "Menarik Data Pengaturan...");
+    
+    const fdSet = new URLSearchParams(); 
+    fdSet.append('action', 'getPengaturan'); 
+    fdSet.append('kelas', kelasLengkap);
+    
+    const tokenTersimpan = sessionStorage.getItem('tokenMadasa');
+    if (tokenTersimpan) fdSet.append('token', tokenTersimpan);
+
+    gasFetch( { method: 'POST', body: fdSet })
+        .then(r => r.json())
+        .then(resSet => {
+            showLoading(false);
+            
+            let setUmum = {};
+            if(resSet.status === 'success') {
+                setUmum = resSet.umum || {};
+            }
+
+            const bersihkanTeks = (teks) => {
+                if (!teks) return '-';
+                return teks.toString().replace(/\uFFFD/g, "'").replace(/[’‘`]/g, "'");
+            };
+
+            const namaB = bersihkanTeks(santriInfo.nama);
+            const ayahB = bersihkanTeks(santriInfo.ayah);
+            const ibuB  = bersihkanTeks(santriInfo.ibu);
+            const almtB = bersihkanTeks(santriInfo.alamat);
+
+            // 2. Tentukan Tanggal & Pejabat
+            const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+            const tanggalCetakDefault = new Date().toLocaleDateString('id-ID', opsiTanggal);
+            
+            const tanggalTampil = setUmum.tanggal || ('Bangkalan, ' + tanggalCetakDefault);
+            const namaKepala = setUmum.kepala || '..............................';
+            const urlKepala = '../asset/ttdtk.png';
+            const urlStempel = '../asset/stempeltk.png';
+
+            const kertas = document.getElementById('kertasRapor');
+            
+            // Simpan template rapor asli
+            if (!window.templateRaporAsli) {
+                window.templateRaporAsli = kertas.innerHTML;
+            }
+
+            kertas.classList.remove('hidden');
+            
+            kertas.innerHTML = `
+                <!-- SAMPUL TK -->
+                <div class="flex flex-col justify-center items-center text-center" style="height: 270mm; page-break-after: always; box-sizing: border-box; padding: 20px;">
+                    <img src="../asset/logo.png" class="w-48 h-48 object-contain mb-8" alt="Logo">
+                    <h1 class="text-3xl font-black uppercase tracking-widest mb-1 text-emerald-800">Buku Laporan Penilaian</h1>
+                   <h2 class="text-2xl font-bold uppercase tracking-widest text-black mb-2">Hasil Belajar Santri TK-RA</h2>
+                    <div class="w-3/4 border-b-2 border-emerald-800 mb-12"></div>
+                    <h1 class="text-[40px] font-bold leading-none mb-2 text-emerald-800" style="font-family: 'Traditional Arabic', serif;">مدرسة دينية دار السلام</h1>
+                    <h2 class="text-xl font-black uppercase tracking-widest text-black mb-1">MADRASAH DINIYAH DARUSSALAM</h2>
+                    <p class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-12">Bhetoran Batukessel Bandang Laok Kokop Bangkalan</p>
+                    
+                    <div class="w-3/4 border-2 border-emerald-800 p-6 rounded-lg bg-white relative mt-4">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-4 text-xs font-bold uppercase tracking-wider text-emerald-800">Nama Santri</div>
+                        <h3 class="text-2xl font-black uppercase tracking-widest text-black mb-3">${namaB}</h3>
+                        <div class="flex justify-center items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-700">
+                            <span>NIS / NISN :</span>
+                            <span class="border-b border-black border-dashed px-4 text-black">${santriInfo.nis || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BIODATA TK -->
+                <div class="flex flex-col" style="font-family: 'Times New Roman', Times, serif; padding: 5mm 10mm; color: #000; min-height: 270mm; position: relative; box-sizing: border-box;">
+                    
+                    <!-- PERBAIKAN: Margin bawah diperkecil (mb-4) agar naik -->
+                    <div class="text-center mb-4 shrink-0">
+                        <img src="../asset/logo.png" class="w-20 h-20 object-contain mx-auto mb-4" alt="Logo">
+                        <h2 class="text-[16px] font-bold uppercase tracking-wider m-0 text-emerald-800">LAPORAN HASIL BELAJAR SANTRI</h2>
+                        <h1 class="text-[18px] font-bold uppercase tracking-widest m-0">TK - RA DARUSSALAM</h1>
+                    </div>
+
+                    <!-- PERBAIKAN: Margin bawah diperkecil (mb-3) -->
+                    <div class="text-[14px] font-bold underline mb-3 tracking-wide text-emerald-800 shrink-0">IDENTITAS SANTRI</div>
+
+                    <!-- PERBAIKAN: Padding diubah dari 6px menjadi 4px agar tabel lebih rapat -->
+                    <style>
+                        #tabelBiodataTK td { padding: 4px 0; }
+                    </style>
+
+                    <table id="tabelBiodataTK" class="w-full text-[13px] leading-relaxed no-border shrink-0" style="border: none !important;">
+                        <tr style="border:none;"><td class="w-[4%] align-top" style="border:none;">1.</td><td class="w-[38%] align-top" style="border:none;">Nama Lengkap</td><td class="w-[2%] align-top" style="border:none;">:</td><td class="align-top uppercase font-bold" style="border:none;">${namaB}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">2.</td><td class="align-top" style="border:none;">Nomor Induk Santri</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">${santriInfo.nis || '-'}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">3.</td><td class="align-top" style="border:none;">Jenis Kelamin</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${santriInfo.jk || '-'}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">4.</td><td class="align-top" style="border:none;">Tempat Tanggal Lahir</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${santriInfo.ttl || '-'}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">5.</td><td class="align-top" style="border:none;">Agama</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Islam</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">6.</td><td class="align-top" style="border:none;">Alamat Santri</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${almtB}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">7.</td><td class="align-top" style="border:none;">Taman Kanak-Kanak</td><td class="align-top" style="border:none;"></td><td class="align-top" style="border:none;"></td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">a. Nama TK / RA</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">TK RA Darussalam</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">b. Alamat</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Bhetoran Batukessel Bandang Laok</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">c. Kecamatan</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Kokop</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">d. Kabupaten</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Bangkalan</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">8.</td><td class="align-top" style="border:none;">Nama Orang Tua</td><td class="align-top" style="border:none;"></td><td class="align-top" style="border:none;"></td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">a. Ayah</td><td class="align-top" style="border:none;">:</td><td class="align-top uppercase" style="border:none;">${ayahB}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">b. Ibu</td><td class="align-top" style="border:none;">:</td><td class="align-top uppercase" style="border:none;">${ibuB}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">9.</td><td class="align-top" style="border:none;">Alamat Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${almtB}</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">10.</td><td class="align-top" style="border:none;">Agama Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Islam</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">11.</td><td class="align-top" style="border:none;">Pekerjaan Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">12.</td><td class="align-top" style="border:none;">Nama Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">13.</td><td class="align-top" style="border:none;">Alamat Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">14.</td><td class="align-top" style="border:none;">Nomor Telepon</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">15.</td><td class="align-top" style="border:none;">Agama Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                        <tr style="border:none;"><td class="align-top" style="border:none;">16.</td><td class="align-top" style="border:none;">Pekerjaan Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                    </table>
+
+                    <!-- PERBAIKAN: mt-[2cm] diubah menjadi mt-8 agar foto naik dan tidak mepet bawah -->
+                    <div class="flex justify-between items-end px-4 mt-8 pb-4">
+                        <div class="w-[3cm] h-[4cm] border-2 border-emerald-800 flex flex-col items-center justify-center text-center relative z-10 bg-white">
+                            <span class="text-[11px] text-emerald-800">Pas Photo</span><br>
+                            <span class="text-[11px] font-bold text-emerald-800">3 x 4</span>
+                        </div>
+                        
+                        <div class="text-center w-[250px] relative">
+                            <!-- Teks Atas (Z-10) -->
+                            <div class="relative z-10">
+                                <p class="m-0 text-[13px] mb-1">${tanggalTampil}</p>
+                                <p class="m-0 text-[13px] font-bold mb-1">Kepala TK-RA</p>
+                            </div>
+                            
+                            <!-- Wadah Tanda Tangan & Stempel (Z-30) -->
+                            <div class="relative flex justify-center items-center h-[75px] w-full my-1 pointer-events-none z-30">
+                                <img src="${urlKepala}" class="relative h-20 z-20 ${urlKepala ? '' : 'hidden'}" alt="TTD Kepala">
+                                <img src="${urlStempel}" class="absolute h-24 -ml-16 z-30 ${urlStempel ? '' : 'hidden'}" alt="Stempel">
+                            </div>
+
+                            <!-- Teks Nama (Z-10) -->
+                            <div class="relative z-10">
+                                <p class="m-0 text-[14px] font-bold underline tracking-wide uppercase">${namaKepala}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const judulAsli = document.title;
+            document.title = "Biodata_TK_" + santriInfo.nis + "_" + namaB;
+
+            setTimeout(() => {
+                window.print();
+                document.title = judulAsli;
+            }, 500);
+			
+        }).catch(err => {
+            showLoading(false);
+            Swal.fire('Error', 'Gagal memuat pengaturan dari server.', 'error');
+        });
+}
+		
+		
+		
+		function buatOpsiKelasOtomatis() {
+    const selectKelas = document.getElementById('raporKelas');
+    if (!selectKelas) return;
+    
+    // 1. Ambil semua data kelas dari GLOBAL_DATA_SANTRI, 
+    //    filter yang mengandung kata "TK", lalu hapus duplikat (unik), dan urutkan.
+    const kelasTKUnik = [...new Set(GLOBAL_DATA_SANTRI.map(s => s.kelas))]
+                          .filter(kelas => {
+                              const k = String(kelas || '').toUpperCase();
+                              return k.includes('TPQ') || k.includes('TK') || k.includes('RA');
+                          })
+                          .sort();
+
+    // 2. Kosongkan pilihan yang ada dan setel ulang defaultnya
+    selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas TK --</option>';
+
+    // 3. Masukkan kelas unik tersebut ke dalam elemen <select> secara otomatis
+    kelasTKUnik.forEach(kelas => {
+        selectKelas.innerHTML += `<option value="${kelas}">${kelas}</option>`;
+    });
+}
+		
+		
+</script>
+</body>
+</html>

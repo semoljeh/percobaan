@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Maker - Madrasah Darussalam</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://guru.madasa.ponpes.id/asset/log.png">
+
+    <!-- Open Graph Meta Tags untuk Preview WhatsApp -->
+    <meta property="og:title" content="Signature Maker - Madrasah Darussalam">
+    <meta property="og:description" content="Aplikasi pembuat tanda tangan digital transparan (PNG) untuk keperluan cetak Rapor Madrasah Darussalam.">
+    <!-- PERUBAHAN: Menggunakan URL absolut untuk og:image -->
+    <meta property="og:image" content="https://guru.madasa.ponpes.id/asset/log.png">
+    <!-- Tambahan untuk memastikan WhatsApp menarik URL secure -->
+    <meta property="og:image:secure_url" content="https://guru.madasa.ponpes.id/asset/log.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:type" content="website">
+    
+    <!-- Memuat Font dan Icon bawaan sistem Anda -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Memuat Tailwind CSS dan Tema Madasa -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        emerald: { 600: '#059669', 700: '#047857', 800: '#065f46' }, 
+                        gold: '#D4AF37' 
+                    }, 
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'], 
+                        heading: ['Poppins', 'sans-serif'] 
+                    } 
+                } 
+            } 
+        }
+    </script>
+
+    <style>
+        /* Pola Papan Catur untuk penanda gambar transparan */
+        .bg-transparent-pattern {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Modifikasi bentuk input warna bawaan browser */
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex items-center justify-center p-4">
+
+    <!-- Container Utama mirip dengan Modal/Card Madasa -->
+   <div class="bg-white w-full max-w-2xl min-w-0 rounded-[1.5rem] shadow-xl border border-gray-100 p-6 sm:p-8 relative overflow-hidden">
+        
+        <!-- Hiasan Sudut -->
+        <i class="fas fa-pen-fancy absolute -right-6 -bottom-6 text-emerald-50 opacity-50" style="font-size: 10rem;"></i>
+
+        <div class="relative z-10">
+            <!-- Header -->
+            <div class="text-center mb-6 border-b border-gray-100 pb-4">
+                <h1 class="text-2xl sm:text-3xl font-heading font-bold text-emerald-800 mb-1">
+                    <i class="fas fa-signature mr-2 text-emerald-600"></i>MADASA Signature Maker
+                </h1>
+                <p class="text-xs sm:text-sm text-gray-500 font-medium">
+                    Buat tanda tangan format PNG transparan untuk sistem cetak Rapor
+                </p>
+            </div>
+
+            <!-- Wadah Kanvas -->
+            <div class="canvas-wrapper relative border-2 border-dashed border-emerald-300 rounded-2xl overflow-hidden mb-6 bg-transparent-pattern group hover:border-emerald-500 transition-colors shadow-inner">
+                <canvas id="canvas" class="w-full h-[250px] sm:h-[320px] cursor-crosshair touch-none block"></canvas>
+            </div>
+
+            <!-- Panel Pengaturan -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-emerald-50 p-4 sm:p-5 rounded-xl border border-emerald-100 shadow-sm">
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-emerald-800 mb-2">
+                        <i class="fas fa-pen-nib mr-1 text-emerald-600"></i> Ketebalan Garis
+                    </label>
+                    <input id="size" type="range" min="1" max="15" value="4" class="w-full accent-emerald-600 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-emerald-800 mb-2">
+                        <i class="fas fa-palette mr-1 text-emerald-600"></i> Warna Tinta
+                    </label>
+                    <input id="color" type="color" value="#000000" class="w-full h-10 border border-emerald-200 rounded-lg cursor-pointer bg-white p-1 outline-none focus:border-emerald-500 shadow-sm transition-all">
+                </div>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                <button onclick="undo()" class="flex-1 py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                    <i class="fas fa-undo"></i> Batalkan Garis
+                </button>
+                <button onclick="clearCanvas()" class="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                    <i class="fas fa-trash-alt"></i> Hapus Semua
+                </button>
+            </div>
+            
+            <button onclick="downloadPNG()" class="w-full py-4 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base sm:text-lg rounded-xl shadow-md transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                <i class="fas fa-download"></i> Download PNG Transparan
+            </button>
+        </div>
+    </div>
+
+    <!-- Script JavaScript Bawaan Anda (Hanya memanggil ID saja) -->
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let drawing = false;
+        let paths = [];
+        let current = [];
+
+       function setupCanvas() {
+    let ratio = window.devicePixelRatio || 1;
+    
+    // 1. Nolkan sementara lebar CSS agar flex container bisa menyusut mengikuti layar HP
+    canvas.style.width = '0px'; 
+    
+    // 2. Ambil ukuran asli dari elemen pembungkusnya (parent) yang sudah menyusut
+    let wrapper = canvas.parentElement;
+    let newWidth = wrapper.clientWidth;
+    let newHeight = wrapper.clientHeight;
+    
+    // 3. Hapus inline style agar kembali menggunakan class Tailwind (w-full)
+    canvas.style.width = '';
+    
+    // 4. Terapkan ukuran canvas yang baru
+    canvas.width = newWidth * ratio;
+    canvas.height = newHeight * ratio;
+    
+    ctx.scale(ratio, ratio);
+    redraw();
+}
+
+        setupCanvas();
+        window.addEventListener("resize", setupCanvas);
+
+       function getPos(e) {
+    let rect = canvas.getBoundingClientRect();
+    if (e.touches) {
+        return {
+            // Simpan sebagai rasio (0.0 - 1.0) relatif terhadap ukuran saat ini
+            x: (e.touches[0].clientX - rect.left) / rect.width,
+            y: (e.touches[0].clientY - rect.top) / rect.height
+        };
+    }
+    return {
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
+    };
+}
+
+function start(e) {
+            drawing = true;
+            current = [];
+            let p = getPos(e);
+            current.push(p);
+            redraw(); // <-- TAMBAHAN: Memaksa kanvas menggambar titik saat pertama kali diklik
+        }
+
+        function move(e) {
+            if (!drawing) return;
+            // Hanya cegah default jika menekan kanvas agar layar tidak ikut scroll
+            if(e.cancelable) e.preventDefault(); 
+            let p = getPos(e);
+            current.push(p);
+            redraw();
+        }
+
+        function stop() {
+            if (drawing) {
+                paths.push(current);
+                redraw(); // <-- TAMBAHAN: Memastikan titik/garis terakhir dirender dan disimpan ke dalam array paths
+            }
+            drawing = false;
+            current = [];
+        }
+
+        canvas.addEventListener("mousedown", start);
+        canvas.addEventListener("mousemove", move);
+        canvas.addEventListener("mouseup", stop);
+        canvas.addEventListener("mouseleave", stop);
+
+        canvas.addEventListener("touchstart", start, {passive: false});
+        canvas.addEventListener("touchmove", move, {passive: false});
+        canvas.addEventListener("touchend", stop);
+
+function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Gaya dasar ujung pulpen
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = document.getElementById("color").value;
+    ctx.lineWidth = document.getElementById("size").value;
+    
+    // Efek tinta nyata (sedikit blur/bayangan)
+    ctx.shadowBlur = 1.5;
+    ctx.shadowColor = document.getElementById("color").value;
+
+    paths.forEach(drawPath);
+
+    if (current.length) {
+        drawPath(current);
+    }
+}
+
+function drawPath(path) {
+    if (path.length < 2) {
+        // Jika hanya ada 1 titik (klik saja), buat titik (dot)
+        if (path.length === 1) {
+            ctx.beginPath();
+            let currentWidth = canvas.offsetWidth;
+            let currentHeight = canvas.offsetHeight;
+            ctx.arc(path[0].x * currentWidth, path[0].y * currentHeight, ctx.lineWidth / 2, 0, Math.PI * 2);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.fill();
+        }
+        return;
+    }
+
+    ctx.beginPath();
+    let currentWidth = canvas.offsetWidth;
+    let currentHeight = canvas.offsetHeight;
+
+    // Mulai dari titik pertama
+    ctx.moveTo(path[0].x * currentWidth, path[0].y * currentHeight);
+
+    // Hubungkan titik-titik dengan kurva melengkung (bukan garis lurus)
+    for (let i = 1; i < path.length - 1; i++) {
+        let p1X = path[i].x * currentWidth;
+        let p1Y = path[i].y * currentHeight;
+        
+        let p2X = path[i + 1].x * currentWidth;
+        let p2Y = path[i + 1].y * currentHeight;
+
+        // Hitung titik tengah di antara 2 kordinat pergerakan
+        let midX = (p1X + p2X) / 2;
+        let midY = (p1Y + p2Y) / 2;
+
+        // Tarik garis melengkung dari titik awal melewati p1 menuju titik tengah
+        ctx.quadraticCurveTo(p1X, p1Y, midX, midY);
+    }
+
+    // Tarik garis akhir ke titik terakhir
+    let lastPoint = path[path.length - 1];
+    ctx.lineTo(lastPoint.x * currentWidth, lastPoint.y * currentHeight);
+    
+    ctx.stroke();
+}
+
+        document.getElementById("size").addEventListener("input", redraw);
+        document.getElementById("color").addEventListener("input", redraw);
+
+        function undo() {
+            paths.pop();
+            redraw();
+        }
+
+        function clearCanvas() {
+            paths = [];
+            redraw();
+        }
+
+        function downloadPNG() {
+            // Cek apakah kanvas kosong
+            if(paths.length === 0) {
+                alert("Kanvas masih kosong! Silakan buat tanda tangan terlebih dahulu.");
+                return;
+            }
+
+            let link = document.createElement("a");
+            link.download = "Tanda-Tangan-Madasa.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>

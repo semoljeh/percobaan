@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Madrasah Darussalam - Sistem Penilaian</title>
+	
+	<meta name="description" content="Sistem Informasi Penilaian Santri Digital Madrasah Darussalam. Memudahkan dewan guru dalam mengelola data induk, input nilai, ranking, hingga cetak rapor santri secara real-time.">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Madrasah Darussalam - Sistem Penilaian">
+    <meta property="og:description" content="Sistem Informasi Penilaian Santri Digital Madrasah Darussalam. Memudahkan dewan guru dalam mengelola data induk, input nilai, ranking, hingga cetak rapor santri secara real-time.">
+    <meta property="og:image" content="https://semoljeh.github.io/madasa/asset/logoweb.png">
+    <meta property="og:image:secure_url" content="https://semoljeh.github.io/madasa/asset/logoweb.png">
+    <meta property="og:image:type" content="image/png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Madrasah Darussalam - Sistem Penilaian">
+    <meta name="twitter:description" content="Sistem Informasi Penilaian Santri Digital Madrasah Darussalam. Memudahkan dewan guru dalam mengelola data induk, input nilai, ranking, hingga cetak rapor santri secara real-time.">
+    <meta name="twitter:image" content="https://semoljeh.github.io/madasa/asset/logoweb.png">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#065f46">
+    <link rel="apple-touch-icon" href="asset/logo-192.png">
+    
+    <link rel="icon" type="image/png" href="asset/logoweb.png">
+    <link rel="shortcut icon" href="asset/logoweb.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+<script>
+        tailwind.config = { theme: { extend: { colors: { emerald: { 600: '#059669', 700: '#047857', 800: '#065f46' }, gold: '#D4AF37' }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- TAMBAHKAN SCRIPT INI UNTUK EXCELJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css?v=16">
+	
+<!-- KODE ONESIGNAL PUSH NOTIFICATION (MODERN SLIDE PROMPT) -->
+
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
+<script>
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+
+        appId: '8f0faf3e-0fea-464e-b12c-ae077ad2cbcb',
+
+       serviceWorkerPath: "sw.js",
+
+        promptOptions: {
+          slidedown: {
+            enabled: true,
+            actionMessage: 'Ingin mendapatkan informasi terbaru dan update dari Madrasah Darussalam?',
+            acceptButtonText: 'Ya, Izinkan',
+            cancelButtonText: 'Nanti Saja'
+          }
+        },
+
+        notifyButton: { 
+          enable: false 
+        }
+
+      });
+});
+
+</script>
+	
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<!-- ============================================== -->
+    <!-- HALAMAN ONBOARDING (WELCOME SCREEN) -->
+    <!-- ============================================== -->
+    <div id="onboardingPage" class="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-6 transition-opacity duration-500 hidden">
+        <div class="text-center w-full max-w-sm flex flex-col items-center">
+            
+            <!-- Logo Madasa -->
+            <div class="mb-8">
+                <img src="asset/logo.png" class="w-32 h-32 object-contain drop-shadow-md mx-auto" alt="Logo">
+            </div>
+
+            <!-- Teks Sambutan -->
+            <h1 class="text-2xl font-heading font-bold text-gray-800 mb-3">
+                Ahlan Wa Sahlan<br>
+                <span class="text-emerald-600"> Di Madasa Super App</span>
+            </h1>
+            <p class="text-gray-500 text-sm leading-relaxed mb-12 px-2">
+               Platform digital terpadu untuk layanan akademik dan evaluasi pencapaian santri Madrasah Darussalam. Bersama memantau perkembangan ilmu dan akhlak generasi Rabbani.
+            </p>
+
+            <!-- Tombol Mulai -->
+            <button onclick="selesaikanOnboarding()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base py-3.5 rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                Bismillah, Mulai
+            </button>
+            
+        </div>
+    </div>
+    <!-- ============================================== -->
+
+    <div id="pwaInstallPrompt" class="fixed top-4 right-4 z-[100] w-[calc(100%-2rem)] sm:w-80 bg-white/90 backdrop-blur-xl border border-emerald-100 shadow-2xl rounded-2xl p-4 transition-all duration-700 transform translate-x-[150%] opacity-0 flex items-start gap-4">
+        <button onclick="tutupNotifPWA()" class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all cursor-pointer">
+            <i class="fas fa-times text-sm"></i>
+        </button>
+        
+        <div class="w-12 h-12 shrink-0 bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-600 rounded-xl flex items-center justify-center text-2xl shadow-inner border border-white">
+            <i class="fas fa-download"></i>
+        </div>
+        
+        <div class="flex-1 pt-0.5">
+            <h4 class="font-heading font-bold text-gray-800 text-sm mb-1">Install Aplikasi</h4>
+            <p class="text-[11px] text-gray-500 leading-relaxed mb-3">Tambahkan Madasa ke layar utama HP Anda untuk akses lebih cepat & ringan.</p>
+            <button onclick="installPWA()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all transform hover:-translate-y-0.5">
+                Install Sekarang
+            </button>
+        </div>
+    </div>
+
+    <div id="loadingScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-600"></div>
+    </div>
+
+    <div id="loginPage" style="visibility: hidden;" class="min-h-screen flex items-center justify-center bg-madrasah-dark relative px-4 py-4">
+    
+    <div class="bg-white w-full max-w-[360px] rounded-[1.5rem] shadow-2xl relative z-10 overflow-hidden border border-white">
+        
+        <div class="relative pt-8 pb-6 px-6 text-center overflow-hidden min-h-[220px] flex flex-col justify-center">
+            
+            <div class="absolute inset-0 z-0">
+                <img src="asset/bg.jpg" class="w-full h-full object-cover" alt="Background Madrasah">
+                <div class="absolute inset-0 bg-emerald-900/60 mix-blend-multiply"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-emerald-900/90 to-transparent"></div>
+            </div>
+            
+            <div class="relative z-10 text-white mt-4">
+                <img src="asset/logo.png" class="w-16 h-16 mx-auto object-contain drop-shadow-lg mb-3" alt="Logo">
+                <h1 class="font-heading text-xl font-extrabold text-white mb-0.5 tracking-tight drop-shadow-md">Madrasah Darussalam</h1>
+               <p class="text-white/90 text-[10px] font-bold tracking-widest drop-shadow-md">E-Rapor Santri: Portal Evaluasi Akademik & Akhlaq</p>
+            </div>
+        </div>
+        <div class="p-6 bg-white rounded-b-[1.5rem]">
+            <form id="loginForm" class="space-y-3">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400 text-xs"></i>
+                        </div>
+                        <input type="text" id="username" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-gray-800 outline-none shadow-sm" placeholder="Username" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400 text-xs"></i>
+                        </div>
+                        <input type="password" id="password" class="w-full pl-9 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-gray-800 outline-none shadow-sm" placeholder="Password" required>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors" onclick="togglePassword()">
+                            <i class="fas fa-eye text-xs" id="eyeIcon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 mt-4 rounded-xl shadow-lg shadow-emerald-600/20 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt text-xs"></i> Masuk Sistem
+                </button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-gray-100 text-center">
+                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                    &copy; 2026 Madrasah Darussalam
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div id="dashboardPage" class="hidden flex h-screen bg-gray-50 overflow-hidden">
+        
+        <aside class="w-64 bg-emerald-800 text-white hidden md:flex flex-col shadow-xl z-20 shrink-0">
+            <div class="p-6 text-center border-b border-emerald-700 bg-emerald-900/50">
+                <img src="asset/logo.png" class="w-14 h-14 mx-auto object-contain mb-2 drop-shadow-md" alt="Logo Madrasah">
+                <h2 class="font-heading font-bold text-base tracking-wide">DARUSSALAM</h2>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+			
+			
+                <button onclick="showView('home')" class="nav-link w-full flex items-center gap-3 px-4 py-3 bg-emerald-700 rounded-xl text-white font-medium transition-all text-sm">
+    <i class="fas fa-th-large w-5 text-gold"></i> Utama
+</button>
+
+<button onclick="showView('dataSantri')" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-users w-5"></i> Data Santri
+</button>
+
+<button onclick="showView('inputNilai')" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-edit w-5"></i> Input Nilai
+</button>
+
+<button onclick="showView('dataNilai')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-chart-line w-5"></i> Data Nilai
+</button>
+
+<button onclick="showView('ranking')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-trophy w-5"></i> Ranking
+</button>
+
+<button onclick="showView('cetakRapor')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-print w-5"></i> Cetak Rapor
+</button>
+
+<button onclick="window.location.href='cetak/cetakkartu.html'" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-id-card w-5 text-emerald-300"></i>
+    Cetak Kartu Ujian
+</button>
+
+<button onclick="showView('mutasi')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-exchange-alt w-5"></i> Mutasi Kelas
+</button>
+
+<!-- Portal Wali Santri -->
+
+<!-- Portal Wali Santri -->
+<button onclick="window.location.href='informasi/'" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-user-check w-5 text-emerald-300"></i>
+    Portal Wali Santri
+</button>
+
+
+<!-- Administrasi SPP (Di dalam tag <nav>) -->
+<button onclick="window.location.href='administrasi/spp.html'" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-wallet w-5"></i>
+    Administrasi SPP
+</button>
+
+<button onclick="window.location.href='absensi/absensi.html'" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-qrcode w-5 text-emerald-300"></i> Scan Absensi
+</button>
+
+<!-- TAMBAHKAN TOMBOL ADMIN ABSENSI DI SINI -->
+<button onclick="window.location.href='absensi/admin_absensi.html'" class="admin-only w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-user-shield w-5 text-emerald-300"></i> Admin Absensi
+</button>
+
+<!-- TOMBOL BUAT TANDA TANGAN -->
+<button onclick="window.location.href='ttd/ttdmadasa.html'" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-signature w-5 text-emerald-300"></i> Buat Tanda Tangan
+</button>
+
+<button onclick="showView('pengaturan')" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+    <i class="fas fa-cog w-5"></i> Pengaturan
+</button>
+
+				
+				
+            </nav>
+			
+            </nav> <div class="p-4 border-t border-emerald-700/50 mt-auto shrink-0">
+                <button onclick="tampilkanProfilDeveloper()" class="w-full group flex items-center gap-3 p-3 bg-emerald-900/40 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer text-left shadow-sm">
+                    <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 border-2 border-emerald-500 group-hover:border-white transition-all overflow-hidden">
+    <!-- Mengganti ikon dengan tag img -->
+    <img src="asset/logoweb.png" alt="Logo Web" class="w-full h-full object-cover">
+</div>
+<div class="overflow-hidden">
+    <p class="text-[10px] text-emerald-300 font-bold tracking-wider mb-0.5 uppercase">Madasa v1.0</p>
+    <p class="text-sm text-white font-bold truncate">Development</p>
+</div>
+                </button>
+            </div>
+            
+			
+        </aside>
+
+        <main class="flex-1 flex flex-col h-screen overflow-hidden w-full">
+		
+            <header class="bg-white shadow-sm border-b border-gray-100 z-10 flex items-center justify-between p-4 sm:px-6">
+    <div class="flex items-center gap-3 sm:gap-4">
+        
+        <button onclick="toggleSidebarMobile()" class="md:hidden w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center justify-center shrink-0">
+            <i class="fas fa-bars text-lg"></i>
+        </button>
+
+        <h2 class="text-lg sm:text-xl font-heading font-bold text-gray-800 truncate">Madrasah Darussalam</h2>
+    </div>
+    
+    <div class="flex items-center gap-2 sm:gap-4">
+        <div class="text-right hidden sm:block border-r pr-4 border-gray-200">
+            <p id="userNameDisplay" class="text-sm font-semibold text-gray-800">Nama</p>
+            <p id="userRoleDisplay" class="text-xs font-medium text-emerald-600">Role</p>
+        </div>
+
+        <button onclick="logout()" class="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center shrink-0">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
+
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50">
+                
+               
+                  <div id="view-home" class="view-section">
+                    <div class="bg-gradient-to-r from-emerald-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-md mb-6 sm:mb-8 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        
+<!-- Container Utama Banner (Tinggi dikurangi agar jarak jam tidak jauh) -->
+<div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center w-full h-[180px] md:h-[140px]">
+    
+    <!-- 1. Kunci tinggi wadah Judul agar tidak tergeser -->
+    <div class="h-[40px] flex items-center justify-center">
+        <h1 id="judulBanner" class="text-2xl sm:text-3xl font-heading font-bold transition-opacity duration-700 ease-in-out drop-shadow-sm">
+            Ahlan Wa Sahlan
+        </h1>
+    </div>
+    
+    <!-- 2. Garis Pemisah (Margin dikurangi sedikit) -->
+    <div class="shrink-0 h-[2px] w-full max-w-[280px] sm:max-w-[350px] my-2 sm:my-3 bg-gradient-to-r from-transparent via-emerald-300 to-transparent opacity-80"></div>
+    
+    <!-- 3. Kunci tinggi wadah Teks Quotes (Tinggi dikurangi menjadi 85px) -->
+    <!-- pt-1 memberikan sedikit jarak dari garis agar lebih rapi -->
+    <div class="w-full max-w-lg h-[85px] md:h-[70px] flex items-start justify-center pt-1">
+        <p id="teksBanner" class="text-emerald-100 text-sm sm:text-base font-medium italic transition-opacity duration-700 ease-in-out leading-relaxed">
+            Selamat datang di Sistem Informasi Penilaian Santri Digital.
+        </p>
+    </div>
+
+</div>
+
+                        <div class="relative z-10 bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center md:text-right min-w-[200px]">
+                            <h2 id="waktu-jam" class="text-3xl sm:text-4xl font-bold font-mono tracking-tighter text-gold leading-none drop-shadow-sm">00:00</h2>
+                            <div class="mt-2 pt-2 border-t border-white/20 border-dashed">
+                                <p id="waktu-hijriyah" class="text-[12px] text-emerald-200 font-bold tracking-wide mb-0.5">Memuat Hijriyah...</p>
+                                <p id="waktu-masehi" class="text-[10px] font-bold text-emerald-50 uppercase tracking-widest">Memuat Masehi...</p>
+                            </div>
+                        </div>
+
+                        <i class="fas fa-mosque absolute -right-6 -bottom-6 text-emerald-900 opacity-20" style="font-size: 8rem;"></i>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6">
+
+<div onclick="showView('dataSantri')" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-teal-50 text-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-users"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Data Santri</h3>
+</div>
+
+<div onclick="showView('inputNilai')" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-book-open"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Input Nilai</h3>
+</div>
+
+<div onclick="showView('dataNilai')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-blue-50 text-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-table"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Data Nilai</h3>
+</div>
+
+<div onclick="showView('ranking')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-trophy"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Ranking</h3>
+</div>
+
+<div onclick="showView('cetakRapor')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-purple-50 text-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-print"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Cetak Rapor</h3>
+</div>
+
+<div onclick="showView('mutasi')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-50 text-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-exchange-alt"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Mutasi Kelas</h3>
+</div>
+
+
+<!-- PORTAL WALI SANTRI -->
+<div onclick="window.location.href='informasi/'" class="bg-gradient-to-br from-emerald-50 to-white p-4 sm:p-6 rounded-2xl shadow-sm border border-emerald-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-100 text-emerald-700 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-user-check"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Portal Wali Santri</h3>
+</div>
+
+
+<!-- DATA SPP -->
+<div onclick="window.location.href='administrasi/spp.html'" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-red-50 text-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-wallet"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Data SPP</h3>
+</div>
+
+
+<div onclick="window.location.href='absensi/absensi.html'" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-qrcode"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Scan Absensi</h3>
+</div>
+
+
+
+
+<!-- BUAT TANDA TANGAN -->
+<div onclick="window.location.href='ttd/ttdmadasa.html'" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-signature"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Buat TTD</h3>
+</div>
+
+
+<div onclick="showView('pengaturan')" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gray-50 text-gray-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h3 class="font-bold text-gray-800 text-sm sm:text-base">Pengaturan</h3>
+        </div>
+
+    </div> </div> <div id="view-dataSantri" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-6 border-b border-gray-100 pb-4 gap-4">
+                            <div class="flex items-center gap-3 sm:gap-4">
+                                <button onclick="showView('home')" class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-teal-100 hover:text-teal-600 transition-all shadow-sm shrink-0"><i class="fas fa-arrow-left"></i></button>
+                                <div><h3 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Data Induk Santri</h3><p class="text-xs text-gray-500 mt-0.5 sm:mt-1">Manajemen biodata seluruh santri aktif</p></div>
+                            </div>
+						<div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+    <!-- TOMBOL BARU: Download Template -->
+
+<button onclick="downloadTemplateExcel()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-gray-500 text-white rounded-xl hover:bg-gray-600 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
+    <i class="fas fa-file-excel"></i> Template XLSX
+</button>
+    
+    <button onclick="openModalImportSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
+        <i class="fas fa-file-import"></i> Import
+    </button>
+	
+    <button onclick="openModalSantri()" class="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
+        <i class="fas fa-user-plus"></i> Tambah
+    </button>
+	
+	    <button onclick="cetakDataSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
+        <i class="fas fa-print"></i> Cetak
+    </button>
+	
+</div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-5 sm:mb-6">
+                            <div class="relative flex-1">
+                                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" id="searchSantri" onkeyup="filterSantri()" placeholder="Cari nama atau NIS santri..." class="w-full pl-11 pr-4 py-3 sm:py-2.5 border border-gray-200 rounded-xl focus:ring-teal-500 focus:border-teal-500 outline-none text-sm bg-gray-50 focus:bg-white transition-all">
+                            </div>
+							
+							
+<div class="relative w-full sm:w-48 custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('filterKelasSantri')" class="w-full p-3 sm:p-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer transition-all shadow-sm">
+        <span id="text_filterKelasSantri" class="truncate">Semua Kelas</span>
+        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 ml-2 shrink-0" id="icon_filterKelasSantri"></i>
+    </div>
+    <input type="hidden" id="filterKelasSantri" value="Semua">
+    <ul id="list_filterKelasSantri" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
+</div>
+							
+							
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                            <table class="w-full text-left border-collapse" id="tabelSantri">
+                                
+	<thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200">
+    <tr>
+        <th class="p-3 sm:p-4 font-semibold text-center w-12 whitespace-nowrap">NO</th>
+        <th class="p-3 sm:p-4 font-semibold w-24 whitespace-nowrap">NIS</th>
+        <th class="p-3 sm:p-4 font-semibold whitespace-nowrap">Nama Lengkap</th>
+        <th class="p-3 sm:p-4 font-semibold text-center w-32 whitespace-nowrap">L/P</th>
+        <th class="p-3 sm:p-4 font-semibold w-32 whitespace-nowrap">Kelas</th>
+        <th class="p-3 sm:p-4 font-semibold text-center w-24 whitespace-nowrap">Aksi</th>
+    </tr>
+</thead>
+								
+                                <tbody id="bodyTabelSantri" class="text-sm divide-y divide-gray-100 bg-white"></tbody>
+                            </table>
+                        </div>
+                        <div id="noDataPesan" class="hidden text-center py-10">
+                            <div class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-3"><i class="fas fa-search"></i></div>
+                            <h4 class="text-gray-700 font-bold">Tidak ditemukan</h4>
+                            <p class="text-gray-500 text-sm mt-1">Santri yang Anda cari tidak ada dalam daftar.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-inputNilai" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-6 border-b border-gray-100 pb-4 gap-4">
+                            <div class="flex items-center gap-3 sm:gap-4">
+                                <button onclick="showView('home')" class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600 transition-all shadow-sm shrink-0"><i class="fas fa-arrow-left"></i></button>
+                                <div><h3 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Aplikasi Buku Nilai</h3><p class="text-xs text-gray-500 mt-0.5 sm:mt-1">Sistem Input Real-Time Terpadu</p></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-5 sm:mb-6 bg-teal-50 p-4 sm:p-5 rounded-xl border border-teal-200">
+                            <div>
+                                <label class="block text-xs sm:text-sm font-bold text-teal-800 mb-1.5 sm:mb-2">1. Pilih Kelas</label>
+								
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('pilihKelasNilai')" class="w-full p-3 border border-teal-300 rounded-xl bg-white text-sm sm:text-base font-medium text-teal-800 flex justify-between items-center cursor-pointer hover:border-teal-500 transition-all shadow-sm">
+        <span id="text_pilihKelasNilai" class="truncate">-- Silakan Pilih Kelas Dulu --</span>
+        <i class="fas fa-chevron-down text-teal-600 transition-transform duration-300 ml-2 shrink-0" id="icon_pilihKelasNilai"></i>
+    </div>
+    <input type="hidden" id="pilihKelasNilai" value="">
+    <ul id="list_pilihKelasNilai" class="absolute z-50 w-full mt-2 bg-white border border-teal-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
+</div>
+								
+                            </div>
+                            <div id="wadahFilterKedua" class="hidden">
+                                <label id="labelFilterKedua" class="block text-xs sm:text-sm font-bold text-teal-800 mb-1.5 sm:mb-2">2. Pilihan Kedua</label>
+                                <select id="pilihFilterKedua" onchange="generateTabelAbsen()" class="w-full p-3 border border-teal-300 rounded-xl focus:ring-teal-500 focus:border-teal-500 outline-none font-bold bg-white text-emerald-700 shadow-sm transition-all text-sm sm:text-base"></select>
+                            </div>
+                        </div>
+
+                        <form id="formInputNilaiBulk" class="hidden">
+                            <div id="wadahGlobalMapelTK" class="hidden mb-5 sm:mb-6 bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-sm">
+                                <div class="mb-3">
+                                    <span class="inline-block bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-md tracking-wider">NAMA MATA PELAJARAN</span>
+                                </div>
+								
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+    <input type="text" id="global_tk_m1" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm" placeholder="Mata Pelajaran 1 (Wajib)">
+    <input type="text" id="global_tk_m2" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm" placeholder="Mata Pelajaran 2 (Opsional)">
+</div>
+								
+                            </div>
+                            <div class="overflow-x-auto rounded-xl border border-gray-200 mb-6 shadow-sm w-full">
+                                <table class="w-full text-left border-collapse bg-white whitespace-nowrap min-w-max">
+                                    <thead id="headerTK" class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200" style="display: none;">
+                                        <tr>
+                                            <th class="p-3 text-center border-r border-gray-200 w-10">No</th>
+                                            <th class="p-3 border-r border-gray-200 whitespace-nowrap w-1">NIS</th>
+                                            <th class="p-3 border-r border-gray-200 md:sticky md:left-0 bg-gray-100 z-10 md:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[140px]">Nama Lengkap Santri</th>
+											
+                                           <th class="p-3 border-r border-gray-200 text-center w-20 sm:w-24">N1</th>
+                                           <th class="p-3 text-center w-20 sm:w-24">N2</th>
+											
+                                        </tr>
+                                    </thead>
+                                    <thead id="headerIBT" class="bg-emerald-600 text-white text-xs uppercase" style="display: none;">
+                                        <tr>
+                                            <th class="p-3 text-center border-r border-emerald-500 w-10">No</th>
+                                            <th class="p-3 border-r border-emerald-500 whitespace-nowrap w-1">NIS</th>
+                                            <th class="p-3 border-r border-emerald-500 md:sticky md:left-0 bg-emerald-600 z-10 md:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)] min-w-[140px]">Nama Lengkap Santri</th>
+                                            <th class="p-3 text-center min-w-[120px] sm:w-32" id="judulKolomNilai">NILAI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyTabelAbsen" class="text-sm divide-y divide-dashed divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 sm:py-4 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm transition-all font-bold text-base sm:text-lg flex justify-center items-center gap-2">
+                                <i class="fas fa-save"></i> Simpan Ke Buku Nilai
+                            </button>
+							
+<div id="petunjukPredikatTK" class="mt-5 p-4 sm:p-5 bg-emerald-50/50 border border-emerald-200 rounded-xl hidden">
+    <h4 class="text-sm font-bold text-emerald-800 mb-3"><i class="fas fa-info-circle mr-2"></i>Panduan Konversi Nilai Angka ke Huruf (Rapor TK):</h4>
+    
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-bold text-gray-700 text-center mb-4">
+        <div class="bg-white p-2.5 rounded-lg shadow-sm border border-emerald-200 flex flex-col justify-center">
+            <span class="text-base text-gray-800 mb-1">90 - 100</span>
+            <span class="text-emerald-600 bg-emerald-50 py-1 rounded">A (Sangat Baik)</span>
+        </div>
+        <div class="bg-white p-2.5 rounded-lg shadow-sm border border-blue-200 flex flex-col justify-center">
+            <span class="text-base text-gray-800 mb-1">80 - 89</span>
+            <span class="text-blue-600 bg-blue-50 py-1 rounded">B (Baik)</span>
+        </div>
+        <div class="bg-white p-2.5 rounded-lg shadow-sm border border-orange-200 flex flex-col justify-center">
+            <span class="text-base text-gray-800 mb-1">70 - 79</span>
+            <span class="text-orange-500 bg-orange-50 py-1 rounded">C (Cukup)</span>
+        </div>
+        <div class="bg-white p-2.5 rounded-lg shadow-sm border border-red-200 flex flex-col justify-center">
+            <span class="text-base text-gray-800 mb-1">0 - 69</span>
+            <span class="text-red-600 bg-red-50 py-1 rounded">D (Kurang)</span>
+        </div>
+    </div>
+
+    <div class="mt-4 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <h4 class="text-sm font-bold text-amber-800 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Mohon Perhatian:</h4>
+        <p class="text-xs sm:text-sm text-gray-700 leading-relaxed text-justify">
+            Afwan Ustadz/Ustadzah, mohon berkenan untuk <b>meneliti kembali angka (skala 0 - 100)</b> yang dimasukkan sebelum menekan tombol simpan. Ketepatan nilai ini sangat penting karena sistem akan otomatis mengonversinya menjadi predikat (huruf) dan merangkai deskripsi capaian pada rapor Ananda. <i>Jazakumullah khairan</i> atas kehati-hatian dan dedikasi Ustadz/Ustadzah.
+        </p>
+    </div>
+</div>
+
+<div id="peringatanNilaiIbt" class="mt-5 p-4 sm:p-5 bg-blue-50 border border-blue-200 rounded-xl hidden">
+    <h4 class="text-sm font-bold text-blue-800 mb-2"><i class="fas fa-exclamation-circle mr-2"></i>Mohon Perhatian:</h4>
+    <p class="text-xs sm:text-sm text-gray-700 leading-relaxed text-justify">
+        Afwan Ustadz/Ustadzah, mohon berkenan untuk <b>memeriksa kembali ketepatan angka (skala 0 - 100)</b> sebelum menekan tombol simpan. Nilai <b>0 tetap dianggap nilai sah</b>. Jika santri tidak mengikuti ujian, gunakan status <b>Tidak Hadir</b> atau <b>Menunggu Susulan</b>, jangan mengisi 0 kecuali nilai finalnya memang 0. Ranking hanya ditetapkan setelah seluruh mapel wajib pada kelas tersebut memiliki nilai. <i>Jazakumullah khairan</i> atas ketelitiannya.
+    </p>
+</div>
+							
+                            <div style="height: 250px;"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="view-dataNilai" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-6 border-b border-gray-100 pb-4 gap-4">
+                            <div class="flex items-center gap-3 sm:gap-4">
+                                <button onclick="showView('home')" class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm shrink-0"><i class="fas fa-arrow-left"></i></button>
+                                <div><h3 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Rekap Data Nilai</h3><p class="text-xs text-gray-500 mt-0.5 sm:mt-1">Pantau hasil input nilai seluruh kelas.</p></div>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-4 sm:p-5 rounded-xl border border-blue-100 mb-6">
+                            <label class="block text-sm font-bold text-blue-800 mb-2">Pilih Kelas Laporan:</label>
+                            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+							
+<div class="relative w-full sm:flex-1 custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('filterKelasDataNilai')" class="w-full p-3 border border-blue-200 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-blue-400 transition-all shadow-sm">
+        <span id="text_filterKelasDataNilai" class="truncate">-- Pilih Kelas Terlebih Dahulu --</span>
+        <i class="fas fa-chevron-down text-blue-500 transition-transform duration-300 ml-2 shrink-0" id="icon_filterKelasDataNilai"></i>
+    </div>
+    <input type="hidden" id="filterKelasDataNilai" value="">
+    <ul id="list_filterKelasDataNilai" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
+</div>
+								
+								
+                          <!-- KODE BARU (Sudah ditambahkan tombol Download Excel): -->
+                                <button onclick="loadDataNilaiKelas()" class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                                    <i class="fas fa-search"></i> Tampilkan Laporan
+                                </button>
+                                
+                                <button onclick="cetakDataNilai()" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                                    <i class="fas fa-print"></i> Cetak / Print
+                                </button>
+
+                                <!-- 🟢 TOMBOL DOWNLOAD EXCEL 🟢 -->
+                                <button id="btn-download-excel" onclick="downloadExcelNilai()" class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                                    <i class="fas fa-file-excel"></i> Download Excel
+                                </button>
+						  
+						  
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 w-full shadow-sm">
+                            <table class="w-full text-left border-collapse min-w-max" id="tabelDataNilai">
+                                <thead id="headerDataNilai" class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200"></thead>
+                                <tbody id="bodyDataNilai" class="text-sm divide-y divide-dashed divide-gray-200 bg-white">
+                                    <tr><td class="p-10 text-center text-gray-500"><i class="fas fa-table text-4xl mb-3 text-gray-300 block"></i> Silakan pilih kelas dan klik tombol cari.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-ranking" class="view-section hidden">
+				
+<div class="relative bg-emerald-900 rounded-3xl shadow-2xl border border-emerald-700/50 p-6 sm:p-8 mb-8 overflow-hidden">
+    <!-- Overlay Pola Islami yang Halus & Modern -->
+    <div class="absolute inset-0 pola-islami opacity-20 mix-blend-overlay"></div>
+    
+    <!-- Ornamen Lingkaran Abstrak di Sudut -->
+    <div class="absolute -right-20 -bottom-20 w-64 h-64 border-[30px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
+    <div class="absolute -left-10 -top-10 w-32 h-32 border-[15px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
+    
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-5 border-b border-emerald-800/60 pb-6">
+        <div class="flex items-center gap-4">
+            <!-- Ikon Bintang dengan Style Modern 3D -->
+            <div class="w-14 h-14 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-2xl flex items-center justify-center text-emerald-900 text-2xl shadow-lg transform rotate-3">
+                <i class="fas fa-star"></i>
+            </div>
+            <div>
+                <!-- Teks Gradient Emas -->
+                <h2 class="text-2xl sm:text-3xl font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 drop-shadow-sm">
+                    Bintang Pelajar
+                </h2>
+                <p class="text-emerald-100/90 font-medium mt-1 text-sm sm:text-base tracking-wide">Kumpulan santri peraih Peringkat 1 dari seluruh kelas.</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-row gap-3 w-full sm:w-auto">
+            <button onclick="loadBintangPelajar()" class="flex-1 sm:w-12 h-12 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 rounded-xl transition-all shadow-inner flex items-center justify-center gap-2 font-bold backdrop-blur-sm border border-emerald-600/50" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i><span class="sm:hidden">Refresh</span>
+            </button>
+            <!-- Tombol Cetak Emas -->
+            <button onclick="cetakBintangPelajar()" class="flex-1 sm:w-auto px-6 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-emerald-900 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 font-bold whitespace-nowrap">
+                <i class="fas fa-print"></i><span>Cetak / Print</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Wadah Data -->
+    <div id="wadahBintangPelajar" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10"></div>
+</div>
+
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5 sm:mb-6">
+                            <button onclick="showView('home')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600 transition-all shrink-0"><i class="fas fa-arrow-left"></i></button>
+                            <div><h3 class="text-lg font-heading font-bold text-gray-800">Ranking Per Kelas</h3></div>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 mb-6 flex flex-col sm:flex-row gap-3">
+						
+<div class="relative w-full sm:flex-1 custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('filterKelasRanking')" class="w-full p-3 border border-emerald-200 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-emerald-400 transition-all shadow-sm">
+        <span id="text_filterKelasRanking" class="truncate">-- Pilih Kelas Untuk Melihat Ranking --</span>
+        <i class="fas fa-chevron-down text-emerald-600 transition-transform duration-300 ml-2 shrink-0" id="icon_filterKelasRanking"></i>
+    </div>
+    <input type="hidden" id="filterKelasRanking" value="">
+    <ul id="list_filterKelasRanking" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
+</div>
+							
+							
+                            <button onclick="loadRankingKelas()" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
+                                <i class="fas fa-trophy"></i> Lihat Ranking
+                            </button>
+                          <button onclick="cetakRanking()" class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
+    <i class="fas fa-print"></i> Cetak / Print
+</button>
+                        </div>
+						
+                       <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm w-full">
+                            <table class="w-full text-left border-collapse min-w-max">
+                                <thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200 whitespace-nowrap">
+                                    <tr>
+                                        <th class="p-3 text-center border-r border-gray-200 w-16">Rank</th>
+                                        <th class="p-3 border-r border-gray-200 w-20">NIS</th>
+                                        <th class="p-3 border-r border-gray-200 min-w-[280px]">Nama & Detail Santri</th>
+                                        <th class="p-3 text-center border-r border-gray-200 w-24">Total Nilai</th>
+                                        <th class="p-3 text-center w-24">Rata-Rata</th>
+                                    </tr>
+                                </thead>
+                               <tbody id="bodyTabelRanking" class="text-sm divide-y divide-gray-100 bg-white">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-left sm:text-center border-none">
+                                            <div class="sticky left-6 inline-block text-center text-gray-400">
+                                                <i class="fas fa-list-ol text-4xl mb-2 text-gray-200 block"></i>Silakan pilih kelas.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="view-cetakRapor" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                        <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
+                            <button onclick="showView('home')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600 transition-all shrink-0"><i class="fas fa-arrow-left"></i></button>
+                            <div>
+                                <h3 class="text-xl font-heading font-bold text-gray-800">Cetak Dokumen Rapor</h3>
+                                <p class="text-xs text-gray-500">Pilih tingkat pendidikan untuk mencetak rapor</p>
+                            </div>
+                        </div>
+
+                       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                            
+                            <!-- 1. RAPOR TK (target="_blank" sudah dihapus) -->
+                           <a href="rapor/rapor_tpq.html" class="animasi-klik-saya group flex flex-col items-center justify-center p-8 bg-gradient-to-b from-emerald-50 to-emerald-100 rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 transition-all cursor-pointer text-emerald-800 relative overflow-hidden" style="animation-delay: 0s;">
+                                <i class="fas fa-child text-5xl mb-4 group-hover:scale-110 group-hover:text-emerald-600 transition-transform duration-300"></i>
+                                <h3 class="text-xl font-bold font-heading mb-1">Rapor TK / RA</h3>
+                                <p class="text-xs text-center text-emerald-600 font-medium px-2">Masuk ke sistem cetak rapor khusus Taman Kanak-Kanak</p>
+                            </a>
+
+                            <!-- 2. RAPOR IBTIDAIYAH (target="_blank" sudah dihapus) -->
+                           <a href="rapor/rapor_ibtidaiyah.html" class="animasi-klik-saya group flex flex-col items-center justify-center p-8 bg-gradient-to-b from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 hover:border-blue-500 transition-all cursor-pointer text-blue-800 relative overflow-hidden" style="animation-delay: 0.4s;">
+                                <i class="fas fa-book-open text-5xl mb-4 group-hover:scale-110 group-hover:text-blue-600 transition-transform duration-300"></i>
+                                <h3 class="text-xl font-bold font-heading mb-1">Ibtidaiyah</h3>
+                                <p class="text-xs text-center text-blue-600 font-medium px-2">Masuk ke cetak rapor Madrasah Ibtidaiyah</p>
+                            </a>
+
+                            <!-- 3. RAPOR SANAWIYAH & ALIYAH (target="_blank" sudah dihapus) -->
+                           <a href="rapor/rapor_sanawiyah.html" class="animasi-klik-saya group flex flex-col items-center justify-center p-8 bg-gradient-to-b from-purple-50 to-purple-100 rounded-2xl border-2 border-purple-200 hover:border-purple-500 transition-all cursor-pointer text-purple-800 relative overflow-hidden" style="animation-delay: 0.8s;">
+                                <i class="fas fa-graduation-cap text-5xl mb-4 group-hover:scale-110 group-hover:text-purple-600 transition-transform duration-300"></i>
+                                <h3 class="text-xl font-bold font-heading mb-1">Sanawiyah & Aliyah</h3>
+                                <p class="text-xs text-center text-purple-600 font-medium px-2">Masuk ke cetak rapor Madrasah Sanawiyah & Aliyah</p>
+                            </a>
+                        </div>
+						
+                    </div>
+                </div>
+                
+                <div id="view-pengaturan" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
+                            <button onclick="showView('home')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-teal-100 transition-all"><i class="fas fa-arrow-left"></i></button>
+                            <div><h3 class="text-xl font-heading font-bold text-gray-800">Pengaturan Rapor Kelas</h3></div>
+                        </div>
+
+                        <div class="bg-teal-50 p-4 rounded-xl border border-teal-100 mb-6">
+                            <label class="block text-sm font-bold text-teal-800 mb-2">Pilih Kelas yang Akan Diatur:</label>
+							
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('settingKelas')" class="w-full p-3 border border-teal-300 rounded-xl bg-white text-sm font-bold text-teal-700 flex justify-between items-center cursor-pointer hover:border-teal-500 transition-all shadow-sm">
+        <span id="text_settingKelas" class="truncate">-- Pilih Kelas --</span>
+        <i class="fas fa-chevron-down text-teal-600 transition-transform duration-300 ml-2 shrink-0" id="icon_settingKelas"></i>
+    </div>
+    <input type="hidden" id="settingKelas" value="">
+    <ul id="list_settingKelas" class="absolute z-50 w-full mt-2 bg-white border border-teal-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden custom-scrollbar"></ul>
+</div>
+							
+							
+                        </div>
+
+                        <form id="formSettingRapor" class="hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 shadow-inner">
+                                    <h4 class="font-bold text-gray-700 mb-3 border-b border-gray-200 pb-2"><i class="fas fa-school mr-2 text-emerald-600"></i>Identitas Rapor</h4>
+                                    <div class="space-y-3">
+									
+									<div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
+         <label class="text-xs font-bold text-emerald-700 block mb-1">Publikasi Nilai ke Portal Ortu</label>
+         <select id="set_status_rilis" class="w-full p-2 border border-emerald-300 rounded text-sm font-bold text-emerald-800 focus:ring-emerald-500 outline-none cursor-pointer">
+             <option value="Sembunyi">🔒 Sembunyikan Nilai Dulu</option>
+             <option value="Rilis">🌍 Rilis (Tampilkan di Portal)</option>
+         </select>
+     </div>
+									
+									
+                                       <div>
+                                           <label class="text-xs font-bold text-gray-600">Semester</label>
+                                           <select id="set_semester" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer">
+                                               <option value="1 (Ganjil)">1 (Ganjil)</option>
+                                               <option value="2 (Genap)" selected>2 (Genap)</option>
+                                           </select>
+                                       </div>
+                                        <div><label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label><input type="text" id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: 2025/2026"></div>
+                                        <div><label class="text-xs font-bold text-gray-600">Tanggal Rapor</label><input type="text" id="set_tanggal" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: Bangkalan, 5 April 2026"></div>
+                                    </div>
+                                </div>
+								
+                                <div class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 shadow-inner">
+    <h4 class="font-bold text-gray-700 mb-3 border-b border-gray-200 pb-2"><i class="fas fa-user-tie mr-2 text-blue-600"></i>Pejabat Madrasah</h4>
+    <div class="space-y-3">
+        <div><label id="labelKepalaSetting" class="text-xs font-bold text-gray-600">Nama Kepala Madrasah</label><input type="text" id="set_kepala" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 outline-none" placeholder="Ex: KH. Umar Faruq"></div>
+        
+        <div><label class="text-xs font-bold text-gray-600">Nama Wali Kelas</label><input type="text" id="set_wali" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 outline-none" placeholder="Ex: Ust. Muhtarom"></div>
+        <p class="text-[10px] text-gray-400 italic mt-2">*Catatan: Untuk gambar stempel dan tanda tangan akan ditanam otomatis di aplikasi cetak.</p>
+    </div>
+</div>
+								
+                            </div>
+							
+							
+							<div id="wadahKategoriMapel" class="bg-indigo-50 p-4 sm:p-5 rounded-xl border border-indigo-200 shadow-inner mb-6 transition-all duration-300">
+    <h4 class="font-bold text-indigo-800 mb-2 border-b border-indigo-200 pb-2"><i class="fas fa-book mr-2 text-indigo-600"></i>Master Mata Pelajaran (Kategori)</h4>
+                                <p class="text-[11px] text-indigo-600 mb-3 font-medium">* Ketik mapel dipisah tanda koma ( , ). Kosongkan jika tidak ada.</p>
+                                
+                                <div class="space-y-3 mb-4">
+                                    <div><label class="text-xs font-bold text-indigo-700">A. Ujian Tertulis</label><textarea id="set_mapel_tulis" rows="2" class="w-full p-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 outline-none text-xs font-bold text-gray-700 uppercase" placeholder="Contoh: AKHLAQ, FIQIH, SEJARAH"></textarea></div>
+                                    <div><label class="text-xs font-bold text-indigo-700">B. Ujian Praktek</label><textarea id="set_mapel_praktek" rows="1" class="w-full p-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 outline-none text-xs font-bold text-gray-700 uppercase" placeholder="Contoh: WUDUK, SHOLAT"></textarea></div>
+                                    <div><label class="text-xs font-bold text-indigo-700">C. Ujian Membaca</label><textarea id="set_mapel_baca" rows="1" class="w-full p-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 outline-none text-xs font-bold text-gray-700 uppercase" placeholder="Contoh: ALQUR'AN, KITAB"></textarea></div>
+                                </div>
+                                
+                                <h4 class="font-bold text-indigo-800 mb-2 border-b border-indigo-200 pb-2"><i class="fas fa-language mr-2 text-indigo-600"></i>Kamus Terjemahan Arab (Untuk Cetak Rapor)</h4>
+                                <textarea id="set_kamus" rows="2" class="w-full p-3 border border-indigo-300 rounded-xl focus:ring-indigo-500 outline-none text-sm font-bold text-gray-700 leading-relaxed" placeholder="Contoh: AKHLAQ=أخلاق, FIQIH=فقه" dir="auto"></textarea>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 shadow-inner mb-6">
+                                <h4 class="font-bold text-gray-700 mb-2 border-b border-gray-200 pb-2"><i class="fas fa-image mr-2 text-purple-600"></i>Upload Stempel & Tanda Tangan</h4>
+                                <p class="text-[11px] text-red-500 mb-4 font-medium">* Aturan: Format <b>WAJIB .PNG</b> (Latar Belakang Transparan). Ukuran maksimal <b>5 MB</b> per gambar.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="border border-dashed border-gray-400 rounded-lg p-3 text-center bg-white hover:bg-purple-50 transition-all">
+                                        <label class="block text-xs font-bold text-gray-600 mb-2">TTD Guru Wali Kelas</label>
+                                        <div class="h-16 flex items-center justify-center mb-2 border border-gray-100 rounded bg-gray-50 overflow-hidden">
+                                            <img id="preview_wali" class="h-full object-contain mix-blend-multiply hidden" alt="Preview Wali">
+                                            <span id="teks_wali" class="text-xs text-gray-400 italic">Belum ada gambar</span>
+                                        </div>
+                                        <input type="file" id="upload_wali" accept="image/png" class="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:font-semibold file:bg-purple-100 file:text-purple-700 cursor-pointer outline-none">
+                                    </div>
+
+                                    <div class="border border-dashed border-gray-400 rounded-lg p-3 text-center bg-white hover:bg-blue-50 transition-all">
+                                        <label class="block text-xs font-bold text-gray-600 mb-2">TTD Kepala Madrasah</label>
+                                        <div class="h-16 flex items-center justify-center mb-2 border border-gray-100 rounded bg-gray-50 overflow-hidden">
+                                            <img id="preview_kepala" class="h-full object-contain mix-blend-multiply hidden" alt="Preview Kepala">
+                                            <span id="teks_kepala" class="text-xs text-gray-400 italic">Belum ada gambar</span>
+                                        </div>
+                                        <input type="file" id="upload_kepala" accept="image/png" class="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:font-semibold file:bg-blue-100 file:text-blue-700 cursor-pointer outline-none">
+                                    </div>
+
+                                    <div class="border border-dashed border-gray-400 rounded-lg p-3 text-center bg-white hover:bg-emerald-50 transition-all">
+                                        <label class="block text-xs font-bold text-gray-600 mb-2">Stempel Madrasah</label>
+                                        <div class="h-16 flex items-center justify-center mb-2 border border-gray-100 rounded bg-gray-50 overflow-hidden">
+                                            <img id="preview_stempel" class="h-full object-contain mix-blend-multiply hidden" alt="Preview Stempel">
+                                            <span id="teks_stempel" class="text-xs text-gray-400 italic">Belum ada gambar</span>
+                                        </div>
+                                        <input type="file" id="upload_stempel" accept="image/png" class="text-[10px] w-full file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:font-semibold file:bg-emerald-100 file:text-emerald-700 cursor-pointer outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                           <h4 class="font-bold text-gray-800 mb-3 truncate whitespace-nowrap text-sm sm:text-base"><i class="fas fa-users mr-2 text-orange-500"></i>Detail Kepribadian & Absensi Santri</h4>
+                            <div class="overflow-x-auto rounded-xl border border-gray-200 mb-6 shadow-sm">
+                                <table class="w-full text-left border-collapse bg-white whitespace-nowrap text-sm min-w-max">
+                                    <thead class="bg-gray-100 text-gray-600 text-xs border-b border-gray-200">
+    <tr>
+        <th rowspan="2" class="p-3 border-r text-center sticky left-0 bg-gray-100 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[130px] max-w-[150px] md:max-w-none md:min-w-[250px] whitespace-normal leading-tight">Nama Santri</th>
+        <th colspan="4" class="p-2 border-r border-b text-center bg-blue-50 text-blue-800">Kepribadian (A/B/C/D)</th>
+        <th colspan="3" class="p-2 border-r border-b text-center bg-orange-50 text-orange-800">Absensi (Angka)</th>
+        <th rowspan="2" class="p-3 border-r text-center bg-emerald-50 text-emerald-800">Keputusan Naik/Tinggal</th>
+        <th rowspan="2" class="p-3 text-center bg-purple-50 text-purple-800">Catatan Wali Kelas</th>
+    </tr>
+    <tr>
+        <th class="p-1 border-r text-center bg-blue-50">Akhlaq</th>
+        <th class="p-1 border-r text-center bg-blue-50">Rajin</th>
+        <th class="p-1 border-r text-center bg-blue-50">Disiplin</th>
+        <th class="p-1 border-r text-center bg-blue-50">Rapi</th>
+        <th class="p-1 border-r text-center bg-orange-50">Sakit</th>
+        <th class="p-1 border-r text-center bg-orange-50">Izin</th>
+        <th class="p-1 border-r text-center bg-orange-50">Alpa</th>
+    </tr>
+</thead>
+                                    <tbody id="bodySettingSantri" class="divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md text-lg"><i class="fas fa-save mr-2"></i> Simpan Pengaturan Rapor</button>
+                            <div style="height: 100px;"></div>
+                        </form>
+                    </div>
+                </div>
+				
+				
+				<div id="view-mutasi" class="view-section hidden">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
+                            <button onclick="showView('home')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition-all"><i class="fas fa-arrow-left"></i></button>
+                            <div>
+                                <h3 class="text-xl font-heading font-bold text-gray-800">Mutasi / Kenaikan Kelas</h3>
+                                <p class="text-xs text-gray-500">Pindahkan banyak santri sekaligus ke kelas baru.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                            <div>
+                                <label class="block text-sm font-bold text-indigo-800 mb-2">1. Pilih Kelas Asal:</label>
+								
+								
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('mutasiKelasAsal')" class="w-full p-3 border border-indigo-300 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-indigo-500 transition-all shadow-sm">
+        <span id="text_mutasiKelasAsal" class="truncate">-- Pilih Kelas Asal --</span>
+        <i class="fas fa-chevron-down text-indigo-500 transition-transform duration-300 ml-2 shrink-0" id="icon_mutasiKelasAsal"></i>
+    </div>
+    <input type="hidden" id="mutasiKelasAsal" value="">
+    <ul id="list_mutasiKelasAsal" class="absolute z-50 w-full mt-2 bg-white border border-indigo-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden custom-scrollbar"></ul>
+</div>
+								
+								
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-indigo-800 mb-2">2. Pilih Tujuan Mutasi:</label>
+                                <div class="flex gap-2">
+								
+								
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('mutasiKelasTujuan')" class="w-full p-3 border border-indigo-300 rounded-xl bg-white text-sm font-bold text-indigo-700 flex justify-between items-center cursor-pointer hover:border-indigo-500 transition-all shadow-sm">
+        <span id="text_mutasiKelasTujuan" class="truncate">-- Pilih Tujuan --</span>
+        <i class="fas fa-chevron-down text-indigo-500 transition-transform duration-300 ml-2 shrink-0" id="icon_mutasiKelasTujuan"></i>
+    </div>
+    <input type="hidden" id="mutasiKelasTujuan" value="">
+    <ul id="list_mutasiKelasTujuan" class="absolute z-50 w-full mt-2 bg-white border border-indigo-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden custom-scrollbar"></ul>
+</div>
+									
+									
+                                    <button onclick="prosesMutasi()" class="px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all whitespace-nowrap"><i class="fas fa-paper-plane mr-2"></i> Proses</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm w-full">
+                           <table class="w-full text-left border-collapse min-w-max">
+    <thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200">
+        <tr>
+            <th class="p-3 text-center border-r border-gray-200 w-12">
+                <input type="checkbox" id="cekSemuaMutasi" onchange="toggleSemuaMutasi(this)" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer">
+            </th>
+            <!-- TAMBAHAN KOLOM NOMOR -->
+            <th class="p-3 text-center border-r border-gray-200 w-12">No</th>
+            <th class="p-3 border-r border-gray-200 w-24">NIS</th>
+            <th class="p-3 border-r border-gray-200">Nama Lengkap Santri</th>
+            <th class="p-3 text-center w-32">Kelas Saat Ini</th>
+        </tr>
+    </thead>
+    <tbody id="bodyTabelMutasi" class="text-sm divide-y divide-gray-100 bg-white">
+        <tr>
+            <!-- UBAH COLSPAN MENJADI 5 -->
+            <td colspan="5" class="p-8 text-center text-gray-400">
+                <i class="fas fa-users text-4xl mb-2 text-gray-200 block"></i>Silakan pilih Kelas Asal terlebih dahulu.
+            </td>
+        </tr>
+    </tbody>
+</table>
+                        </div>
+						
+						<!-- 🟢 TAMBAHKAN KODE INI DI SINI 🟢 -->
+                        <!-- DANGER ZONE: Reset Data Tahun Ajaran -->
+                        <div class="mt-8 bg-red-50 p-5 rounded-2xl border border-red-200">
+                            <h4 class="font-bold text-red-800 mb-2 flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-2 text-xl"></i> Zona Berbahaya: Reset Data Tahun Ajaran
+                            </h4>
+                            <p class="text-sm text-red-600 mb-4 leading-relaxed">
+                                Gunakan fitur ini <b>HANYA</b> saat pergantian Tahun Ajaran Baru. Fitur ini akan menghapus seluruh rekaman data di lembar <b>NILAI</b> dan <b>DETAIL RAPOR</b> dari kelas sebelumnya agar bersih dan tidak bertumpuk untuk santri baru.
+                            </p>
+                            <button onclick="resetTahunAjaran()" class="px-6 py-3 bg-red-600 text-white font-bold rounded-xl shadow-sm hover:bg-red-700 transition-all flex items-center gap-2">
+                                <i class="fas fa-trash-alt"></i> Bersihkan Data Rapor Lama
+                            </button>
+                        </div>
+                        <!-- ================================ -->
+						
+						
+                    </div>
+                </div>
+
+                <div class="mt-6 sm:mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 border border-emerald-100 p-6 sm:p-8 shadow-sm group hover:shadow-md transition-all">
+                    <i class="fas fa-quote-right absolute -bottom-4 -right-2 text-7xl text-emerald-100 opacity-50 group-hover:scale-110 group-hover:opacity-70 transition-all duration-500"></i>
+                    <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                        <div class="w-14 h-14 shrink-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-md text-white text-xl transform rotate-3 group-hover:-rotate-3 transition-transform duration-300">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="text-center sm:text-left flex-1 mt-1">
+                            <h4 id="judulMotivasi" class="text-emerald-800 font-heading font-bold text-lg mb-1.5">Memuat Motivasi...</h4>
+                            <p id="teksMotivasi" class="text-gray-600 text-sm sm:text-base italic leading-relaxed">
+                                "Silakan tunggu sebentar..."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div> </main>
+    </div> 
+	
+	<!-- ============================================== -->
+<!-- MODAL TAMBAH SANTRI -->
+<!-- ============================================== -->
+<div id="modalTambahSantri" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 sm:p-6 transform transition-all max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-3 mb-4 sticky top-0 bg-white z-10">
+            <h3 class="text-base sm:text-lg font-heading font-bold text-gray-800">Tambah Data Santri</h3>
+            <button onclick="closeModalSantri()" class="text-gray-400 hover:text-red-500 transition-all"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form id="formTambahSantri" class="space-y-3 sm:space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">NIS <span id="labelNisRole" class="text-[10px] text-red-500 ml-1"></span></label>
+                    <input type="text" id="add_nis" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm font-bold" required>
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="add_nama" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Tempat & Tgl Lahir</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="add_tempat_lahir" class="w-1/2 p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" placeholder="Kota" required>
+                        <input type="date" id="add_tanggal_lahir" class="w-1/2 p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm text-gray-600" required>
+                    </div>
+                </div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label><select id="add_jk" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required><option value="" disabled selected>Pilih...</option><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Penempatan Kelas</label>
+				
+			<!-- Di Form Tambah Santri -->
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('add_kelas')" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-teal-500 transition-all">
+        <span id="text_add_kelas" class="truncate">Pilih...</span>
+        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 ml-2 shrink-0" id="icon_add_kelas"></i>
+    </div>
+   <input type="hidden" id="add_kelas" value="">
+    <ul id="list_add_kelas" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden custom-scrollbar"></ul>
+</div>
+				
+				</div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">No. HP/WA</label><input type="tel" id="add_hp" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Ayah</label><input type="text" id="add_ayah" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required></div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Ibu</label><input type="text" id="add_ibu" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required></div>
+            </div>
+            <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Alamat Lengkap/Domisili</label><textarea id="add_alamat" rows="2" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-teal-500 outline-none text-sm" required></textarea></div>
+            <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4 sm:mt-6">
+                <button type="button" onclick="closeModalSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 border rounded-xl text-gray-600 hover:bg-gray-50 transition-all text-sm font-semibold">Batal</button>
+                <button type="submit" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold"><i class="fas fa-save"></i> Simpan Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- ============================================== -->
+<!-- MODAL EDIT SANTRI -->
+<!-- ============================================== -->
+<div id="modalEditSantri" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 sm:p-6 transform transition-all max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-3 mb-4 sticky top-0 bg-white z-10">
+            <h3 class="text-base sm:text-lg font-heading font-bold text-gray-800">Edit Data Santri</h3>
+            <button onclick="closeModalEditSantri()" class="text-gray-400 hover:text-red-500 transition-all"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <form id="formEditSantri" class="space-y-3 sm:space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <input type="hidden" id="edit_nis_lama">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">NIS <span id="labelEditNisRole" class="text-[10px] text-red-500 ml-1">(Terkunci)</span></label>
+                    <input type="text" id="edit_nis" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none text-sm bg-gray-100">
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="edit_nama" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Tempat & Tgl Lahir</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="edit_tempat_lahir" class="w-1/2 p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" placeholder="Kota" required>
+                        <input type="date" id="edit_tanggal_lahir" class="w-1/2 p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm text-gray-600" required>
+                    </div>
+                </div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label><select id="edit_jk" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Penempatan Kelas</label>
+				
+			<!-- Di Form Edit Santri -->
+<div class="relative w-full custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('edit_kelas')" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-blue-500 transition-all">
+        <span id="text_edit_kelas" class="truncate">Pilih...</span>
+        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 ml-2 shrink-0" id="icon_edit_kelas"></i>
+    </div>
+   <input type="hidden" id="edit_kelas" value="">
+    <ul id="list_edit_kelas" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden custom-scrollbar"></ul>
+</div>
+				
+				</div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">No. HP/WA</label><input type="tel" id="edit_hp" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Ayah</label><input type="text" id="edit_ayah" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required></div>
+                <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Ibu</label><input type="text" id="edit_ibu" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required></div>
+            </div>
+            <div><label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label><textarea id="edit_alamat" rows="2" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-blue-500 outline-none text-sm" required></textarea></div>
+            <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4 sm:mt-6">
+                <button type="button" onclick="closeModalEditSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 border rounded-xl text-gray-600 hover:bg-gray-50 transition-all text-sm font-semibold">Batal</button>
+                <button type="submit" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold"><i class="fas fa-save"></i> Perbarui Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <div id="modalEditNilai" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5 sm:p-6 transform transition-all max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3 mb-4 shrink-0">
+                <h3 class="text-base sm:text-lg font-heading font-bold text-blue-800"><i class="fas fa-edit mr-2"></i>Edit Nilai Santri</h3>
+                <button onclick="closeModalEditNilai()" class="text-gray-400 hover:text-red-500 transition-all"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="formEditNilai" class="flex flex-col flex-1 overflow-hidden">
+                <input type="hidden" id="edit_nilai_kelas">
+                <input type="hidden" id="edit_nilai_nis">
+                <div id="wadahInputEditNilai" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 overflow-y-auto p-1"></div>
+                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4 sm:mt-6 shrink-0">
+                    <button type="button" onclick="closeModalEditNilai()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 border rounded-xl text-gray-600 hover:bg-gray-50 transition-all text-sm font-semibold">Batal</button>
+                    <button type="submit" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold"><i class="fas fa-save"></i> Perbarui Nilai</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+	
+<!-- ============================================== -->
+<!-- MODAL IMPORT SANTRI (VERSI EXCEL/XLSX) -->
+<!-- ============================================== -->
+<div id="modalImportSantri" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 transform transition-all">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-heading font-bold text-gray-800"><i class="fas fa-file-excel text-green-600 mr-2"></i>Import Data Santri</h3>
+            <button onclick="closeModalImportSantri()" class="text-gray-400 hover:text-red-500 transition-all"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        
+        <!-- PANDUAN SUDAH DIUPDATE UNTUK EXCEL -->
+        <div class="bg-green-50 border border-green-200 text-green-800 p-3 rounded-xl text-xs mb-4">
+            <b>ATURAN IMPORT EXCEL:</b><br>
+            1. Unduh Template dengan mengklik tombol <b>Template XLSX</b>.<br>
+            2. Isi data santri (Jangan ubah format kolom atau nama sheet).<br>
+            3. Langsung upload file <b>Excel (.xlsx)</b> tersebut ke area di bawah ini tanpa perlu diubah ke format lain.
+        </div>
+
+        <form id="formImportSantri">
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-green-50 transition-all cursor-pointer relative group">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 group-hover:text-green-500 transition-colors mb-2"></i>
+                <!-- TEKS DAN ACCEPT DIUBAH KE XLSX -->
+                <p class="text-sm font-bold text-gray-600 group-hover:text-green-600">Klik Untuk Memilih File Excel (.xlsx)</p>
+                <input type="file" id="fileImportCSV" accept=".xlsx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required onchange="document.getElementById('namaFileCsv').innerText = this.files[0].name">
+            </div>
+            <p id="namaFileCsv" class="text-center text-xs text-green-600 font-bold mt-2"></p>
+            
+            <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4">
+                <button type="button" onclick="closeModalImportSantri()" class="w-full sm:w-auto px-4 py-2.5 border rounded-xl text-gray-600 hover:bg-gray-50 transition-all text-sm font-semibold">Batal</button>
+                <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold"><i class="fas fa-save"></i> Proses Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="config.js?v=18"></script>
+<script src="script.js?v=18"></script>
+
+<script src="widget-wa.js"></script>
+
+
+</body>
+</html>

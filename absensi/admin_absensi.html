@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Absensi & ID Card - Madrasah Darussalam</title>
+	
+    <link rel="icon" type="image/png" href="../asset/logoweb.png">
+    <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <script>
+        tailwind.config = { theme: { extend: { colors: { emerald: { 600: '#059669', 700: '#047857', 800: '#065f46' } }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+    
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .id-card-container { width: 55mm; height: 85mm; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 6px; position: relative; background-color: white; display: flex; flex-direction: column; align-items: center; overflow: hidden; margin: 0 auto; }
+       
+        .custom-option-group { font-weight: 700; color: #047857; background-color: #f1f5f9; padding: 8px 12px; font-size: 0.75rem; text-transform: uppercase; cursor: default; }
+        .custom-option-group:not(:first-child) { border-top: 1px dashed #cbd5e1; }
+        .custom-option-item { padding: 10px 12px 10px 24px; font-weight: 600; color: #334155; font-size: 0.875rem; cursor: pointer; border-bottom: 1px solid #f8fafc; transition: all 0.2s ease; }
+        .custom-option-item:hover { background-color: #ecfdf5; color: #059669; padding-left: 28px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+       @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { size: 215mm 330mm; margin: 10mm; } 
+            body { background-color: #fff !important; margin: 0 !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+            
+            #idCardGrid { display: flex !important; flex-wrap: wrap !important; gap: 5mm !important; justify-content: flex-start !important; }
+            .id-card-container { page-break-inside: avoid; border: 1px solid #000; box-shadow: none !important; margin: 0; }
+			
+            body.cetak-mode-rekap @page { size: legal portrait; margin: 0mm 15mm 15mm 15mm; }
+            .print-only { display: none; }
+            
+            body.cetak-mode-rekap, 
+            body.cetak-mode-rekap #areaRekap { margin-top: 0 !important; padding-top: 0 !important; display: block !important; }
+            body.cetak-mode-rekap .print-only { display: block !important; }
+            
+            body.cetak-mode-rekap #areaRekap .bg-white { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; }
+            body.cetak-mode-rekap #areaRekap .overflow-x-auto { border-radius: 0 !important; border: none !important; overflow: visible !important; }
+            body.cetak-mode-rekap #areaRekap table { border: 1px solid #000 !important; border-collapse: collapse !important; }
+            body.cetak-mode-rekap #areaRekap th, body.cetak-mode-rekap #areaRekap td { border: 1px solid #000 !important; color: #000 !important; padding: 8px !important; }
+			body.cetak-mode-rekap #areaRekap tbody tr, body.cetak-mode-rekap #areaRekap tbody td { background-color: #ffffff !important; }
+            body.cetak-mode-rekap #areaRekap thead { background-color: #e2e8f0 !important; }
+            body.cetak-mode-rekap .text-emerald-700, body.cetak-mode-rekap .text-blue-600, body.cetak-mode-rekap .text-orange-500, body.cetak-mode-rekap .text-red-600 { color: #000 !important; }
+            body.cetak-mode-rekap .no-print, body.cetak-mode-rekap #areaRekap .bg-emerald-50 { display: none !important; }
+            body.cetak-mode-rekap #areaRekap tbody tr:empty, body.cetak-mode-rekap #areaRekap tbody tr:has(td[colspan="6"]) { display: none !important; }
+        }
+		
+		@font-face {
+            font-family: 'Diwani Jali';
+            src: url('../asset/DiwaniJali.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+</head>
+<body class="text-gray-800 p-4 sm:p-8">
+
+    <div id="loadingScreen" class="fixed inset-0 z-[99] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm hidden px-6">
+        <div class="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 border-emerald-600 mb-3 sm:mb-4"></div>
+        <h2 id="teksLoading" class="text-sm sm:text-xl font-bold text-gray-800 font-heading text-center w-full max-w-xs sm:max-w-md leading-relaxed">Memuat Data...</h2>
+    </div>
+
+    <div class="max-w-5xl mx-auto no-print">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-3 mb-5 sm:mb-6">
+            <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                <div class="w-10 h-10 sm:w-14 sm:h-14 bg-emerald-50 rounded-full flex items-center justify-center shrink-0 border border-emerald-100 overflow-hidden p-1">
+                    <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-mosque text-xl sm:text-2xl text-emerald-600 hidden"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-base sm:text-xl font-heading font-bold text-gray-800 truncate leading-tight">Admin Absensi & ID Card</h1>
+                    <p class="text-[10px] sm:text-sm text-gray-500 mt-0.5 truncate">Madrasah Darussalam</p>
+                </div>
+            </div>
+            <button onclick="window.location.href='../index.html'" class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-all shadow-sm" title="Kembali ke Beranda">
+                <i class="fas fa-arrow-left sm:text-lg"></i>
+            </button>
+        </div>
+
+        <!-- 4 Tab Menu -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2 mb-6 bg-white p-1.5 sm:p-2 rounded-2xl shadow-sm border border-gray-100">
+            <button onclick="switchTab('pengaturan')" id="tabPengaturan" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 bg-emerald-600 text-white rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm">
+                <i class="fas fa-cog text-lg sm:text-base"></i> <span>Pengaturan</span>
+            </button>
+            <button onclick="switchTab('cetak')" id="tabCetak" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+                <i class="fas fa-id-badge text-lg sm:text-base"></i> <span>ID Card</span>
+            </button>
+            <button onclick="switchTab('izin')" id="tabIzin" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+                <i class="fas fa-envelope-open-text text-lg sm:text-base"></i> <span>Surat Izin</span>
+            </button>
+            <button onclick="switchTab('rekap')" id="tabRekap" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+                <i class="fas fa-calendar-check text-lg sm:text-base"></i> <span>Rekap Absen</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- AREA 1: PENGATURAN -->
+    <div id="areaPengaturan" class="max-w-5xl mx-auto no-print">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
+            
+            <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Pengaturan Absensi</h2>
+                    <p class="text-xs text-gray-500 mt-1">Atur status dan jam operasional absensi harian.</p>
+                </div>
+                <span id="badgeStatus" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-600 shadow-sm border border-gray-200 whitespace-nowrap shrink-0"><i class="fas fa-sync fa-spin mr-1"></i> Memuat...</span>
+            </div>
+
+            <!-- KOTAK 1: STATUS -->
+            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-6">
+                <label class="text-sm font-bold text-gray-700 block mb-1"><i class="fas fa-toggle-on text-emerald-600 mr-2"></i>Status Operasional</label>
+                <p class="text-[11px] text-gray-500 mb-4">Masukkan keterangan jika ingin menutup/meliburkan absensi hari ini.</p>
+                
+                <input type="text" id="ketStatus" placeholder="Contoh: Libur Maulid Nabi / Cuaca Buruk" class="w-full p-3.5 mb-4 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm font-medium transition-all">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onclick="ubahStatusSistem('Libur')" class="w-full flex items-center justify-center px-4 py-3 bg-white text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-lock mr-2"></i> Tutup & Libur
+                    </button>
+                    <button onclick="ubahStatusSistem('Buka')" class="w-full flex items-center justify-center px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-unlock mr-2"></i> Buka Absen
+                    </button>
+                </div>
+            </div>
+
+            <!-- KOTAK 2: JAM ABSEN -->
+            <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-6">
+                <label class="text-sm font-bold text-blue-800 block mb-1"><i class="fas fa-clock mr-2"></i>Jam Buka-Tutup Scanner</label>
+                <p class="text-[11px] text-blue-600 mb-4">Gunakan format 24 jam (Misal: 12 untuk jam 12 siang).</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-5">
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 block mb-1.5">Jam Buka</label>
+                        <input type="number" id="inputJamBuka" min="0" max="23" placeholder="12" class="w-full p-3.5 border border-white rounded-xl text-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold text-center text-gray-800 transition-all">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 block mb-1.5">Jam Tutup</label>
+                        <input type="number" id="inputJamTutup" min="0" max="23" placeholder="18" class="w-full p-3.5 border border-white rounded-xl text-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm font-bold text-center text-gray-800 transition-all">
+                    </div>
+                </div>
+                
+                <button onclick="simpanJamAbsen()" class="w-full flex items-center justify-center px-4 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm transition-all shadow-sm">
+                    <i class="fas fa-save mr-2"></i> Simpan Pengaturan Jam
+                </button>
+            </div>
+            
+            <!-- KOTAK 3: LOKASI GPS -->
+            <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100">
+                <label class="text-sm font-bold text-amber-800 block mb-1"><i class="fas fa-map-marker-alt mr-2"></i>Titik Lokasi Absensi (GPS)</label>
+                <p class="text-[11px] text-amber-600 mb-4">Atur koordinat pusat madrasah dan radius jangkauan (dalam meter) agar santri hanya bisa absen di area madrasah.</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 block mb-1.5">Latitude (Garis Lintang)</label>
+                        <input type="text" id="inputLat" placeholder="-7.xxxxx" class="w-full p-3 border border-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white shadow-sm font-medium text-gray-800">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 block mb-1.5">Longitude (Garis Bujur)</label>
+                        <input type="text" id="inputLng" placeholder="112.xxxxx" class="w-full p-3 border border-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white shadow-sm font-medium text-gray-800">
+                    </div>
+                </div>
+                
+                <div class="mb-5">
+                    <label class="text-xs font-bold text-gray-600 block mb-1.5">Radius Maksimal (Meter)</label>
+                    <input type="number" id="inputRadius" value="50" class="w-full p-3 border border-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white shadow-sm font-bold text-gray-800">
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="dapatkanLokasiSaatIni()" class="flex-1 flex items-center justify-center px-4 py-3 bg-white border border-amber-300 text-amber-700 rounded-xl hover:bg-amber-100 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-crosshairs mr-2"></i> Lacak Lokasi Saya
+                    </button>
+                    <button onclick="simpanLokasiAbsen()" class="flex-1 flex items-center justify-center px-4 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-save mr-2"></i> Simpan Lokasi
+                    </button>
+                    <button onclick="hapusLokasiAbsen()" class="flex items-center justify-center px-4 py-3 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 font-bold text-sm transition-all shadow-sm" title="Hapus Batasan Lokasi">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- AREA 2: ID CARD -->
+    <div id="areaCetak" class="max-w-5xl mx-auto hidden">
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 no-print flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div class="w-full sm:w-1/2 relative">
+                <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                <input type="text" id="filterNama" onkeyup="filterCetakTertunda()" placeholder="Cari berdasarkan NIS, Nama, atau Kelas..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium">
+            </div>
+            <button onclick="window.print()" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm transition-all shadow-sm">
+                <i class="fas fa-print mr-2"></i> Cetak Kertas F4
+            </button>
+        </div>
+        <div id="idCardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </div>
+	
+    <!-- AREA BARU: SURAT IZIN -->
+    <div id="areaIzin" class="max-w-3xl mx-auto hidden no-print">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Cetak Kartu Surat Izin</h2>
+                    <p class="text-xs text-gray-500 mt-1">Buat surat izin / pas keluar resmi untuk santri.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Kelas:</label>
+                    <select id="izin_kelas" onchange="loadSantriIzin()" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium">
+                        <option value="" disabled selected>-- Pilih Kelas --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Santri:</label>
+                    <select id="izin_santri" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium">
+                        <option value="" disabled selected>-- Pilih Santri --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Izin:</label>
+                    <input type="date" id="izin_tanggal" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Izin:</label>
+                    <select id="izin_jenis" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium">
+                        <option value="Sakit">Sakit</option>
+                        <option value="Izin Keluar / Pulang">Izin Keluar / Pulang</option>
+                        <option value="Acara Keluarga">Acara Keluarga</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Alasan / Keterangan Tambahan:</label>
+                <textarea id="izin_keterangan" rows="2" placeholder="Contoh: Menghadiri acara keluarga di luar kota..." class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-gray-50 font-medium"></textarea>
+            </div>
+
+            <button onclick="cetakSuratIzin()" class="w-full flex items-center justify-center px-6 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm transition-all shadow-sm">
+                <i class="fas fa-print mr-2"></i> Cetak Kartu Izin
+            </button>
+        </div>
+    </div>
+
+    <!-- AREA 4: REKAP -->
+    <div id="areaRekap" class="max-w-4xl mx-auto hidden">
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
+            
+            <div class="print-only mb-6 text-black hidden border-b-[3px] border-black pb-4">
+                <div class="flex items-center">
+                    <div class="w-24 h-24 shrink-0 flex items-center justify-center">
+                        <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain">
+                    </div>
+                    <div class="flex-1 text-center px-4">
+                        <h2 class="text-2xl font-bold uppercase tracking-wide leading-tight">Laporan Kehadiran Santri</h2>
+                        <h3 class="text-xl font-bold uppercase mt-1 leading-tight">Madrasah Diniyah Darussalam</h3>
+                        <p class="text-sm mt-2 font-medium" id="teksSubtitleCetak">Bulan: - | Kelas: -</p>
+                    </div>
+                    <div class="w-24 h-24 shrink-0"></div>
+                </div>
+            </div>
+
+            <div class="mb-6 bg-emerald-50 p-4 rounded-xl border border-emerald-100 no-print">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-bold text-emerald-800 mb-2">Bulan & Tahun:</label>
+                        <select id="filterBulanRekap" class="w-full p-3 border border-emerald-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-white font-medium text-gray-700">
+                            <option value="" disabled selected>Memuat bulan...</option>
+                        </select>
+                    </div>
+                  
+                  <div id="customSelectWrapperRekap" class="relative">
+                        <label class="block text-sm font-bold text-emerald-800 mb-2">Pilih Kelas:</label>
+                        
+                        <div id="customSelectDisplayRekap" class="w-full p-3 border border-emerald-300 rounded-xl bg-white text-gray-700 text-sm font-medium flex justify-between items-center cursor-pointer hover:border-emerald-400 transition-all">
+                            <span id="customSelectTextRekap">-- Silakan Pilih Kelas --</span>
+                            <i class="fas fa-chevron-down text-emerald-600 transition-transform duration-300" id="customSelectIconRekap"></i>
+                        </div>
+                        
+                        <input type="hidden" id="filterKelasRekap" value="">
+
+                        <ul id="customSelectListRekap" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden custom-scrollbar">
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center w-full gap-2">
+                    <button onclick="tarikDataRekap()" class="flex-1 flex items-center justify-center px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-search mr-2"></i> Tampilkan
+                    </button>
+                    <button onclick="cetakRekap()" id="btnCetakRekap" class="hidden flex-1 flex items-center justify-center px-4 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 font-bold text-sm transition-all shadow-sm">
+                        <i class="fas fa-print mr-2"></i> Cetak Legal
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm w-full">
+                <table class="w-full text-left border-collapse min-w-max">
+                    <thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200">
+                        <tr>
+                            <th class="p-2 sm:p-3 text-center border-r border-gray-200 w-8 sm:w-12 text-[10px] sm:text-xs">No</th>
+                            <th class="p-2 sm:p-3 border-r border-gray-200 min-w-[130px] sm:min-w-[200px] text-[10px] sm:text-xs">Nama Santri</th>
+                            <th class="p-2 sm:p-3 text-center border-r border-gray-200 text-emerald-700 text-[10px] sm:text-xs">Hadir</th>
+                            <th class="p-2 sm:p-3 text-center border-r border-gray-200 text-blue-600 text-[10px] sm:text-xs">Izin</th>
+                            <th class="p-2 sm:p-3 text-center border-r border-gray-200 text-orange-500 text-[10px] sm:text-xs">Sakit</th>
+                            <th class="p-2 sm:p-3 text-center text-red-600 text-[10px] sm:text-xs">Alfa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTabelRekap" class="text-sm divide-y divide-gray-100 bg-white">
+                        <tr><td colspan="6" class="p-8 text-center text-gray-400 no-print">Silakan pilih bulan dan kelas, lalu klik Tampilkan.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="print-only mt-10 text-black hidden">
+                <div class="float-right text-center mr-8">
+                    <p class="mb-16">Bangkalan, <span id="teksTanggalCetak">...</span><br>Wali Kelas,</p>
+                    <p class="font-bold underline">(.......................................)</p>
+                </div>
+                <div class="clear-both"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANGGIL KONFIGURASI BACKEND -->
+    <script src="../config.js?v=16"></script>
+    
+    <script>
+        let JAM_BUKA = 12;
+        let JAM_TUTUP = 18;
+        let DATA_SANTRI = [];
+
+        function showLoading(show, teks="Memproses...") { 
+            document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none'; 
+            document.getElementById('teksLoading').innerText = teks;
+        }
+
+        window.onload = () => {
+            showLoading(true, "Memuat Data Santri...");
+            muatBulanTersedia(); 
+            cekStatusSistemAwal(); 
+            
+            const formData = new URLSearchParams(); 
+            formData.append('action', 'getSantri');
+            formData.append('token', sessionStorage.getItem('tokenMadasa'));
+            
+            gasFetch( { method: 'POST', body: formData })
+            .then(r => r.text()) 
+            .then(text => {
+                showLoading(false);
+                try {
+                    const res = JSON.parse(text);
+                    if(res.status === 'success') {
+                        DATA_SANTRI = res.data;
+                        renderIdCards();
+                        buatOpsiKelasDinamisAbsensi();
+                        populateKelasIzin();
+                    } else {
+                        Swal.fire('Peringatan', res.message || 'Data santri kosong.', 'warning');
+                    }
+                } catch(e) {
+                    Swal.fire('Error Server', 'Terjadi kesalahan sistem atau token tidak valid.', 'error');
+                }
+            })
+            .catch(e => { 
+                showLoading(false); 
+                Swal.fire('Error Koneksi', 'Gagal memuat data santri. Pastikan internet stabil.', 'error'); 
+            });
+        }
+
+// ==========================================================
+// FUNGSI MEMBUAT OPSI KELAS REKAP (CUSTOM SELECT DIPERBAIKI)
+// ==========================================================
+function buatOpsiKelasDinamisAbsensi() {
+    const listEl = document.getElementById('customSelectListRekap');
+    if (!listEl) return;
+
+    // MODIFIKASI: Filter Alumni agar tidak masuk di Rekap
+    const kelasUnik = [...new Set(DATA_SANTRI.map(s => s.kelas))]
+        .filter(k => k && !k.toLowerCase().includes('lulus') && !k.toLowerCase().includes('alumni') && !k.toLowerCase().includes('diberhentikan'))
+        .sort();
+        
+    let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
+
+            let kelompokKelas = {};
+            kelasUnik.forEach(k => {
+                let kUpper = k.toUpperCase();
+                let kategori = "LAINNYA";
+
+                if (kUpper.includes('TK') || kUpper.includes('RA')) kategori = "TK / RA";
+                else if (kUpper.includes('IBT') || kUpper.includes('IBTIDAIYAH')) kategori = "IBTIDAIYAH";
+                else if (kUpper.includes('SANA') || kUpper.includes('SANAWIYAH') || kUpper.includes('MTS')) kategori = "SANAWIYAH";
+                else if (kUpper.includes('ALIYAH') || kUpper.includes('MA')) kategori = "ALIYAH";
+                else kategori = k.split(/[\s-]+/)[0].toUpperCase();
+
+                if (!kelompokKelas[kategori]) kelompokKelas[kategori] = [];
+                kelompokKelas[kategori].push(k);
+            });
+
+            let kategoriUrut = Object.keys(kelompokKelas).sort((a, b) => (bobotJenjang[a] || 99) - (bobotJenjang[b] || 99));
+
+            let htmlList = `<li class="custom-option-item text-gray-400 text-center !pl-3" onclick="pilihKelasCustom('', '-- Silakan Pilih Kelas --')">-- Reset Pilihan --</li>`;
+            
+            kategoriUrut.forEach(kategori => {
+                htmlList += `<li class="custom-option-group"><i class="fas fa-layer-group mr-2 opacity-50"></i>${kategori}</li>`;
+                kelompokKelas[kategori].forEach(kelas => {
+                    let safeKelas = kelas.replace(/'/g, "\\'"); 
+                    htmlList += `<li class="custom-option-item" onclick="pilihKelasCustom('${safeKelas}', '${safeKelas}')">${kelas}</li>`;
+                });
+            });
+
+            listEl.innerHTML = htmlList;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const displayBox = document.getElementById('customSelectDisplayRekap');
+            if (displayBox) {
+                displayBox.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    toggleCustomSelect();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                const list = document.getElementById('customSelectListRekap');
+                const wrapper = document.getElementById('customSelectWrapperRekap');
+                if (list && wrapper && !wrapper.contains(e.target)) {
+                    list.classList.add('hidden');
+                    document.getElementById('customSelectIconRekap')?.classList.remove('rotate-180');
+                }
+            });
+        });
+
+        function toggleCustomSelect() {
+            const list = document.getElementById('customSelectListRekap');
+            const icon = document.getElementById('customSelectIconRekap');
+            if(list) list.classList.toggle('hidden');
+            if(icon) icon.classList.toggle('rotate-180');
+        }
+
+        function pilihKelasCustom(nilai, teks) {
+            document.getElementById('filterKelasRekap').value = nilai; 
+            document.getElementById('customSelectTextRekap').innerText = teks; 
+            toggleCustomSelect(); 
+        }
+
+        function cetakRekap() {
+            const elBulan = document.getElementById('filterBulanRekap');
+            const teksKelas = document.getElementById('customSelectTextRekap').innerText;
+            
+            document.getElementById('teksSubtitleCetak').innerHTML = `Bulan: ${elBulan.options[elBulan.selectedIndex].text} &nbsp;&nbsp;|&nbsp;&nbsp; Kelas: ${teksKelas}`;
+
+            const tgl = new Date();
+            const namaBulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('teksTanggalCetak').innerText = `${tgl.getDate()} ${namaBulanIndo[tgl.getMonth()]} ${tgl.getFullYear()}`;
+
+            document.body.classList.add('cetak-mode-rekap');
+            
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => { document.body.classList.remove('cetak-mode-rekap'); }, 3000); 
+            }, 500); 
+        }
+
+        function switchTab(tab) {
+            const btnPengaturan = document.getElementById('tabPengaturan');
+            const btnCetak = document.getElementById('tabCetak');
+            const btnIzin = document.getElementById('tabIzin');
+            const btnRekap = document.getElementById('tabRekap');
+            
+            const areaPengaturan = document.getElementById('areaPengaturan');
+            const areaCetak = document.getElementById('areaCetak');
+            const areaIzin = document.getElementById('areaIzin');
+            const areaRekap = document.getElementById('areaRekap');
+
+            const baseStyle = 'flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 rounded-xl font-bold text-[10px] sm:text-sm transition-all';
+            const classAktif = baseStyle + ' bg-emerald-600 text-white shadow-sm';
+            const classMati = baseStyle + ' text-gray-500 hover:bg-gray-50';
+
+            btnPengaturan.className = classMati; btnCetak.className = classMati; btnIzin.className = classMati; btnRekap.className = classMati;
+            areaPengaturan.classList.add('hidden'); areaCetak.classList.add('hidden'); areaIzin.classList.add('hidden'); areaRekap.classList.add('hidden');
+
+            if(tab === 'pengaturan') {
+                btnPengaturan.className = classAktif; areaPengaturan.classList.remove('hidden');
+            } else if (tab === 'cetak') {
+                btnCetak.className = classAktif; areaCetak.classList.remove('hidden');
+            } else if (tab === 'izin') {
+                btnIzin.className = classAktif; areaIzin.classList.remove('hidden');
+            } else {
+                btnRekap.className = classAktif; areaRekap.classList.remove('hidden');
+            }
+        }
+
+// ==========================================================
+// FUNGSI SURAT IZIN SANTRI
+// ==========================================================
+function populateKelasIzin() {
+    // MODIFIKASI: Filter Alumni agar tidak masuk di Surat Izin
+    const kelasUnik = [...new Set(DATA_SANTRI.map(s => s.kelas))]
+        .filter(k => k && !k.toLowerCase().includes('lulus') && !k.toLowerCase().includes('alumni') && !k.toLowerCase().includes('diberhentikan'))
+        .sort();
+        
+    const selKelas = document.getElementById('izin_kelas');
+    kelasUnik.forEach(k => {
+        selKelas.innerHTML += `<option value="${k}">${k}</option>`;
+    });
+}
+
+        function loadSantriIzin() {
+            const kelas = document.getElementById('izin_kelas').value;
+            const selSantri = document.getElementById('izin_santri');
+            selSantri.innerHTML = '<option value="" disabled selected>-- Pilih Santri --</option>';
+            
+            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+            santriKelas.forEach(s => {
+                selSantri.innerHTML += `<option value="${s.nis}">${s.nis} - ${s.nama}</option>`;
+            });
+        }
+
+
+       // ==========================================================
+        // FUNGSI CETAK SURAT IZIN SANTRI
+        // ==========================================================
+        function cetakSuratIzin() {
+            const nis = document.getElementById('izin_santri').value;
+            if(!nis) return Swal.fire('Perhatian', 'Pilih santri terlebih dahulu.', 'warning');
+            
+            const santri = DATA_SANTRI.find(s => s.nis == nis);
+            const tglInput = document.getElementById('izin_tanggal').value;
+            let tglFormat = '';
+            const namaBulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            
+            if(tglInput) {
+                const d = new Date(tglInput);
+                tglFormat = `${d.getDate()} ${namaBulanIndo[d.getMonth()]} ${d.getFullYear()}`;
+            } else {
+                const d = new Date();
+                tglFormat = `${d.getDate()} ${namaBulanIndo[d.getMonth()]} ${d.getFullYear()}`;
+            }
+            
+            const jenis = document.getElementById('izin_jenis').value;
+            const keterangan = document.getElementById('izin_keterangan').value || '-';
+            
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) return Swal.fire('Pop-up Diblokir', 'Izinkan pop-up browser untuk mencetak kartu.', 'error');
+            
+            printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="id">
+            <head>
+                <base href="${window.location.href}">
+                <title>Cetak Kartu Surat Izin - ${santri.nama}</title>
+                <style>
+                    @font-face { 
+                        font-family: 'ReemKufi'; 
+                        src: url('../asset/ReemKufi-VariableFont_wght.ttf') format('truetype'); 
+                        font-weight: normal; 
+                        font-style: normal; 
+                    }
+                    
+                    @page { size: 215mm 330mm portrait; margin: 15mm; } 
+                    body { font-family: 'Arial', sans-serif; margin: 0; background: #fff; color: #000; }
+                    .surat-container {
+                        width: 100%;
+                        max-width: 160mm;
+                        margin: 0 auto;
+                        border: 2px dashed #000;
+                        padding: 25px;
+                        box-sizing: border-box;
+                        border-radius: 8px;
+                    }
+                    
+                    /* STYLING KOP KARTU */
+                    .header-surat { display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+                    .header-surat img { width: 55px; height: 55px; margin-right: 15px; }
+                    .header-teks { flex: 1; text-align: center; }
+                    .judul-arab { font-family: 'ReemKufi', sans-serif; font-size: 26px; margin: 0 0 2px 0; font-weight: normal; }
+                    .header-teks h3 { margin: 0 0 5px 0; font-size: 16px; text-transform: uppercase; font-weight: bold; }
+                    .header-teks p { margin: 0; font-size: 10px; font-weight: bold; }
+                    
+                    /* ISI SURAT */
+                    .judul-surat { text-align: center; font-size: 15px; font-weight: bold; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+                    
+                    .isi-surat { font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+                    .isi-surat p { margin: 0 0 8px 0; text-align: justify; }
+                    
+                    .tabel-info { width: 100%; margin: 10px 0 10px 15px; }
+                    .tabel-info td { padding: 3px; vertical-align: top; font-size: 13px; }
+                    
+                    .ttd-area { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; font-size: 13px; }
+                    .ttd-box { width: 45%; }
+                    .nama-ttd { font-weight: bold; text-decoration: underline; margin-top: 60px; }
+                </style>
+            </head>
+            <body>
+                <div class="surat-container">
+                    
+                    <!-- KOP SURAT -->
+                    <div class="header-surat">
+                        <img src="../asset/logo.png" onerror="this.style.display='none'">
+                        <div class="header-teks">
+                            <h2 class="judul-arab" dir="rtl">مدرسة دينية دار السلام</h2>
+                            <h3>MADRASAH DINIYAH DARUSSALAM</h3>
+                            <p>Website : www.madasa.ponpes.id | E-mail : madasaponpes@gmail.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="judul-surat">SURAT IZIN SANTRI</div>
+                    
+                    <div class="isi-surat">
+                        <p style="text-align: center; font-weight: bold; margin-bottom: 15px;">Assalamu'alaikum Warahmatullahi Wabarakatuh</p>
+                        
+                        <p>Dengan hormat,</p>
+                        <p>Melalui surat ini, kami menerangkan bahwa santri di bawah ini:</p>
+                        
+                        <table class="tabel-info">
+                            <tr><td width="110">Nama Lengkap</td><td width="10">:</td><td><strong>${santri.nama}</strong></td></tr>
+                            <tr><td>NIS</td><td>:</td><td>${santri.nis}</td></tr>
+                            <tr><td>Kelas</td><td>:</td><td>${santri.kelas}</td></tr>
+                        </table>
+                        
+                        <p>Dinyatakan berhalangan hadir / memohon izin <strong>${jenis}</strong> pada hari ini, <strong>${tglFormat}</strong>, dengan keterangan / alasan sebagai berikut:</p>
+                        
+                        <p style="text-align: center; font-style: italic; font-weight: bold; margin: 10px 0;">
+                            "${keterangan}"
+                        </p>
+                        
+                        <p>Demikian surat izin ini dibuat untuk dapat dimaklumi dan menjadi periksa adanya. Atas perhatian serta kebijaksanaan Bapak/Ibu Asatidz, kami sampaikan <em>Jazakumullah khairan katsiran</em>.</p>
+                        
+                        <p style="text-align: center; font-weight: bold; margin-top: 15px;">Wassalamu'alaikum Warahmatullahi Wabarakatuh</p>
+                    </div>
+                    
+                    <div class="ttd-area">
+                        <div class="ttd-box">
+                            <p>Mengetahui,<br>Wali Santri</p>
+                            <p class="nama-ttd">( ............................ )</p>
+                        </div>
+                        <div class="ttd-box">
+                            <p>Bangkalan, ${tglFormat}<br>Petugas / Pengurus Madrasah</p>
+                            <p class="nama-ttd">( ............................ )</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <script> 
+                    window.onload = function() { setTimeout(function() { window.print(); }, 1500); }; 
+                <\/script>
+            </body>
+            </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // ==========================================================
+        // FUNGSI ID CARD
+        // ==========================================================
+        let timerCariCetak;
+        function filterCetakTertunda() {
+            clearTimeout(timerCariCetak);
+            timerCariCetak = setTimeout(() => { renderIdCards(); }, 400); 
+        }
+
+        function renderIdCards() {
+            const kataKunci = document.getElementById('filterNama').value.toLowerCase();
+            const grid = document.getElementById('idCardGrid');
+            
+            const dataTersaring = DATA_SANTRI.filter(s => 
+                s.nama.toLowerCase().includes(kataKunci) || 
+                s.kelas.toLowerCase().includes(kataKunci) ||
+                s.nis.toString().toLowerCase().includes(kataKunci)
+            );
+
+            let kumpulanIdCardHtml = '';
+            dataTersaring.forEach(s => {
+                const cardHtml = `
+                <div class="id-card-container relative bg-[#FDFBF7] font-sans overflow-hidden border border-gray-200 !rounded-[14px] print:!rounded-none print:!border-black" style="width: 55mm; height: 85mm; margin: 0 auto; box-sizing: border-box;">
+                    <div class="absolute inset-0 z-0 opacity-[0.06] pointer-events-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cpath d='M9 0 L11 7 L18 9 L11 11 L9 18 L7 11 L0 9 L7 7 Z' fill='none' stroke='%23033323' stroke-width='0.75'/%3E%3Ccircle cx='9' cy='9' r='2.5' fill='none' stroke='%23D4AF37' stroke-width='0.75'/%3E%3C/svg%3E&quot;); background-repeat: repeat;"></div>
+                    <svg class="absolute top-0 left-0 w-full z-0" style="height: 34mm;" viewBox="0 0 200 110" preserveAspectRatio="none">
+                        <path d="M0,0 L200,0 L200,80 Q150,80 100,110 Q50,80 0,80 Z" fill="#D4AF37"/>
+                        <path d="M0,0 L200,0 L200,76 Q150,76 100,105 Q50,76 0,76 Z" fill="#033323"/>
+                    </svg>
+					
+                  <div class="absolute top-[7.5mm] left-0 w-full flex flex-col items-center z-10 pointer-events-none">
+    <h4 class="text-[#D4AF37] text-[6.5px] font-semibold tracking-[0.25em] uppercase mb-[1px]">Madrasah</h4>
+    <h2 class="text-white text-[25px] font-normal leading-none mt-1" style="font-family: 'Diwani Jali', serif;" dir="rtl">دينية دار السلام</h2>
+</div>
+					
+                    <div class="absolute top-[21.5mm] left-1/2 -translate-x-1/2 w-[18mm] h-[18mm] bg-[#FDFBF7] rounded-full p-[1.5px] z-20 shadow-md border-[1.5px] border-[#D4AF37] flex items-center justify-center">
+                        <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'">
+                    </div>
+                    <div class="absolute top-[41.5mm] left-0 w-full flex flex-col items-center px-2 z-10">
+                        <h3 class="font-black text-[#033323] text-[10.5px] uppercase w-full leading-tight text-center px-2 break-words whitespace-normal line-clamp-2">${s.nama}</h3>
+                        <div class="flex items-center justify-center gap-2 mt-[1mm] mb-[1.5mm] w-full px-6">
+                            <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
+                            <svg width="8" height="8" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" fill="none" stroke="#D4AF37" stroke-width="2" transform="rotate(45 12 12)"/></svg>
+                            <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
+                        </div>
+                        <div class="bg-gradient-to-r from-[#033323] to-[#065f46] border border-[#D4AF37] rounded-sm px-2.5 py-[1.5px] shadow-sm"><p class="text-[7.5px] text-white font-bold uppercase tracking-[0.1em] leading-none">${s.kelas}</p></div>
+                    </div>
+                    <div class="absolute top-[55mm] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-[45mm]">
+                        <div class="bg-white p-[2px] rounded shadow-sm border border-gray-200 w-full flex justify-center">
+                            <svg class="barcode-svg" jsbarcode-format="CODE128" jsbarcode-value="${s.nis}" jsbarcode-height="30" jsbarcode-width="1.6" jsbarcode-displayvalue="false" jsbarcode-margin="0" style="max-width: 100%;"></svg>
+                        </div>
+                        <p class="text-[9.5px] font-black text-[#033323] tracking-[0.25em] mt-[2px] leading-none">${s.nis}</p>
+                        <p class="text-[6px] font-semibold text-[#065f46] tracking-wider mt-[2px] leading-normal pb-[1px] w-full text-center truncate px-1">${s.ttl}</p>
+                    </div>
+                    <svg class="absolute bottom-0 left-0 w-full z-0" style="height: 12mm;" viewBox="0 0 200 40" preserveAspectRatio="none">
+                        <path d="M0,40 L200,40 L200,6 Q150,6 100,0 Q50,6 0,6 Z" fill="#D4AF37"/>
+                        <path d="M0,40 L200,40 L200,9 Q150,9 100,3 Q50,9 0,9 Z" fill="#033323"/>
+                    </svg>
+                    <div class="absolute bottom-[2mm] left-0 w-full text-center px-2 z-20">
+                        <p class="text-[4.5px] text-[#FDFBF7] font-medium leading-[1.4]">Kartu ini jangan sampai hilang.<br>Jika menemukan, mohon kembalikan ke<br><span class="font-bold text-[#D4AF37]">Kantor Madrasah Darussalam</span></p>
+                    </div>
+                </div>`;
+                kumpulanIdCardHtml += cardHtml;
+            });
+            
+            grid.innerHTML = kumpulanIdCardHtml;
+            JsBarcode(".barcode-svg").init();
+        }
+
+        // ==========================================================
+        // FUNGSI PENGATURAN KONTROL & JAM ABSEN
+        // ==========================================================
+        function ubahStatusSistem(statusBaru) {
+            const ket = document.getElementById('ketStatus').value || (statusBaru === 'Libur' ? "Libur Madrasah" : "Absensi Berjalan Normal");
+            let judul = statusBaru === 'Libur' ? 'Tutup Absen & Liburkan?' : 'Buka Kembali Absen?';
+            let teks = statusBaru === 'Libur' ? `Sistem akan DITUTUP dengan keterangan: "${ket}"` : 'Sistem akan kembali menerima absen santri.';
+            let warnaBtn = statusBaru === 'Libur' ? '#d33' : '#059669';
+
+            Swal.fire({
+                title: judul, text: teks, icon: 'warning', showCancelButton: true, confirmButtonColor: warnaBtn, cancelButtonColor: '#6b7280', confirmButtonText: 'Ya, Lanjutkan'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading(true, "Memproses Sakelar...");
+                    const fd = new URLSearchParams();
+                    fd.append('action', 'toggleStatusAbsen');
+                    fd.append('status', statusBaru);
+                    fd.append('keterangan', ket);
+                    fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+                    gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                        showLoading(false);
+                        if (res.status === 'success') {
+                            Swal.fire('Berhasil', res.message, 'success');
+                            renderBadgeStatus(statusBaru);
+                            if(statusBaru === 'Buka') document.getElementById('ketStatus').value = '';
+                        } else { Swal.fire('Gagal', res.message, 'error'); }
+                    }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal ke server.', 'error'); });
+                }
+            });
+        }
+
+        function cekStatusSistemAwal() {
+            const fd = new URLSearchParams();
+            fd.append('action', 'getStatusAbsen');
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+                if (res.status === 'success') {
+                    renderBadgeStatus(res.status_absen);
+                    if(res.status_absen === 'Libur' && res.keterangan !== "-") {
+                        document.getElementById('ketStatus').value = res.keterangan;
+                    }
+                    if(res.jam_buka !== undefined) {
+                        JAM_BUKA = parseInt(res.jam_buka);
+                        document.getElementById('inputJamBuka').value = JAM_BUKA;
+                    }
+                    if(res.jam_tutup !== undefined) {
+                        JAM_TUTUP = parseInt(res.jam_tutup);
+                        document.getElementById('inputJamTutup').value = JAM_TUTUP;
+                    }
+                    if(res.lat) document.getElementById('inputLat').value = res.lat;
+                    if(res.lng) document.getElementById('inputLng').value = res.lng;
+                    if(res.radius) document.getElementById('inputRadius').value = res.radius;
+                }
+            }).catch(e => console.log('Gagal cek status sistem:', e));
+        }
+
+        function renderBadgeStatus(status) {
+            const badge = document.getElementById('badgeStatus');
+            if(status === 'Libur') {
+                badge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 shadow-sm border border-red-200 whitespace-nowrap shrink-0';
+                badge.innerHTML = '<i class="fas fa-lock mr-1"></i> STATUS: TUTUP';
+            } else {
+                badge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 shadow-sm border border-red-200 whitespace-nowrap shrink-0';
+                badge.innerHTML = '<i class="fas fa-unlock mr-1"></i> STATUS: BUKA';
+            }
+        }
+
+        function simpanJamAbsen() {
+            const valBuka = document.getElementById('inputJamBuka').value;
+            const valTutup = document.getElementById('inputJamTutup').value;
+
+            if (valBuka === "" || valTutup === "") {
+                Swal.fire('Peringatan', 'Jam Buka dan Jam Tutup tidak boleh kosong!', 'warning');
+                return;
+            }
+
+            showLoading(true, "Menyimpan Pengaturan Jam...");
+            const fd = new URLSearchParams();
+            fd.append('action', 'simpanWaktuAbsen');
+            fd.append('jam_buka', valBuka);
+            fd.append('jam_tutup', valTutup);
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                showLoading(false);
+                if (res.status === 'success') {
+                    Swal.fire('Berhasil', res.message, 'success');
+                    JAM_BUKA = parseInt(valBuka);
+                    JAM_TUTUP = parseInt(valTutup);
+                } else { 
+                    Swal.fire('Gagal', res.message, 'error'); 
+                }
+            }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal menyambung ke server.', 'error'); });
+        }
+
+        // ==========================================================
+        // FUNGSI REKAP ABSENSI
+        // ==========================================================
+        function muatBulanTersedia() {
+            const fd = new URLSearchParams();
+            fd.append('action', 'getBulanTersedia');
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+                const selectBulan = document.getElementById('filterBulanRekap');
+                if (res.status === 'success' && res.data.length > 0) {
+                    selectBulan.innerHTML = ''; 
+                    res.data.forEach(item => {
+                        selectBulan.innerHTML += `<option value="${item.value}">${item.label}</option>`;
+                    });
+                } else {
+                    selectBulan.innerHTML = '<option value="" disabled selected>Belum ada data absen</option>';
+                }
+            }).catch(e => console.error('Gagal memuat bulan:', e));
+        }
+
+        function tarikDataRekap() {
+            const bulanTahun = document.getElementById('filterBulanRekap').value;
+            const kelas = document.getElementById('filterKelasRekap').value;
+            const tbody = document.getElementById('bodyTabelRekap');
+            
+            if (!bulanTahun) return Swal.fire('Perhatian', 'Pilih bulan terlebih dahulu', 'warning');
+            if (!kelas) return Swal.fire('Perhatian', 'Pilih kelas terlebih dahulu', 'warning');
+
+            showLoading(true, `Menarik Laporan ${kelas}...`);
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-400">Sedang memuat data...</td></tr>';
+
+            const fd = new URLSearchParams();
+            fd.append('action', 'getRekapBulanan');
+            fd.append('bulan_tahun', bulanTahun);
+            fd.append('kelas', kelas);
+            fd.append('token', sessionStorage.getItem('tokenMadasa')); 
+
+            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+                showLoading(false);
+                tbody.innerHTML = '';
+                
+                if (res.status === 'success') {
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold"><i class="fas fa-folder-open mb-2 text-2xl block"></i>Belum ada data absensi untuk kelas dan bulan ini.</td></tr>';
+                        document.getElementById('btnCetakRekap').classList.add('hidden');
+                        return;
+                    }
+                    document.getElementById('btnCetakRekap').classList.remove('hidden');
+                    res.data.forEach((s, i) => {
+                        tbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 transition-all">
+                            <td class="p-2 sm:p-3 text-center border-r border-gray-200 text-gray-500 font-medium text-xs sm:text-sm">${i + 1}</td>
+                            <td class="p-2 sm:p-3 border-r border-gray-200 font-bold text-gray-800 text-xs sm:text-sm leading-tight">${s.nama}<br><span class="text-[9px] sm:text-[10px] text-gray-500 font-medium">NIS: ${s.nis}</span></td>
+                            <td class="p-2 sm:p-3 text-center border-r border-gray-200 font-bold text-emerald-700 text-xs sm:text-sm">${s.hadir}</td>
+                            <td class="p-2 sm:p-3 text-center border-r border-gray-200 font-bold text-blue-600 text-xs sm:text-sm">${s.izin}</td>
+                            <td class="p-2 sm:p-3 text-center border-r border-gray-200 font-bold text-orange-500 text-xs sm:text-sm">${s.sakit}</td>
+                            <td class="p-2 sm:p-3 text-center font-bold text-red-600 text-xs sm:text-sm">${s.alfa}</td>
+                        </tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">${res.message}</td></tr>`;
+                }
+            }).catch(e => {
+                showLoading(false);
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">Gagal terhubung ke server.</td></tr>';
+                Swal.fire('Error', 'Gagal memuat rekap bulanan.', 'error');
+            });
+        }
+
+        // --- LOGIKA LOKASI GPS ---
+        function dapatkanLokasiSaatIni() {
+            if (navigator.geolocation) {
+                showLoading(true, "Mencari koordinat GPS...");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        showLoading(false);
+                        document.getElementById('inputLat').value = position.coords.latitude;
+                        document.getElementById('inputLng').value = position.coords.longitude;
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Titik koordinat ditemukan!', showConfirmButton: false, timer: 2000 });
+                    },
+                    (error) => {
+                        showLoading(false);
+                        Swal.fire('Gagal', 'Pastikan GPS/Lokasi di perangkat Anda aktif dan diizinkan oleh browser.', 'error');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                Swal.fire('Gagal', 'Browser Anda tidak mendukung fitur lokasi.', 'error');
+            }
+        }
+
+        function simpanLokasiAbsen() {
+            const lat = document.getElementById('inputLat').value;
+            const lng = document.getElementById('inputLng').value;
+            const radius = document.getElementById('inputRadius').value;
+
+            if (!lat || !lng) return Swal.fire('Peringatan', 'Lacak koordinat lokasi terlebih dahulu.', 'warning');
+
+            showLoading(true, "Menyimpan Lokasi...");
+            const fd = new URLSearchParams();
+            fd.append('action', 'simpanLokasiAbsen');
+            fd.append('lat', lat);
+            fd.append('lng', lng);
+            fd.append('radius', radius || 50);
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                showLoading(false);
+                if (res.status === 'success') {
+                    Swal.fire('Berhasil', res.message, 'success');
+                } else { Swal.fire('Gagal', res.message, 'error'); }
+            }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal menyambung ke server.', 'error'); });
+        }
+
+        function hapusLokasiAbsen() {
+            Swal.fire({
+                title: 'Hapus Batasan Lokasi?', text: 'Santri akan bisa absen dari mana saja jika lokasi dihapus (Tanpa Batasan).', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6b7280', confirmButtonText: 'Ya, Hapus'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading(true, "Menghapus...");
+                    const fd = new URLSearchParams();
+                    fd.append('action', 'hapusLokasiAbsen');
+                    fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+                    gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                        showLoading(false);
+                        if (res.status === 'success') {
+                            document.getElementById('inputLat').value = '';
+                            document.getElementById('inputLng').value = '';
+                            Swal.fire('Dihapus', res.message, 'success');
+                        } else { Swal.fire('Gagal', res.message, 'error'); }
+                    }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal ke server.', 'error'); });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "Madrasah Darussalam",
+  "short_name": "MADASA",
+  "description": "Sistem Penilaian Santri Madrasah Darussalam.",
+  "start_url": "./index.html",
+  "scope": "./", 
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#065f46",
+  "icons": [
+    {
+      "src": "asset/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "asset/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

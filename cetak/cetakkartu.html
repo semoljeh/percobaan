@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Ujian - Madrasah Darussalam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
+    <script src="../config.js?v=16"></script>
+	
+	<!-- Favicon -->
+    <link rel="icon" type="image/png" href="../asset/logoweb.png">
+    <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    
+    <style>
+        /* Memastikan full-width mutlak di layar HP tanpa jarak */
+     html, body {
+         margin: 0 !important;
+         padding: 0 !important;
+         width: 100%;
+     }
+
+        @media (min-width: 768px) {
+            body { padding: 2rem !important; }
+        }
+
+        .header-kartu {
+            background-image: url('../asset/bg.jpg') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Animasi Bottom Sheet bergaya Mobile App */
+        @keyframes slideUp {
+            0% { transform: translateY(100%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .mobile-bottom-sheet {
+            animation: slideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @media print {
+            @page { size: legal portrait; margin: 10mm; }
+            body { padding: 0 !important; background-color: white !important; }
+            .no-print { display: none !important; }
+            
+            body.print-kartu #areaDaftarHadir, body.print-kartu #areaDenah { display: none !important; }
+            body.print-kartu #gridKartu {
+                display: block !important;
+                text-align: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            body.print-absen #gridKartu, body.print-absen #areaDenah { display: none !important; }
+            body.print-absen #areaDaftarHadir { display: block !important; width: 100% !important; }
+
+            body.print-denah #gridKartu, body.print-denah #areaDaftarHadir { display: none !important; }
+            body.print-denah #areaDenah { display: block !important; width: 100% !important; }
+
+            .kartu-page { 
+                display: inline-block !important;
+                margin: 1.5mm !important; 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important; 
+                -webkit-column-break-inside: avoid !important;
+                vertical-align: top !important;
+                border: 1.5px solid #064e3b !important; 
+            }
+
+            .halaman-absen, .halaman-denah {
+                page-break-after: always !important;
+                padding: 0 5mm !important; 
+                margin: 0 !important;
+                width: 100% !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            
+            .tabel-absen { page-break-inside: auto !important; }
+            .tabel-absen tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+            .tabel-absen thead { display: table-header-group !important; }
+            
+            .area-ttd { page-break-inside: avoid !important; }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                filter: none !important;
+            }
+            
+            .bg-gradient-to-r { background-image: none !important; background-color: #064e3b !important; }
+            .opacity-10 { 
+                display: block !important; 
+                opacity: 0.15 !important; 
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23022c22' stroke-width='0.75'%3E%3Ccircle cx='0' cy='0' r='20'/%3E%3Ccircle cx='40' cy='0' r='20'/%3E%3Ccircle cx='0' cy='40' r='20'/%3E%3Ccircle cx='40' cy='40' r='20'/%3E%3Ccircle cx='20' cy='20' r='20'/%3E%3C/g%3E%3C/svg%3E") !important;
+                background-size: 35px 35px !important;
+            }
+            
+            .opacity-90 { opacity: 1 !important; }
+            .bg-emerald-50\/60, .bg-emerald-50\/50 { background-color: #ecfdf5 !important; }
+            .bg-emerald-700\/50 { background-color: #047857 !important; }
+            .border-emerald-700\/70 { border-color: #047857 !important; }
+            .bg-teal-50\/30 { background-color: #f0fdfa !important; }
+			
+			#areaDaftarHadir, #areaDenah { height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
+            #kertasAbsenWrapper, #kertasDenahWrapper { transform: none !important; margin: 0 auto !important; width: 215.9mm !important; min-width: auto !important; }
+        }
+		
+        .tabel-absen { border-collapse: collapse !important; width: 100% !important; }
+        .tabel-absen, .tabel-absen th, .tabel-absen td { border: 1.5px solid #000000 !important; }
+        .kartu-b2 { width: 55mm; height: 85mm; }
+        
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+		
+		
+		@font-face {
+    font-family: 'Diwani Jali';
+    src: url('../asset/DiwaniJali.ttf') format('truetype'); /* Sesuaikan path dan nama file font Anda */
+    font-weight: normal;
+    font-style: normal;
+}
+		
+		
+		
+    </style>
+</head>
+<body class="bg-[#FDFBF3] md:bg-slate-50 font-sans antialiased text-slate-800">
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 no-print pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto md:mb-10 no-print relative z-50 !w-full">
+        <div class="bg-[#FDFBF3] md:bg-white !rounded-none md:!rounded-2xl !shadow-none md:!shadow-2xl !border-none md:!border border-emerald-100 flex flex-col w-full">
+            
+            <!-- HEADER -->
+            <div class="relative bg-gradient-to-b from-[#0a5c40] to-[#063e2a] pt-12 pb-8 px-5 md:px-8 border-b-[4px] border-[#D4AF37] flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-5 text-center md:text-left !rounded-none md:!rounded-t-2xl w-full overflow-hidden shrink-0">
+                <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'%3E%3Cg fill=\'none\' stroke=\'%23ffffff\' stroke-width=\'1\'%3E%3Ccircle cx=\'0\' cy=\'0\' r=\'20\'/%3E%3Ccircle cx=\'40\' cy=\'0\' r=\'20\'/%3E%3Ccircle cx=\'0\' cy=\'40\' r=\'20\'/%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'20\'/%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\'/%3E%3C/g%3E%3C/svg%3E'); background-size: 40px 40px;"></div>
+                
+                <div class="bg-white p-2 rounded-[12px] border-[2px] border-[#D4AF37] relative z-10 shrink-0 shadow-[0_5px_15px_rgba(0,0,0,0.15)] flex justify-center items-center">
+                    <img src="../asset/logo.png" alt="Logo Madrasah" class="w-12 h-12 md:w-14 md:h-14 object-contain">
+                </div>
+                
+                <div class="relative z-10 flex flex-col items-center md:items-start w-full mt-1">
+                    <h2 class="text-3xl md:text-3xl font-bold text-white tracking-wide drop-shadow-md">Panel Cetak Ujian</h2>
+                    <p class="text-[10px] md:text-xs text-emerald-100 font-bold mt-2 uppercase tracking-[0.1em] flex justify-center md:justify-start items-center gap-1.5 drop-shadow-sm w-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#F2C94C] inline-block animate-pulse shadow-[0_0_4px_#F2C94C]"></span>
+                        Kartu Peserta & Daftar Hadir Otomatis
+                    </p>
+                </div>
+            </div>
+
+            <!-- KONTEN INPUT -->
+            <div class="p-5 md:p-8 bg-[#FDFBF3] relative z-10 w-full shrink-0">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-5 items-end relative z-10 w-full">
+                    
+                    <div class="lg:col-span-3 md:col-span-2 relative w-full" id="dropdownContainer">
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Pilih Kelas
+                        </label>
+                        <button type="button" id="btnDropdownKelas" onclick="toggleDropdownKelas()" class="w-full bg-white border-2 border-emerald-100 text-emerald-900 py-3.5 px-4 rounded-xl flex justify-between items-center focus:outline-none focus:border-emerald-600 transition-all font-bold shadow-sm disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]" disabled>
+                            <span id="textDropdownKelas" class="truncate text-sm md:text-base">Tarik data dahulu...</span>
+                            <svg class="w-4 h-4 text-emerald-600 flex-none transition-transform duration-200" id="iconDropdown" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        
+                        <div id="panelKelasWrapper" class="hidden z-[100] md:z-50">
+                            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-[2px] md:hidden transition-opacity" onclick="closeAllPanels()"></div>
+                            <div class="fixed inset-x-0 bottom-0 z-[101] bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col max-h-[85vh] mobile-bottom-sheet 
+                                        md:absolute md:inset-auto md:top-[100%] md:left-0 md:w-full md:mt-2 md:rounded-xl md:shadow-2xl md:border-2 md:border-emerald-100 md:!animate-none">
+                                <div class="md:hidden flex items-center justify-between p-4 px-5 border-b border-slate-100 bg-white rounded-t-3xl shrink-0">
+                                    <span class="text-sm font-black text-emerald-900 uppercase tracking-widest">Pilih Kelas</span>
+                                    <button type="button" onclick="closeAllPanels()" class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors active:scale-95">Tutup</button>
+                                </div>
+                                <div class="p-3 md:p-2 border-b border-emerald-100 bg-emerald-50/50 shrink-0">
+                                    <label class="flex items-center gap-4 md:gap-3 px-3 py-2 cursor-pointer hover:bg-emerald-100 rounded-lg transition-colors">
+                                        <input type="checkbox" id="checkAllKelas" onclick="toggleSemuaKelas(this)" class="w-5 h-5 md:w-4 md:h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500 accent-emerald-600 cursor-pointer">
+                                        <span class="text-sm md:text-[12px] font-black text-emerald-900 uppercase tracking-wide mt-0.5">Pilih Semua Kelas</span>
+                                    </label>
+                                </div>
+                                <div id="listKelasCheckboxes" class="overflow-y-auto p-3 md:p-2 flex flex-col gap-2 md:gap-1 max-h-[60vh] md:max-h-56 pb-8 md:pb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 w-full">
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Semester
+                        </label>
+                        <select id="inputSemester" class="w-full bg-white border-2 border-emerald-100 text-emerald-900 py-3.5 px-3 rounded-xl focus:outline-none focus:border-emerald-600 transition-all font-bold shadow-sm text-sm cursor-pointer">
+                            <option value="Ganjil">Ganjil</option>
+                            <option value="Genap">Genap</option>
+                        </select>
+                    </div>
+
+                    <div class="lg:col-span-2 w-full">
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
+                            Tahun Ajaran
+                        </label>
+                        <input type="text" id="inputTahunAjaran" value="2026/2027" class="w-full bg-white border-2 border-emerald-100 text-emerald-900 py-3.5 px-3 rounded-xl focus:outline-none focus:border-emerald-600 transition-all font-bold shadow-sm text-center text-sm" placeholder="2026/2027">
+                    </div>
+                    
+                    <div class="lg:col-span-2 w-full">
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            Mode Susun
+                        </label>
+                        <select id="modeSusun" onchange="toggleModeRuang()" class="w-full bg-white border-2 border-emerald-100 text-emerald-900 py-3.5 px-2 rounded-xl focus:outline-none focus:border-emerald-600 transition-all font-bold shadow-sm text-sm cursor-pointer">
+                            <option value="acak">Acak Kelas (Campur)</option>
+                            <option value="urut">Per Kelas (Manual)</option>
+                        </select>
+                    </div>
+
+                    <div class="lg:col-span-3 md:col-span-2 relative w-full" id="containerAreaRuang">
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            Setup Ruangan
+                        </label>
+                        
+                        <input type="text" id="inputRuang" placeholder="Misal: 7 atau Aula,01" value="7" class="w-full bg-white border-2 border-emerald-100 text-emerald-900 py-3.5 px-3 rounded-xl focus:outline-none focus:border-emerald-600 transition-all font-bold shadow-sm text-center text-sm" title="Ketik jumlah atau nama dipisah koma">
+                        
+                        <button type="button" id="btnRuangManual" onclick="toggleManualRuangPanel()" class="hidden w-full bg-emerald-50 border-2 border-emerald-300 text-emerald-900 py-3.5 px-4 rounded-xl focus:outline-none hover:border-emerald-500 transition-all font-bold shadow-sm text-center text-sm flex justify-between items-center active:scale-[0.98]">
+                            <span>Atur Ruang Manual</span>
+                            <svg class="w-4 h-4 text-emerald-600 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+
+                        <div id="panelRuangWrapper" class="hidden z-[100] md:z-50 w-full">
+                            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-[2px] md:hidden transition-opacity" onclick="closeAllPanels()"></div>
+                            <div class="fixed inset-x-0 bottom-0 z-[101] bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col max-h-[90vh] mobile-bottom-sheet 
+                                        md:absolute md:inset-auto md:top-[100%] md:left-0 md:w-full lg:w-[130%] xl:w-[150%] md:mt-2 md:rounded-xl md:shadow-2xl md:border-2 md:border-emerald-100 md:!animate-none">
+                                <div class="md:hidden flex items-center justify-between p-4 px-5 border-b border-slate-100 bg-white rounded-t-3xl shrink-0">
+                                    <span class="text-sm font-black text-emerald-900 uppercase tracking-widest">Atur Ruangan</span>
+                                    <button type="button" onclick="closeAllPanels()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors active:scale-95 shadow-md">Selesai</button>
+                                </div>
+                                <div id="panelRuangManual" class="overflow-y-auto p-4 md:p-3 flex flex-col gap-3 md:gap-2 max-h-[75vh] md:max-h-64 pb-8 md:pb-3 w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-12 md:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-2 md:gap-3 mt-4 pt-5 border-t border-emerald-100/60 w-full">
+                        <button onclick="tarikDataSantri()" id="btnTarik" class="bg-white border-2 border-emerald-700 text-emerald-800 hover:bg-emerald-50 py-3.5 px-2 rounded-xl font-bold shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2">
+                            <svg class="w-4 h-4 flex-none text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span id="txtTarik" class="whitespace-nowrap text-xs md:text-sm">Tarik Data</span>
+                            <div id="loading" class="loader flex-none !border-emerald-200 !border-t-emerald-800"></div>
+                        </button>
+
+                        <button onclick="generateData()" id="btnGenerate" class="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white py-3.5 px-2 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100" disabled>
+                            <svg id="iconGenerate" class="w-4 h-4 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <span id="txtGenerate" class="whitespace-nowrap text-xs md:text-sm">Proses</span>
+                            <div id="loadingGenerate" class="loader flex-none !border-white/30 !border-t-white"></div>
+                        </button>
+                        
+                        <button onclick="cetakKartu()" id="btnCetakKartu" class="bg-[#D4AF37] text-yellow-950 border border-[#b8952b] py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-[#F2C94C] transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
+                            <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                            <span class="whitespace-nowrap text-xs md:text-sm">Kartu</span>
+                        </button>
+
+                        <button onclick="cetakAbsen()" id="btnCetakAbsen" class="bg-indigo-600 text-white border border-indigo-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-indigo-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
+                            <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            <span class="whitespace-nowrap text-xs md:text-sm">Absen</span>
+                        </button>
+
+                        <!-- TOMBOL CETAK DENAH -->
+                        <button onclick="cetakDenah()" id="btnCetakDenah" class="bg-teal-600 text-white border border-teal-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-teal-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
+                            <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                            <span class="whitespace-nowrap text-xs md:text-sm">Denah</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="infoStatistik" class="mt-6 text-sm text-emerald-900 font-semibold bg-emerald-100/50 border border-emerald-200 p-4 rounded-xl flex items-start gap-3 hidden transition-all">
+                    <svg class="w-5 h-5 text-emerald-600 flex-none mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div id="infoContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+	
+    <div id="gridKartu" class="max-w-6xl mx-auto flex flex-wrap gap-5 justify-center relative z-10 pb-10 px-4 md:px-0 mt-6 md:mt-0">
+        <div class="w-full text-center py-20 px-8 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-3xl bg-slate-50/50">
+            <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <p class="text-slate-500 font-medium text-[14px]">Area Tampil Data</p>
+            <p class="text-slate-400 text-[11px] mt-1">Silakan tarik data dari server dan klik "Proses"</p>
+        </div>
+    </div>
+
+    <div id="areaDaftarHadir" class="hidden relative z-10 pb-10 mt-6 md:mt-0 w-full overflow-visible">
+        <div id="kertasAbsenWrapper" class="flex flex-col transition-transform duration-300 shrink-0" style="width: 215.9mm; min-width: 215.9mm;">
+        </div>
+    </div>
+
+    <!-- AREA DENAH RUANG -->
+    <div id="areaDenah" class="hidden relative z-10 pb-10 mt-6 md:mt-0 w-full overflow-visible">
+        <div id="kertasDenahWrapper" class="flex flex-col transition-transform duration-300 shrink-0" style="width: 215.9mm; min-width: 215.9mm;">
+        </div>
+    </div>
+
+    <script>
+        let semuaSantri = [];
+        let dataGlobalCetak = []; 
+        let isPanelOpen = false; 
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgColor = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-blue-600';
+            let icon = type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>` : type === 'error' ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>` : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`;
+
+            toast.className = `flex items-center gap-3 ${bgColor} text-white px-5 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto mt-2 mx-2 md:m-0`;
+            toast.innerHTML = `<svg class="w-5 h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg> <p class="text-sm font-semibold tracking-wide leading-tight">${message}</p>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function openPanel(panelId, hash) {
+            if (isPanelOpen) return;
+            document.getElementById(panelId).classList.remove('hidden');
+            if (panelId === 'panelKelasWrapper') {
+                document.getElementById('iconDropdown').classList.add('rotate-180');
+            }
+            isPanelOpen = true;
+            history.pushState({ popup: panelId }, "", "#" + hash);
+        }
+
+        function closeAllPanels(fromPopState = false) {
+            let closedSomething = false;
+            const pKelas = document.getElementById('panelKelasWrapper');
+            const pRuang = document.getElementById('panelRuangWrapper');
+
+            if (!pKelas.classList.contains('hidden')) {
+                pKelas.classList.add('hidden');
+                document.getElementById('iconDropdown').classList.remove('rotate-180');
+                closedSomething = true;
+            }
+            if (!pRuang.classList.contains('hidden')) {
+                pRuang.classList.add('hidden');
+                closedSomething = true;
+            }
+
+            if (closedSomething) {
+                isPanelOpen = false;
+                if (!fromPopState) {
+                    history.back(); 
+                }
+            }
+        }
+
+        window.addEventListener('popstate', function(event) {
+            closeAllPanels(true); 
+        });
+
+        function toggleDropdownKelas() {
+            if (document.getElementById('panelKelasWrapper').classList.contains('hidden')) {
+                openPanel('panelKelasWrapper', 'pilihkelas');
+            } else {
+                closeAllPanels();
+            }
+        }
+
+        function toggleManualRuangPanel() {
+            if (document.getElementById('panelRuangWrapper').classList.contains('hidden')) {
+                openPanel('panelRuangWrapper', 'aturruang');
+            } else {
+                closeAllPanels();
+            }
+        }
+
+        function toggleModeRuang() {
+            const mode = document.getElementById('modeSusun').value;
+            const inputAcak = document.getElementById('inputRuang');
+            const btnManual = document.getElementById('btnRuangManual');
+
+            if (mode === 'urut') {
+                inputAcak.classList.add('hidden');
+                btnManual.classList.remove('hidden');
+                closeAllPanels();
+                renderManualRuangList();
+            } else {
+                inputAcak.classList.remove('hidden');
+                btnManual.classList.add('hidden');
+                closeAllPanels();
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const pKelas = document.getElementById('panelKelasWrapper');
+            const containerKelas = document.getElementById('dropdownContainer');
+            if (!pKelas.classList.contains('hidden') && containerKelas && !containerKelas.contains(event.target)) {
+                closeAllPanels();
+            }
+
+            const pRuang = document.getElementById('panelRuangWrapper');
+            const containerRuang = document.getElementById('containerAreaRuang');
+            if (!pRuang.classList.contains('hidden') && containerRuang && !containerRuang.contains(event.target)) {
+                closeAllPanels();
+            }
+        });
+
+        function toggleSemuaKelas(source) {
+            document.querySelectorAll('.kelas-checkbox').forEach(cb => cb.checked = source.checked);
+            updateTeksDropdown();
+        }
+
+        function updateTeksDropdown() {
+            const checked = document.querySelectorAll('.kelas-checkbox:checked');
+            const total = document.querySelectorAll('.kelas-checkbox').length;
+            const teks = document.getElementById('textDropdownKelas');
+            document.getElementById('checkAllKelas').checked = (checked.length === total && total > 0);
+            
+            if (checked.length === 0) teks.textContent = "-- Belum ada dipilih --";
+            else if (checked.length === total) teks.textContent = `Semua Kelas Dipilih (${total})`;
+            else teks.textContent = `${checked.length} Kelas Dipilih`;
+
+            if (document.getElementById('modeSusun').value === 'urut') {
+                renderManualRuangList();
+            }
+        }
+
+        function renderManualRuangList() {
+            const checkedBoxes = document.querySelectorAll('.kelas-checkbox:checked');
+            const container = document.getElementById('panelRuangManual');
+            container.innerHTML = '<div class="text-[10px] font-bold text-emerald-700 mb-1 md:mb-2 border-b pb-1 hidden md:block">KETIK NAMA RUANG TIAP KELAS:</div>';
+            
+            if (checkedBoxes.length === 0) {
+                container.innerHTML += `
+                    <div class="flex flex-col items-center justify-center p-8 text-center opacity-70">
+                        <svg class="w-10 h-10 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span class="text-xs font-semibold text-slate-500">Pilih kelas di kotak sebelumnya terlebih dahulu.</span>
+                    </div>`;
+                return;
+            }
+
+            checkedBoxes.forEach((cb) => {
+                const kelas = cb.value;
+                container.innerHTML += `
+                    <div class="flex items-center justify-between gap-3 bg-slate-50 md:bg-white p-3 md:p-1.5 rounded-xl md:rounded border md:border-slate-200 border-slate-300/60 shadow-sm md:shadow-none w-full">
+                        <label class="text-sm md:text-[11px] font-bold text-emerald-900 truncate flex-1 pl-1" title="${kelas}">${kelas}</label>
+                        <input type="text" data-kelas="${kelas}" value="" class="input-ruang-manual w-24 md:w-20 text-center text-sm md:text-xs font-black border-2 md:border border-emerald-200 rounded-lg md:rounded py-2 md:py-1 px-1 focus:outline-none focus:border-emerald-600 bg-white focus:ring-4 focus:ring-emerald-50 transition-all placeholder-slate-300 shrink-0" placeholder="Misal: 01">
+                    </div>
+                `;
+            });
+        }
+
+async function tarikDataSantri(maksimalPercobaan = 3) {
+    const urlGAS = typeof GAS_URL !== 'undefined' ? GAS_URL : null;
+    if (!urlGAS) return showToast("URL Web App tidak ditemukan!", "error");
+
+    const btnTarik = document.getElementById('btnTarik');
+    const txtTarik = document.getElementById('txtTarik');
+    const loading = document.getElementById('loading');
+    
+    // Tampilan loading diaktifkan sebelum loop dimulai
+    btnTarik.disabled = true;
+    txtTarik.textContent = "Menarik...";
+    loading.style.display = "block";
+
+    let percobaan = 0;
+    let berhasil = false;
+
+    // Loop akan berjalan selama belum berhasil dan belum mencapai batas maksimal
+    while (percobaan < maksimalPercobaan && !berhasil) {
+        try {
+            percobaan++;
+            
+            // Ubah teks tombol jika ini adalah percobaan ulang
+            if (percobaan > 1) {
+                txtTarik.textContent = `Menarik... (Coba ke-${percobaan})`;
+            }
+
+            // Membangun form data
+            let f = new FormData(); 
+            f.append('action', 'getSantri');
+            
+            // Mengirim request
+            const response = await fetch(urlGAS, { method: 'POST', body: f });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+
+            // Jika respons dari GAS menyatakan sukses
+            if (result.status === 'success') {
+                semuaSantri = result.data.filter(santri => santri.nama && santri.kelas); 
+                siapkanFilterKelas(semuaSantri);
+                document.getElementById('btnGenerate').disabled = false;
+                showToast(`Sukses! ${semuaSantri.length} data ditarik.`, "success");
+                berhasil = true; // Menandai sukses agar keluar dari loop
+            } else {
+                // Jika GAS merespons tapi memberikan pesan error logis
+                showToast(result.message || "Gagal mengambil data", "error");
+                berhasil = true; // Keluar dari loop agar tidak me-retry error dari database
+            }
+
+        } catch (error) {
+            console.warn(`Percobaan ${percobaan} gagal:`, error);
+            
+            if (percobaan >= maksimalPercobaan) {
+                // Jika sudah melewati batas maksimal, tampilkan error ke pengguna
+                showToast("Koneksi server gagal setelah beberapa percobaan! Pastikan jaringan stabil.", "error");
+            } else {
+                // Memberikan jeda 1 detik (1000 milidetik) sebelum mencoba ulang
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+    }
+
+    // Mengembalikan tampilan tombol ke keadaan semula, baik setelah sukses maupun gagal total
+    btnTarik.disabled = false;
+    txtTarik.textContent = "Tarik Ulang";
+    loading.style.display = "none";
+}
+
+        function siapkanFilterKelas(data) {
+            const listContainer = document.getElementById('listKelasCheckboxes');
+            listContainer.innerHTML = ''; 
+            const daftarKelas = [...new Set(data.map(s => s.kelas))].sort();
+            
+            daftarKelas.forEach(kelas => {
+                listContainer.innerHTML += `
+                    <label class="flex items-center gap-4 md:gap-3 px-3 py-2.5 md:py-2 cursor-pointer hover:bg-emerald-50 rounded-lg transition-colors border-b border-slate-100 md:border-none w-full">
+                        <input type="checkbox" value="${kelas}" onchange="updateTeksDropdown()" class="kelas-checkbox w-5 h-5 md:w-4 md:h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500 accent-emerald-600 cursor-pointer flex-none">
+                        <span class="text-sm md:text-xs font-semibold text-slate-700 mt-0.5">${kelas}</span>
+                    </label>
+                `;
+            });
+            document.getElementById('btnDropdownKelas').disabled = false;
+            document.getElementById('textDropdownKelas').textContent = "-- Pilih Kelas Ujian --";
+            document.getElementById('checkAllKelas').checked = false;
+        }
+
+        function generateData() {
+            const checkedBoxes = document.querySelectorAll('.kelas-checkbox:checked');
+            const arrayKelasDipilih = Array.from(checkedBoxes).map(cb => cb.value);
+            const modeSusun = document.getElementById('modeSusun').value;
+
+            if (semuaSantri.length === 0) return showToast("Data kosong!", "error");
+            if (arrayKelasDipilih.length === 0) {
+                showToast("Centang minimal 1 kelas!", "error");
+                openPanel('panelKelasWrapper', 'pilihkelas');
+                return;
+            }
+
+            let daftarNamaRuangAcak = [];
+            let mappingRuangManual = {};
+
+            if (modeSusun === 'urut') {
+                let isValid = true;
+                document.querySelectorAll('.input-ruang-manual').forEach(input => {
+                    let val = input.value.trim();
+                    if (!val) isValid = false;
+                    mappingRuangManual[input.dataset.kelas] = val;
+                });
+                
+                if (!isValid) {
+                    showToast("Harap isi semua nama ruang dengan angka/huruf!", "error");
+                    openPanel('panelRuangWrapper', 'aturruang');
+                    return;
+                }
+            } else {
+                let inputRuangVal = document.getElementById('inputRuang').value.toString().trim();
+                if (!inputRuangVal) return showToast("Input ruang tidak valid!", "error");
+
+                if (/^\d+$/.test(inputRuangVal)) {
+                    let jml = parseInt(inputRuangVal);
+                    for(let i=1; i<=jml; i++) daftarNamaRuangAcak.push(i.toString().padStart(2, '0'));
+                } else {
+                    daftarNamaRuangAcak = inputRuangVal.split(',').map(s => s.trim()).filter(s => s !== "");
+                }
+                if (daftarNamaRuangAcak.length === 0) return showToast("Input ruang tidak valid!", "error");
+            }
+
+            let dataProses = semuaSantri.filter(s => arrayKelasDipilih.includes(s.kelas));
+            if (dataProses.length === 0) return showToast("Kelas terpilih kosong.", "error");
+
+            const btnGenerate = document.getElementById('btnGenerate');
+            const txtGenerate = document.getElementById('txtGenerate');
+            const iconGenerate = document.getElementById('iconGenerate');
+            const loadingGenerate = document.getElementById('loadingGenerate');
+
+            btnGenerate.disabled = true;
+            txtGenerate.textContent = "Proses...";
+            iconGenerate.classList.add('hidden'); 
+            loadingGenerate.style.display = "block";
+
+            setTimeout(() => {
+                dataGlobalCetak = [];
+
+                if (modeSusun === 'urut') {
+                    let grupKelas = {};
+                    dataProses.forEach(s => { if (!grupKelas[s.kelas]) grupKelas[s.kelas] = []; grupKelas[s.kelas].push(s); });
+                    
+                    let pelacakMeja = {}; 
+
+                    for(let kelas in grupKelas) {
+                        let santriKelas = grupKelas[kelas];
+                        santriKelas.sort((a,b) => a.nama.localeCompare(b.nama));
+                        let namaRuangan = mappingRuangManual[kelas] || "Ruang ?";
+                        
+                        santriKelas.forEach((s) => {
+                            if (!pelacakMeja[namaRuangan]) {
+                                pelacakMeja[namaRuangan] = 1;
+                            }
+                            
+                            dataGlobalCetak.push({
+                                ...s,
+                                namaRuangan: namaRuangan,
+                                nomorMeja: pelacakMeja[namaRuangan]++ 
+                            });
+                        });
+                    }
+                } else {
+                    const jumlahRuang = daftarNamaRuangAcak.length;
+                    let grupKelas = {};
+                    dataProses.forEach(s => { if (!grupKelas[s.kelas]) grupKelas[s.kelas] = []; grupKelas[s.kelas].push(s); });
+                    let ruangan = Array.from({length: jumlahRuang}, () => []);
+                    let urutanKelas = Object.keys(grupKelas).sort((a,b) => grupKelas[b].length - grupKelas[a].length);
+                    
+                    let roomIndex = 0;
+                    for (let kelas of urutanKelas) {
+                        for (let s of grupKelas[kelas]) {
+                            ruangan[roomIndex].push(s);
+                            roomIndex = (roomIndex + 1) % jumlahRuang; 
+                        }
+                    }
+
+                    ruangan.forEach((isiRuang, idxRuang) => {
+                        let grupDalamRuang = {};
+                        isiRuang.forEach(s => { if (!grupDalamRuang[s.kelas]) grupDalamRuang[s.kelas] = []; grupDalamRuang[s.kelas].push(s); });
+
+                        let kelasDalamRuang = Object.keys(grupDalamRuang);
+                        let mejaAcak = [];
+
+                        while (kelasDalamRuang.length > 0) {
+                            kelasDalamRuang.sort((a, b) => grupDalamRuang[b].length - grupDalamRuang[a].length);
+                            let pickIdx = (mejaAcak.length > 0 && kelasDalamRuang.length > 1 && kelasDalamRuang[0] === mejaAcak[mejaAcak.length - 1].kelas) ? 1 : 0;
+                            
+                            let kelasTerpilih = kelasDalamRuang[pickIdx];
+                            mejaAcak.push({ 
+                                ...grupDalamRuang[kelasTerpilih].shift(), 
+                                namaRuangan: daftarNamaRuangAcak[idxRuang], 
+                                nomorMeja: mejaAcak.length + 1 
+                            });
+                            if (grupDalamRuang[kelasTerpilih].length === 0) kelasDalamRuang.splice(pickIdx, 1);
+                        }
+                        dataGlobalCetak = dataGlobalCetak.concat(mejaAcak);
+                    });
+                }
+
+                document.getElementById('btnCetakKartu').disabled = false;
+                document.getElementById('btnCetakAbsen').disabled = false;
+                document.getElementById('btnCetakDenah').disabled = false;
+
+                renderKartuHTML();
+                renderAbsenHTML();
+                renderDenahHTML();
+
+                txtGenerate.textContent = "Proses";
+                iconGenerate.classList.remove('hidden');
+                loadingGenerate.style.display = "none";
+                btnGenerate.disabled = false; 
+
+                let setRuang = new Set(dataGlobalCetak.map(s => s.namaRuangan));
+
+                const info = document.getElementById('infoStatistik');
+                document.getElementById('infoContent').innerHTML = `<span class="block font-bold text-emerald-900 text-base">Berhasil Diproses!</span><span class="text-emerald-700 font-medium"><b>${dataGlobalCetak.length}</b> santri telah dialokasikan ke dalam <b>${setRuang.size}</b> ruangan. Silakan klik tombol Cetak.</span>`;
+                info.classList.remove('hidden');
+                
+                showToast(`Selesai! Data siap dicetak.`, "success");
+                switchToKartu(); 
+                closeAllPanels(); 
+            }, 600);
+        }
+
+        function switchToKartu() {
+            document.getElementById('gridKartu').classList.remove('hidden');
+            document.getElementById('areaDaftarHadir').classList.add('hidden');
+            document.getElementById('areaDenah').classList.add('hidden');
+        }
+        function switchToAbsen() {
+            document.getElementById('gridKartu').classList.add('hidden');
+            document.getElementById('areaDenah').classList.add('hidden');
+            document.getElementById('areaDaftarHadir').classList.remove('hidden');
+			setTimeout(sesuaikanSkalaCetak, 100);
+        }
+        function switchToDenah() {
+            document.getElementById('gridKartu').classList.add('hidden');
+            document.getElementById('areaDaftarHadir').classList.add('hidden');
+            document.getElementById('areaDenah').classList.remove('hidden');
+			setTimeout(sesuaikanSkalaCetak, 100);
+        }
+
+        function cetakKartu() {
+            switchToKartu();
+            document.body.classList.remove('print-absen', 'print-denah');
+            document.body.classList.add('print-kartu');
+            setTimeout(() => window.print(), 150);
+        }
+        
+        function cetakAbsen() {
+            switchToAbsen();
+            document.body.classList.remove('print-kartu', 'print-denah');
+            document.body.classList.add('print-absen');
+            setTimeout(() => window.print(), 150);
+        }
+
+        function cetakDenah() {
+            switchToDenah();
+            document.body.classList.remove('print-kartu', 'print-absen');
+            document.body.classList.add('print-denah');
+            setTimeout(() => window.print(), 150);
+        }
+
+        function renderKartuHTML() {
+            const grid = document.getElementById('gridKartu');
+            grid.innerHTML = ''; 
+            
+            const strSemester = document.getElementById('inputSemester').value;
+            const strTahun = document.getElementById('inputTahunAjaran').value;
+
+            const daftarQuotes = [
+                "Awali ujianmu dengan doa, iringi setiap jawaban dengan kejujuran, dan akhiri perjuanganmu dengan tawakal.",
+                "Menyontek mungkin memberimu nilai tinggi di atas kertas, namun kejujuranlah yang memberimu derajat tinggi di sisi Allah.",
+                "Ujian ini hanyalah jembatan kecil menuju mimpimu. Berjalanlah dengan doa, usaha, dan keyakinan.",
+                "Setiap tetes keringat belajarmu hari ini adalah investasi keberkahan untuk masa depanmu kelak.",
+                "Ilmu yang sejati tidak diukur dari seberapa besar nilaimu, melainkan dari seberapa besar kejujuran dan adabmu saat mencarinya.",
+                "Kerjakanlah sebatas kemampuan terbaikmu. Sisanya, biarkan Allah yang menyempurnakan hasil dari setiap ikhtiar tulusmu."
+            ];
+            
+            dataGlobalCetak.forEach((santri, index) => {
+                const strMeja = santri.nomorMeja.toString().padStart(2, '0');
+                const quoteSantri = daftarQuotes[index % daftarQuotes.length];
+
+               grid.innerHTML += `
+                <div class="kartu-page kartu-b2 relative bg-white font-sans shadow-md flex flex-col border-[1.5px] border-emerald-800 overflow-hidden" style="box-sizing: border-box;">
+                    
+                    <div class="relative header-kartu text-white flex flex-col items-center pt-2.5 pb-2 flex-none border-b-[2px] border-[#D4AF37]">
+                        <div class="absolute inset-0 bg-[#022c22] opacity-[0.85] z-0" style="-webkit-print-color-adjust: exact; print-color-adjust: exact;"></div>
+                        <div class="absolute inset-0 opacity-10 z-0" style="-webkit-print-color-adjust: exact; print-color-adjust: exact;"></div>
+                        <img src="../asset/logo.png" alt="Logo" class="relative z-10 h-7 w-auto object-contain mb-1 drop-shadow-md">
+                        <h2 class="relative z-10 text-[16px] font-normal leading-none drop-shadow-sm mt-1" style="font-family: 'Diwani Jali', serif;" dir="rtl">مدرسة دينية دار السلام</h2>
+                     <h3 class="relative z-10 text-[10px] font-bold tracking-[0.2em] uppercase mt-1 opacity-90">KARTU UJIAN</h3>
+                        <p class="relative z-10 text-[5px] font-bold tracking-[0.1em] uppercase mt-0.5 text-[#F2C94C] drop-shadow-sm">Semester ${strSemester} - ${strTahun}</p>
+                    </div>
+
+              <div class="p-2 pb-6 flex-1 flex flex-col justify-center relative z-10">
+                        <div class="relative z-10 w-full">
+                            <div class="text-center bg-emerald-50/60 border border-emerald-100 py-1.5 px-1 mb-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                <p class="text-[5px] font-bold text-emerald-700 uppercase tracking-widest mb-0.5">Nama Peserta</p>
+                                <p class="text-[9px] font-black text-gray-900 uppercase leading-tight line-clamp-2">${santri.nama}</p>
+                            </div>
+                            <div class="space-y-1.5 px-1 mt-1">
+                                <div class="flex justify-between items-end border-b border-gray-300 border-dotted pb-0.5">
+                                    <span class="text-[6px] font-bold text-gray-500 uppercase tracking-wider">No. Induk Santri</span>
+                                    <span class="text-[8px] font-bold text-gray-900">${santri.nis}</span>
+                                </div>
+                                <div class="flex justify-between items-end border-b border-gray-300 border-dotted pb-0.5">
+                                    <span class="text-[6px] font-bold text-gray-500 uppercase tracking-wider">Kelas</span>
+                                    <span class="text-[8px] font-bold text-gray-900">${santri.kelas}</span>
+                                </div>
+                            </div>
+                         <div class="flex gap-2 pt-1">
+                                <div class="flex-1 bg-gradient-to-b from-white to-emerald-50/50 border border-emerald-200 text-center py-1 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                                    <div class="absolute top-0 left-0 w-full h-[2px] bg-emerald-600"></div>
+                                    <p class="text-[5px] text-emerald-700 uppercase font-bold tracking-wider">Ruang</p>
+                                    <p class="text-[13px] font-black text-emerald-800 leading-none mt-1 line-clamp-1 break-all" title="${santri.namaRuangan}">${santri.namaRuangan}</p>
+                                </div>
+                                <div class="flex-1 bg-gradient-to-b from-white to-[#FDFBF3] border border-[#EADDAC] text-center py-1 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                                    <div class="absolute top-0 left-0 w-full h-[2px] bg-[#D4AF37]"></div>
+                                    <p class="text-[5px] text-yellow-700 uppercase font-bold tracking-wider">Meja</p>
+                                    <p class="text-[15px] font-black text-yellow-800 leading-none mt-1">${strMeja}</p>
+                                </div>
+                            </div>
+                           <div class="mt-1 text-center flex flex-col items-center">
+                                <div class="bg-white p-1 border border-gray-100 shadow-sm inline-block mx-auto mb-1 w-[95%]">
+                                   <svg class="barcode-ujian w-full h-6" jsbarcode-value="${santri.nis}" jsbarcode-format="CODE128" jsbarcode-displayvalue="false"></svg>
+                                </div>
+                                <div class="flex justify-center items-center gap-1 mb-0.5">
+                                    <div class="w-2 h-[0.5px] bg-emerald-700/50"></div>
+                                    <div class="w-1 h-1 rotate-45 border-[0.5px] border-emerald-700/70"></div>
+                                    <div class="w-2 h-[0.5px] bg-emerald-700/50"></div>
+                                </div>
+                                <p class="text-[6px] leading-[1.3] font-medium text-gray-700 italic px-1.5 mt-0.5 line-clamp-3">"${quoteSantri}"</p>
+                            </div>
+                        </div>
+                    </div>
+<div class="absolute bottom-0 left-0 w-full bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 text-center py-0.5 z-20">
+  <p class="relative z-10 text-[5px] font-semibold tracking-wider text-emerald-50 uppercase">WAJIB DIBAWA SAAT UJIAN, BILA MENEMUKAN KEMBALIKAN PADA PANITIA</p>
+</div>
+                </div>`;
+            });
+            JsBarcode(".barcode-ujian").init();
+        }
+
+       function renderAbsenHTML() {
+            const area = document.getElementById('kertasAbsenWrapper');
+            area.innerHTML = '';
+
+            const strSemester = document.getElementById('inputSemester').value;
+            const strTahun = document.getElementById('inputTahunAjaran').value;
+
+            const mapRuang = {};
+            dataGlobalCetak.forEach(s => {
+                if(!mapRuang[s.namaRuangan]) mapRuang[s.namaRuangan] = [];
+                mapRuang[s.namaRuangan].push(s);
+            });
+
+            let sortedRuang = Object.keys(mapRuang).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+
+            sortedRuang.forEach(ruangNama => {
+                let santriRuang = mapRuang[ruangNama].sort((a,b) => a.nomorMeja - b.nomorMeja);
+                let barisTabel = '';
+                
+                santriRuang.forEach((s, idx) => {
+                    barisTabel += `
+                        <tr class="text-gray-900">
+                            <td class="text-center py-1.5 px-2 font-semibold">${idx + 1}</td>
+                            <td class="text-center py-1.5 px-2 tracking-wider">${s.nis}</td>
+                            <td class="py-1.5 px-3 font-bold uppercase">${s.nama}</td>
+                            <td class="text-center py-1.5 px-2 whitespace-nowrap">${s.kelas}</td>
+                            <td class="text-center py-1.5 px-2 font-black text-base">${s.nomorMeja.toString().padStart(2, '0')}</td>
+                            <td class="py-1.5 px-2 relative align-top w-[12%] h-8">
+                                <span class="text-[10px] text-gray-500 absolute top-1 left-2">1.</span>
+                            </td>
+                            <td class="py-1.5 px-2 relative align-bottom w-[12%] h-8">
+                                <span class="text-[10px] text-gray-500 absolute top-3 left-2">2.</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                area.innerHTML += `
+                    <div class="halaman-absen bg-white sm:shadow-[0_0_15px_rgba(0,0,0,0.05)] mb-10 mx-auto w-full max-w-[215.9mm] py-4 border border-gray-300">
+                        
+                        <div class="border-b-[3px] border-double border-black pb-2 mb-3 flex justify-between items-center min-h-[60px]">
+                            <img src="../asset/logo.png" alt="Logo" class="w-16 h-16 object-contain flex-none">
+                            <div class="text-center flex-1 px-4">
+                                <h1 class="text-xl md:text-2xl font-black uppercase tracking-widest text-gray-900 leading-tight">Daftar Hadir Peserta Ujian</h1>
+                                <h2 class="text-sm md:text-base font-bold uppercase tracking-[0.2em] text-gray-800 mt-1">Madrasah Diniyah Darussalam</h2>
+                                <p class="text-[10px] md:text-xs font-bold uppercase tracking-widest text-emerald-700 mt-1.5 border-t-2 border-emerald-100/50 inline-block pt-1">Semester ${strSemester} • Tahun Ajaran ${strTahun}</p>
+                            </div>
+                            <div class="w-16 flex-none"></div>
+                        </div>
+
+                        <div class="flex justify-between items-start mb-3">
+                            <table class="text-sm font-semibold text-gray-800">
+                                <tr>
+                                    <td class="py-1 w-32">Hari / Tanggal</td>
+                                    <td class="py-1 w-4 text-center">:</td>
+                                    <td class="py-1 w-48 border-b border-gray-400 border-dotted"></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-1">Sesi / Waktu</td>
+                                    <td class="py-1 text-center">:</td>
+                                    <td class="py-1 border-b border-gray-400 border-dotted"></td>
+                                </tr>
+                            </table>
+                            <div class="border-[2px] border-black px-6 py-2 rounded-lg bg-gray-50 text-center max-w-[200px]">
+                                <p class="text-[10px] uppercase font-bold text-gray-700 tracking-widest mb-0.5">Ruang Ujian</p>
+                                <p class="text-xl md:text-2xl font-black text-black leading-none truncate">${ruangNama}</p>
+                            </div>
+                        </div>
+
+                        <table class="tabel-absen text-sm">
+                            <thead class="bg-gray-100">
+                                <tr class="font-bold uppercase tracking-wider text-gray-900 text-center text-xs">
+                                    <th class="py-1.5 px-2 w-10">No</th>
+                                    <th class="py-1.5 px-2 w-28">No. Induk</th>
+                                    <th class="py-1.5 px-3 text-left">Nama Peserta</th>
+                                    <th class="py-1.5 px-2 w-28">Kelas</th>
+                                    <th class="py-1.5 px-2 w-16">Meja</th>
+                                    <th class="py-1.5 px-2" colspan="2">Tanda Tangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${barisTabel}
+                            </tbody>
+                        </table>
+
+                        <div class="mt-4 mb-0 flex justify-between px-10 text-sm font-semibold text-gray-900 area-ttd">
+                            <div class="text-center">
+                                <p>Pengawas 1</p>
+                                <div class="h-14"></div>
+                                <p class="underline underline-offset-4">( .................................................... )</p>
+                            </div>
+                            <div class="text-center">
+                                <p>Pengawas 2</p>
+                                <div class="h-14"></div>
+                                <p class="underline underline-offset-4">( .................................................... )</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDenahHTML() {
+            const area = document.getElementById('kertasDenahWrapper');
+            area.innerHTML = '';
+
+            const strSemester = document.getElementById('inputSemester').value;
+            const strTahun = document.getElementById('inputTahunAjaran').value;
+
+            const mapRuang = {};
+            dataGlobalCetak.forEach(s => {
+                if(!mapRuang[s.namaRuangan]) mapRuang[s.namaRuangan] = [];
+                mapRuang[s.namaRuangan].push(s);
+            });
+
+            let sortedRuang = Object.keys(mapRuang).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+
+            sortedRuang.forEach(ruangNama => {
+                let santriRuang = mapRuang[ruangNama].sort((a,b) => a.nomorMeja - b.nomorMeja);
+                
+                // Set maksimal 40 meja per halaman (4 kolom x 10 baris) agar pas di Legal Paper.
+                const MAX_MEJA = 40; 
+                const totalPages = Math.ceil(santriRuang.length / MAX_MEJA);
+
+                for (let page = 0; page < totalPages; page++) {
+                    let startIdx = page * MAX_MEJA;
+                    let chunk = santriRuang.slice(startIdx, startIdx + MAX_MEJA);
+                    
+                    let mejaHTML = '';
+                    chunk.forEach((s) => {
+                        mejaHTML += `
+                            <div class="border-2 border-emerald-800 p-2 rounded-lg flex flex-col items-center justify-center text-center relative bg-teal-50/30 min-h-[75px] shadow-sm page-break-inside-avoid" style="page-break-inside: avoid;">
+                                <div class="absolute top-0 left-0 bg-emerald-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-br-lg rounded-tl-md">
+                                    ${s.nomorMeja.toString().padStart(2, '0')}
+                                </div>
+                                <div class="mt-4 text-[11px] font-black uppercase text-gray-900 leading-tight line-clamp-2 w-full">${s.nama}</div>
+                                <div class="text-[9px] font-bold text-gray-600 mt-1">${s.nis} &bull; ${s.kelas}</div>
+                            </div>
+                        `;
+                    });
+
+                    // Pad with empty desks to keep layout solid on last page
+                    let padTo = Math.ceil(chunk.length / 4) * 4;
+                    for(let i=chunk.length; i<padTo; i++) {
+                         mejaHTML += `
+                            <div class="border-2 border-dashed border-gray-300 p-2 rounded-lg flex flex-col items-center justify-center text-center relative bg-gray-50 min-h-[75px] page-break-inside-avoid" style="page-break-inside: avoid;">
+                                <span class="text-gray-400 text-xs font-medium">Kosong</span>
+                            </div>`;
+                    }
+
+                    let pageHeader = totalPages > 1 ? `<span class="text-sm font-semibold text-emerald-700 ml-2 block mt-1">(Halaman ${page+1} dari ${totalPages})</span>` : '';
+
+                    area.innerHTML += `
+                        <div class="halaman-denah bg-white sm:shadow-[0_0_15px_rgba(0,0,0,0.05)] mb-10 mx-auto w-full max-w-[215.9mm] py-6 px-8 border border-gray-300 flex flex-col relative overflow-hidden" style="min-height: 330mm;">
+                            
+                            <!-- Header -->
+                            <div class="border-b-[3px] border-double border-black pb-3 mb-4 flex justify-between items-center shrink-0">
+                                <img src="../asset/logo.png" alt="Logo" class="w-14 h-14 object-contain flex-none">
+                                <div class="text-center flex-1 px-4">
+                                    <h1 class="text-xl font-black uppercase tracking-widest text-gray-900 leading-tight">Denah Tempat Duduk Peserta Ujian</h1>
+                                    <h2 class="text-sm font-bold uppercase tracking-[0.2em] text-gray-800 mt-1">Madrasah Diniyah Darussalam</h2>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mt-1.5 border-t-2 border-emerald-100/50 inline-block pt-1">Semester ${strSemester} • Tahun Ajaran ${strTahun}</p>
+                                </div>
+                                <div class="w-14 flex-none"></div>
+                            </div>
+
+                            <!-- Ruang Info -->
+                            <div class="flex justify-between items-end mb-6 shrink-0">
+                                <div>
+                                    <p class="text-sm font-bold text-gray-600 uppercase tracking-widest">Ruang Ujian</p>
+                                    <p class="text-3xl font-black text-black leading-none mt-1">${ruangNama}</p>
+                                    ${pageHeader}
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs font-semibold text-gray-500 uppercase">Total Peserta Ruang</p>
+                                    <p class="text-lg font-bold text-gray-900">${santriRuang.length} Orang</p>
+                                </div>
+                            </div>
+
+                            <!-- Meja Pengawas -->
+                            <div class="flex justify-center mb-6 shrink-0">
+                                <div class="border-2 border-gray-800 bg-gray-100 rounded-lg px-12 py-3 text-center shadow-sm w-2/3">
+                                    <p class="text-sm font-black uppercase tracking-widest text-gray-800">Meja Pengawas / Papan Tulis</p>
+                                </div>
+                            </div>
+
+                            <!-- Grid Denah (Main Content 4 Kolom) -->
+                            <div class="grid grid-cols-4 gap-3 flex-1 content-start">
+                                ${mejaHTML}
+                            </div>
+                            
+                            <!-- Footer Identitas -->
+                            <div class="absolute bottom-4 left-0 w-full text-center text-[10px] text-gray-400 font-medium tracking-widest uppercase">
+                                Dicetak dari Sistem Ujian &bull; Denah Ruang ${ruangNama}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+		
+        // ==========================================
+        // FUNGSI ZOOM OTOMATIS (PRESISI TENGAH)
+        // ==========================================
+        function sesuaikanSkalaCetak() {
+            function applyZoom(wadah, kertas) {
+                const lebarKertasAsli = 816; // Approx Legal width in pixels
+                const lebarLayar = window.innerWidth;
+                
+                if (lebarLayar < lebarKertasAsli) {
+                    const targetLebarVisual = lebarLayar - 20;
+                    const rasioScale = targetLebarVisual / lebarKertasAsli;
+                    
+                    kertas.style.transformOrigin = 'top left';
+                    kertas.style.transform = `scale(${rasioScale})`;
+                    
+                    const geserKiri = (lebarLayar - targetLebarVisual) / 2;
+                    kertas.style.marginLeft = `${geserKiri}px`;
+                    
+                    const tinggiAsli = kertas.scrollHeight;
+                    wadah.style.height = `${(tinggiAsli * rasioScale) + 40}px`;
+                } else {
+                    kertas.style.transformOrigin = 'top center';
+                    kertas.style.transform = 'scale(1)';
+                    kertas.style.marginLeft = 'auto';
+                    kertas.style.marginRight = 'auto';
+                    wadah.style.height = 'auto';
+                }
+            }
+
+            const wadahAbsen = document.getElementById('areaDaftarHadir');
+            const kertasAbsen = document.getElementById('kertasAbsenWrapper');
+            if (!wadahAbsen.classList.contains('hidden')) applyZoom(wadahAbsen, kertasAbsen);
+
+            const wadahDenah = document.getElementById('areaDenah');
+            const kertasDenah = document.getElementById('kertasDenahWrapper');
+            if (!wadahDenah.classList.contains('hidden')) applyZoom(wadahDenah, kertasDenah);
+        }
+
+        window.addEventListener('resize', () => {
+            sesuaikanSkalaCetak();
+        });
+    </script>
+</body>
+</html>

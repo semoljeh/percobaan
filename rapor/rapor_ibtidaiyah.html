@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Rapor - Ibtidaiyah</title>
+	
+	<!-- Favicon -->
+    <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+	
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = { theme: { extend: { colors: { blue: { 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af' } }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+    
+    <style> 
+        body { -webkit-font-smoothing: antialiased; background-color: #f3f4f6; } 
+        *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+        table { border-collapse:collapse; }
+        table th, table td { border: 1px solid #000; }
+        .no-border th, .no-border td { border: none !important; }
+		
+		@media print {
+            @page { margin: 10mm; } 
+            body { background-color: #fff !important; margin: 0; padding: 0 !important; }
+            .no-print { display: none !important; }
+            #kertasRapor { box-shadow: none !important; margin: 0 auto !important; width: 100% !important; min-height: auto !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 p-4 sm:p-8">
+
+    <div id="loadingScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+        <h2 id="teksLoading" class="text-xl font-bold text-gray-800">Memuat Sistem...</h2>
+    </div>
+
+    <!-- PANEL KONTROL KHUSUS IBTIDAIYAH -->
+    <div class="max-w-[210mm] mx-auto bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 no-print" id="panelKontrol">
+        <div class="flex items-center gap-4 mb-4">
+            <button onclick="window.history.length > 1 ? window.history.back() : window.close()" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 transition-all flex items-center justify-center shadow-sm shrink-0" title="Tutup Rapor & Kembali">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-book-open"></i></div>
+            <div>
+                <h1 class="text-xl font-heading font-bold text-gray-800">Sistem Cetak Rapor Ibtidaiyah</h1>
+                <p class="text-sm text-gray-500">Madrasah Darussalam</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">1. Pilih Kelas</label>
+                <select id="raporKelas" onchange="populateSantriRapor()" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-white font-medium">
+                    <option value="" disabled selected>-- Pilih Kelas Ibtidaiyah --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">2. Pilih Santri</label>
+                <select id="raporSantri" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-emerald-500 outline-none text-sm bg-white font-medium disabled:bg-gray-100" disabled>
+                    <option value="" disabled selected>-- Pilih Santri --</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button onclick="lihatRaporLangsung()" class="w-full py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm font-bold text-sm transition-all"><i class="fas fa-eye mr-1"></i> Nilai</button>
+                    <button onclick="cetakRapor()" class="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm font-bold text-sm transition-all"><i class="fas fa-print mr-1"></i> Cetak</button>
+                </div>
+                <button onclick="cetakSampulBiodata()" class="w-full py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 shadow-sm font-bold text-sm transition-all"><i class="fas fa-file-invoice mr-1"></i> Cetak Sampul & Biodata</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KERTAS RAPOR -->
+    <div id="kertasRapor" class="bg-white shadow-2xl text-black font-sans relative box-border mx-auto hidden mt-4 mb-10" style="width: 210mm; min-height: 330mm; padding: 8mm;"></div>
+
+    <script src="../config.js?v=16"></script>
+
+    <script>
+        let GLOBAL_DATA_SANTRI = [];
+
+        function showLoading(show, teks="Memproses...") { 
+            document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none'; 
+            document.getElementById('teksLoading').innerText = teks;
+        }
+
+        window.onload = async () => {
+            showLoading(true, "Memuat Database Santri...");
+            try {
+                const formData = new URLSearchParams(); 
+                formData.append('action', 'getSantri');
+                formData.append('token', sessionStorage.getItem('tokenMadasa'));
+                
+                const response = await gasFetch( { method: 'POST', body: formData });
+                const res = await response.json();
+                if(res.status === 'success') {
+                    GLOBAL_DATA_SANTRI = res.data;
+                    buatOsciKelasOtomatis();
+                } else {
+                    Swal.fire('Peringatan', res.message || 'Gagal memuat data', 'warning');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal memuat data dari server', 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        function buatOsciKelasOtomatis() {
+            const selectKelas = document.getElementById('raporKelas');
+            if (!selectKelas) return;
+            
+            const kelasUnik = [...new Set(GLOBAL_DATA_SANTRI.map(s => s.kelas))]
+                                  .filter(kelas => {
+                                      if (!kelas) return false;
+                                      let kUpper = kelas.toUpperCase();
+                                      return kUpper.includes('IBT') || kUpper.includes('MI') || kUpper.includes('SD');
+                                  })
+                                  .sort();
+
+            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas Ibtidaiyah --</option>';
+
+            let kelompok = {};
+            kelasUnik.forEach(k => {
+                let kU = k.toUpperCase();
+                let grup = 'IBTIDAIYAH';
+                if (!kelompok[grup]) kelompok[grup] = [];
+                kelompok[grup].push(k);
+            });
+
+            for (let [grupNama, daftarKelas] of Object.entries(kelompok)) {
+                let optgroup = document.createElement('optgroup');
+                optgroup.label = grupNama;
+                daftarKelas.forEach(kelas => {
+                    let option = document.createElement('option');
+                    option.value = kelas;
+                    option.textContent = kelas;
+                    optgroup.appendChild(option);
+                });
+                selectKelas.appendChild(optgroup);
+            }
+        }
+
+        function populateSantriRapor() {
+            const kelasPilih = document.getElementById('raporKelas').value;
+            const selectSantri = document.getElementById('raporSantri');
+            selectSantri.innerHTML = '<option value="" disabled selected>-- Pilih Santri --</option>';
+            const santriKelasIni = GLOBAL_DATA_SANTRI.filter(s => s.kelas === kelasPilih);
+            santriKelasIni.forEach(s => { selectSantri.innerHTML += `<option value="${s.nis}">${s.nis} - ${s.nama}</option>`; });
+            selectSantri.disabled = false;
+        }
+
+        function terbilang(angka) {
+            angka = Math.round(angka); 
+            const bilangan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            if (angka === 0) return "Nol"; 
+            if (angka < 12) return bilangan[angka]; 
+            if (angka < 20) return terbilang(angka - 10) + " Belas";
+            if (angka < 100) return terbilang(Math.floor(angka / 10)) + " Puluh " + (angka % 10 > 0 ? " " + terbilang(angka % 10) : "");
+            if (angka === 100) return "Seratus";
+            if (angka < 200) return "Seratus " + terbilang(angka - 100);
+            if (angka < 1000) return terbilang(Math.floor(angka / 100)) + " Ratus " + (angka % 100 > 0 ? " " + terbilang(angka % 100) : "");
+            if (angka === 1000) return "Seribu";
+            if (angka < 2000) return "Seribu " + terbilang(angka - 1000);
+            if (angka < 1000000) return terbilang(Math.floor(angka / 1000)) + " Ribu " + (angka % 1000 > 0 ? " " + terbilang(angka % 1000) : "");
+            return angka.toString();
+        }
+
+        function terbilangArab(angka) {
+            if (angka === 0 || isNaN(angka)) return "صفر";
+            const satuan = ["", "واحد", "إثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
+            const belasan = ["عشرة", "أحد عشر", "إثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر", "ستة عشر", "سبعة عشر", "ثمانية عشر", "تسعة عشر"];
+            const puluhan = ["", "عشرة", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"];
+            const ratusan = ["", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"];
+            const ribuan = ["", "ألف", "ألفان", "ثلاثة آلاف", "أربعة آلاف", "خمسة آلاف", "ستة آلاف", "سبعة آلاف", "ثمانية آلاف", "تسعة آلاف"];
+
+            let intAngka = Math.floor(angka);
+            if (intAngka < 10) return satuan[intAngka];
+            if (intAngka >= 10 && intAngka < 20) return belasan[intAngka - 10];
+            if (intAngka >= 20 && intAngka < 100) { let p = Math.floor(intAngka / 10); let s = intAngka % 10; if (s === 0) return puluhan[p]; return satuan[s] + " و " + puluhan[p]; }
+            if (intAngka >= 100 && intAngka < 1000) { let r = Math.floor(intAngka / 100); let sisa = intAngka % 100; if (sisa === 0) return ratusan[r]; return ratusan[r] + " و " + terbilangArab(sisa); }
+            if (intAngka >= 1000 && intAngka < 10000) { let r = Math.floor(intAngka / 1000); let sisa = intAngka % 1000; if (sisa === 0) return ribuan[r]; return ribuan[r] + " و " + terbilangArab(sisa); }
+            return angka.toString();
+        }
+
+        function predikatArab(huruf) {
+            let h = (huruf||'').toUpperCase();
+            if(h==='A') return 'ممتاز'; if(h==='B') return 'جيد'; if(h==='C') return 'كافي'; if(h==='D') return 'ناقص'; return '-';
+        }
+
+        function toArabicNumeral(str) { return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
+
+        function lihatRaporLangsung() {
+            const kelas = document.getElementById('raporKelas').value;
+            const nis = document.getElementById('raporSantri').value;
+            if(!kelas || !nis) return Swal.fire('Perhatian', 'Pilih kelas dan nama santri terlebih dahulu.', 'warning');
+
+            document.getElementById('kertasRapor').classList.add('hidden');
+            
+            showLoading(true, "Menarik Data Rapor...");
+            const fdNilai = new URLSearchParams(); fdNilai.append('action', 'getDataNilai'); fdNilai.append('kelas', kelas);
+            const fdRank = new URLSearchParams(); fdRank.append('action', 'getRankingKelas'); fdRank.append('kelas', kelas);
+            const fdSet = new URLSearchParams(); fdSet.append('action', 'getPengaturan'); fdSet.append('kelas', kelas);
+
+            Promise.all([
+                gasFetch( {method:'POST', body:fdNilai}).then(r=>r.json()),
+                gasFetch( {method:'POST', body:fdRank}).then(r=>r.json()),
+                gasFetch( {method:'POST', body:fdSet}).then(r=>r.json())
+            ]).then(([resNilai, resRank, resSet]) => {
+                showLoading(false);
+                const santriInfo = GLOBAL_DATA_SANTRI.find(x => x.nis == nis);
+                let rowNilai = null;
+                if(resNilai.status === 'success' && resNilai.data) {
+                    rowNilai = resNilai.data.slice().reverse().find(r => r[0].toString().replace(/'/g,'').trim() == nis.trim());
+                }
+                
+                if(!rowNilai) {
+                    rowNilai = Array(resNilai.headers ? resNilai.headers.length : 50).fill('');
+                }
+
+                let rank = '-';
+                let totalSantri = 0;
+                if(resRank.status === 'success' && resRank.data) {
+                    let rData = resRank.data.find(x => x.nis.toString().trim() == nis.trim());
+                    if(rData) rank = (rData.lengkap && rData.rank) ? rData.rank : '-';
+                    totalSantri = resRank.data.length;
+                }
+                
+                let pengaturan = { umum: {}, detail: {} };
+                if(resSet.status === 'success') pengaturan = resSet;
+
+                renderKertasRapor(kelas, santriInfo, resNilai.headers, rowNilai, rank, totalSantri, pengaturan);
+            }).catch(err => { showLoading(false); Swal.fire('Error', 'Gagal memuat data rapor dari server.', 'error'); });
+        }
+
+        function renderKertasRapor(kelas, info, headers, nilaiRow, rank, totalSantri, pengaturan) {
+            const kertas = document.getElementById('kertasRapor');
+            
+            let setUmum = pengaturan.umum || {};
+            let nisDicari = info.nis.toString().replace(/'/g, "").trim();
+            let setDetail = {akhlaq:'-', kerajinan:'-', disiplin:'-', rapi:'-', sakit:'-', izin:'-', alpa:'-', catatan:'-', keputusan:'-'};
+            
+            if (pengaturan.detail) {
+                for (let k in pengaturan.detail) {
+                    if (k.toString() === nisDicari || parseInt(k) === parseInt(nisDicari)) {
+                        setDetail = pengaturan.detail[k]; break;
+                    }
+                }
+            }
+
+            let kamusDinamis = {};
+            if (pengaturan.kamus) {
+                pengaturan.kamus.split(',').forEach(p => {
+                    let parts = p.split('=');
+                    if (parts.length === 2) kamusDinamis[parts[0].trim().toUpperCase()] = parts[1].trim();
+                });
+            }
+
+            document.title = `Rapor_Ibtidaiyah_${info.nama.replace(/\s+/g,"_")}`;
+
+            let idxTotal = headers.findIndex(h => String(h).trim().toLowerCase() === 'total nilai');
+            let total = (idxTotal > -1 && nilaiRow[idxTotal]) ? (parseFloat(nilaiRow[idxTotal]) || 0) : '';
+            
+            let barisIndo = ''; let barisArab = ''; 
+            
+            const katTulis = (pengaturan.mapel_tulis || "").split(',').map(s => s.trim().toUpperCase()).filter(s => s !== "");
+            const katPraktek = (pengaturan.mapel_praktek || "").split(',').map(s => s.trim().toUpperCase()).filter(s => s !== "");
+            const katMembaca = (pengaturan.mapel_baca || "").split(',').map(s => s.trim().toUpperCase()).filter(s => s !== "");
+
+            let mapelTertulis = [], mapelPraktek = [], mapelMembaca = [];
+
+            function getScore(mapelName) {
+                let upper = String(mapelName).toUpperCase();
+                for(let i=5; i<headers.length; i++) {
+                    if(String(headers[i]).toUpperCase() === upper) {
+                        return { nilai: parseFloat(nilaiRow[i]), found: true };
+                    }
+                }
+                return { nilai: '', found: false };
+            }
+
+            katTulis.forEach(m => {
+                let sc = getScore(m);
+                mapelTertulis.push({ nama: m, nilai: isNaN(sc.nilai) ? '' : sc.nilai });
+            });
+            while(mapelTertulis.length < 14) mapelTertulis.push({nama: '', nilai: ''}); 
+
+            katPraktek.forEach(m => {
+                let sc = getScore(m);
+                mapelPraktek.push({ nama: m, nilai: isNaN(sc.nilai) ? '' : sc.nilai });
+            });
+            while(mapelPraktek.length < 4) mapelPraktek.push({nama: '', nilai: ''}); 
+
+            katMembaca.forEach(m => {
+                let sc = getScore(m);
+                mapelMembaca.push({ nama: m, nilai: isNaN(sc.nilai) ? '' : sc.nilai });
+            });
+            while(mapelMembaca.length < 2) mapelMembaca.push({nama: '', nilai: ''}); 
+
+            function buildRow(no, item) {
+                let nama = item && item.nama ? item.nama : '';
+                let nilai = item && item.nilai !== '' && !isNaN(item.nilai) ? item.nilai : '';
+                let hIndo = nilai !== '' ? terbilang(nilai) : '';
+                let hArab = nilai !== '' ? terbilangArab(nilai) : '';
+                
+                // 100% MURNI DARI DATABASE/SETTINGS
+                let mArab = nama !== '' ? (kamusDinamis[nama.toUpperCase()] || nama) : '';
+                let numStr = nilai !== '' ? toArabicNumeral(nilai) : '';
+
+                barisIndo += `<tr style="height: 23.5px;">
+                    <td class="border border-black p-0 text-center text-[11px]">${nama ? no : '&nbsp;'}</td>
+                    <td class="border border-black px-1.5 font-semibold text-[11px]">${nama}</td>
+                    <td class="border border-black text-center font-bold text-[11px]">${nilai}</td>
+                   <td class="border border-black px-1.5 text-[9px] uppercase leading-tight whitespace-nowrap tracking-tighter">${hIndo}</td>
+                </tr>`;
+                
+                    barisArab += `<tr style="height: 23.5px;">
+                    <td class="border border-black p-0 text-center text-[14px] leading-none" style="font-family: 'Traditional Arabic', serif;">${nama ? toArabicNumeral(no) : '&nbsp;'}</td>
+                    <td class="border border-black px-2 text-right font-bold text-[14px] leading-none" style="font-family: 'Traditional Arabic', serif;">${mArab}</td>
+                    <td class="border border-black p-0 text-center text-[11px]">${numStr}</td>
+                    <td class="border border-black px-2 text-right text-[14px] font-bold leading-none" style="font-family: 'Traditional Arabic', serif;">${hArab}</td>
+                </tr>`;
+            }
+
+            function buildHeader(abjadIndo, judulIndo, abjadArab, judulArab) {
+                barisIndo += `<tr class="font-bold bg-gray-50" style="height: 24px;"><td class="border border-black text-center text-[11px] p-0">${abjadIndo}</td><td class="border border-black px-1.5 text-[11px] py-0" colspan="3">${judulIndo}</td></tr>`;
+                barisArab += `<tr class="font-bold bg-gray-50" style="height: 24px;"><td class="border border-black text-center text-[14px] p-0 leading-none" style="font-family: 'Traditional Arabic', serif;">${abjadArab}</td><td class="border border-black px-2 text-right text-[13px] py-0 leading-none" colspan="3" style="font-family: 'Traditional Arabic', serif;">${judulArab}</td></tr>`;
+            }
+
+            buildHeader('A', 'Tertulis', 'أ', 'تحريري');
+            mapelTertulis.forEach((m, i) => buildRow(i + 1, m));
+            
+            buildHeader('B', 'Praktek', 'ب', 'عملي');
+            mapelPraktek.forEach((m, i) => buildRow(i + 1, m));
+            
+            buildHeader('C', 'Membaca', 'ت', 'قراءة');
+            mapelMembaca.forEach((m, i) => buildRow(i + 1, m));
+
+            let isGenap = (setUmum.semester || '').toLowerCase().includes('genap');
+            let teksKeputusan = isGenap 
+                ? `Berdasarkan hasil yang dicapai pada Semester 1 & 2 Santri,<br>maka dinyatakan :<br><span class="font-bold">${setDetail.keputusan || `Naik Kelas`}</span>`
+                : `<div class="text-center mt-3 text-gray-500 font-normal italic">- Hanya diisi pada akhir tahun pelajaran (Genap) -</div>`;
+            
+            kertas.innerHTML = `
+                <div class="flex items-center justify-between pb-1 border-b-[3px] border-black">
+                    <div class="w-20"><img src="../asset/logo.png" class="h-16 w-16 object-contain" alt="Logo Madrasah"></div>
+                    <div class="flex-1 text-center">
+                        <h1 class="text-[32px] font-bold leading-none mb-0" style="font-family: 'Traditional Arabic', serif; color: #000;">مدرسة دينية دار السلام</h1>
+                        <h2 class="text-[14px] font-black uppercase tracking-widest text-black mt-1 mb-0">MADRASAH  DINIYAH DARUSSALAM</h2>
+                        <p class="text-[10px] font-bold text-black uppercase tracking-widest leading-tight mb-0.5">Bhetoran Batukessel Bandang Laok Kokop Bangkalan</p>
+                        <p class="text-[9px] text-gray-800 font-medium leading-tight">E-mail: madasaponpes@gmail.com | Website: www.madasa.ponpes.id</p>
+                    </div>
+                    <div class="w-20"></div>
+                </div>
+                <div class="w-full border-b border-black mb-3 mt-[1px]"></div>
+                
+                <h2 class="text-center text-[12px] font-bold uppercase mb-3 tracking-wider text-black underline underline-offset-2">LAPORAN HASIL BELAJAR SANTRI</h2>
+                
+                <div class="flex justify-between items-start mb-2 text-[11px] font-bold text-black">
+                    <div class="w-[49.3%]">
+                        <table class="w-full no-border">
+                            <tr><td class="w-24 py-0.5">Nama Santri</td><td class="w-2 py-0.5">:</td><td class="py-0.5 uppercase">${info.nama}</td></tr>
+                            <tr><td class="py-0.5">No. Induk</td><td class="py-0.5">:</td><td class="py-0.5">${info.nis}</td></tr>
+                            <tr><td class="py-0.5">Alamat</td><td class="py-0.5">:</td><td class="py-0.5 truncate">${info.alamat || '-'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="w-[49.3%]">
+                        <table class="w-full no-border">
+                            <tr><td class="w-28 py-0.5">Kelas</td><td class="w-2 py-0.5">:</td><td class="py-0.5">${kelas}</td></tr>
+                            <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">${setUmum.semester || '-'}</td></tr>
+                            <tr><td class="py-0.5">Tahun Pelajaran</td><td class="py-0.5">:</td><td class="py-0.5">${setUmum.tahun || '-'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+               <div class="flex justify-between items-stretch mb-2 text-black w-full">
+                    <div class="w-[49.3%]">
+                        <table class="w-full h-full text-left border-collapse border border-black text-[10px]" style="table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 7%;">  <col style="width: 43%;"> <col style="width: 14%;"> <col style="width: 36%;"> 
+                            </colgroup>
+                            <thead>
+                                <tr style="height: 24px;">
+                                    <th width="50%" colspan="2" rowspan="2" class="border border-black text-center align-middle text-[11px] p-0">Mata Pelajaran</th>
+                                    <th width="50%" colspan="2" class="border border-black text-center align-middle text-[11px] p-0">Hasil Tes</th>
+                                </tr>
+                                <tr style="height: 24px;">
+                                    <th width="14%" class="border border-black text-center align-middle text-[11px] p-0">Angka</th>
+                                    <th width="36%" class="border border-black text-center align-middle text-[11px] p-0">Huruf</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${barisIndo}
+                                <tr style="height: 36px;" class="font-bold border-t border-black">
+                                    <td colspan="2" class="border border-black px-1.5 uppercase text-[11px]">JUMLAH</td>
+                                    <td class="border border-black p-0 text-center text-[11px]">${total}</td>
+                                    <td class="border border-black p-0 text-[8px] uppercase align-middle">
+                                        <div style="height: 36px; padding: 0 6px;" class="flex items-center justify-start whitespace-normal leading-tight overflow-hidden">${total !== '' ? terbilang(total) : ''}</div>
+                                    </td>
+                                </tr>
+                                <tr style="height: 24px;" class="font-bold">
+                                    <td colspan="2" class="border border-black px-1.5 uppercase border-b border-black text-[11px]">RANGKING</td>
+                                    <td colspan="2" class="border border-black p-0 text-center border-b border-black text-[11px]">${rank}${totalSantri > 0 ? ' dari ' + totalSantri + ' Santri' : ''}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="w-[49.3%]">
+                        <table class="w-full h-full text-right border-collapse border border-black text-[10px]" dir="rtl" style="table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 7%;">  <col style="width: 43%;"> <col style="width: 14%;"> <col style="width: 36%;"> 
+                            </colgroup>
+                            <thead>
+                                <tr style="height: 24px;">
+                                    <th width="50%" colspan="2" rowspan="2" class="border border-black text-center align-middle font-bold text-[14px] leading-none p-0" style="font-family: 'Traditional Arabic', serif;">المواد الدراسية</th>
+                                    <th width="50%" colspan="2" class="border border-black text-center align-middle font-bold text-[14px] leading-none p-0" style="font-family: 'Traditional Arabic', serif;">الدرجات العملية</th>
+                                </tr>
+                                <tr style="height: 24px;">
+                                    <th width="14%" class="border border-black text-center align-middle font-bold text-[14px] leading-none p-0" style="font-family: 'Traditional Arabic', serif;">رقما</th>
+                                    <th width="36%" class="border border-black text-center align-middle font-bold text-[14px] leading-none p-0" style="font-family: 'Traditional Arabic', serif;">كتابة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${barisArab}
+                               <tr style="height: 36px;" class="font-bold border-t border-black">
+                                    <td colspan="2" class="border border-black px-2 text-right text-[14px] leading-none" style="font-family: 'Traditional Arabic', serif;">الجملة</td>
+                                    <td class="border border-black p-0 text-center text-[11px]">${toArabicNumeral(total)}</td>
+                                    <td class="border border-black p-0 align-middle text-[14px]" style="font-family: 'Traditional Arabic', serif;">
+                                        <div style="height: 36px; padding: 0 8px;" class="flex items-center justify-start whitespace-normal leading-tight overflow-hidden">${total !== '' ? terbilangArab(total) : ''}</div>
+                                    </td>
+                                </tr>
+                                <tr style="height: 24px;" class="font-bold">
+                                    <td colspan="2" class="border border-black px-2 text-right text-[14px] border-b border-black leading-none" style="font-family: 'Traditional Arabic', serif;">الدرجة</td>
+                                    <td colspan="2" class="border border-black p-0 text-center border-b border-black text-[11px]">${toArabicNumeral(rank === '-' ? '-' : rank)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-stretch mb-2 text-black w-full">
+                    <div class="w-[49.3%]">
+                        <table class="w-full h-full border-collapse border border-black text-[10px]" style="table-layout: fixed;">
+                            <colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup>
+                            <thead>
+                                <tr class="font-bold border-b border-black">
+                                    <th class="border border-black text-center py-0.5 text-[11px]">KEPRIBADIAN</th>
+                                    <th class="border border-black text-center py-0.5 text-[14px] leading-none" style="font-family: 'Traditional Arabic', serif;">أحوال الطالب</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-bold uppercase text-[11px]">
+                               <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-20 text-left">Akhlaq</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.akhlaq || '-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">أخلاق</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${predikatArab(setDetail.akhlaq)}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-20 text-left">Kerajinan</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.kerajinan || '-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">مواظبة</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${predikatArab(setDetail.kerajinan)}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-20 text-left">Kedisiplinan</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.disiplin || '-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">انضباط</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${predikatArab(setDetail.disiplin)}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-20 text-left">Kerapihan</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.rapi || '-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">نظافة</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${predikatArab(setDetail.rapi)}</span></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="w-[49.3%]">
+                        <table class="w-full h-full border-collapse border border-black text-[10px]" style="table-layout: fixed;">
+                            <colgroup><col style="width: 50%;"><col style="width: 50%;"></colgroup>
+                            <thead>
+                                <tr class="font-bold border-b border-black">
+                                    <th class="border border-black text-center py-0.5 text-[11px]">Absensi</th>
+                                    <th class="border border-black text-center py-0.5 text-[14px] leading-none" style="font-family: 'Traditional Arabic', serif;">كشف الغياب</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-bold uppercase text-[11px]">
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-12 text-left">Sakit</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.sakit||'-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">مرض</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${toArabicNumeral(setDetail.sakit||'-')}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-12 text-left">Izin</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.izin||'-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">إذن</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${toArabicNumeral(setDetail.izin||'-')}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-12 text-left">Alpa</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${setDetail.alpa||'-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">غياب</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${toArabicNumeral(setDetail.alpa||'-')}</span></div></td>
+                                </tr>
+                                <tr style="height: 20px;">
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center"><span class="w-12 text-left">Jumlah</span><span class="w-2 text-center">:</span><span class="flex-1 text-center">${(parseInt(setDetail.sakit)||0)+(parseInt(setDetail.izin)||0)+(parseInt(setDetail.alpa)||0) || '-'}</span></div></td>
+                                    <td class="border border-black px-1.5 align-middle"><div class="flex items-center" dir="rtl" style="font-family: 'Traditional Arabic', serif;"><span class="w-16 text-right text-[13px] leading-none">الجملة</span><span class="w-2 text-center text-[11px]">:</span><span class="flex-1 text-center text-[13px] leading-none">${toArabicNumeral((parseInt(setDetail.sakit)||0)+(parseInt(setDetail.izin)||0)+(parseInt(setDetail.alpa)||0) || '-')}</span></div></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-stretch mb-4 text-[10px] text-black w-full">
+                    <div class="w-[49.3%] border border-black flex flex-col min-h-[60px]">
+                        <div class="text-center font-bold border-b border-black py-1 text-[11px]">CATATAN GURU</div>
+                        <div class="p-1 italic flex-1 flex items-center justify-center text-center w-full"><span>${setDetail.catatan || '-'}</span></div>
+                    </div>
+                    
+                    <div class="w-[49.3%] border border-black flex flex-col min-h-[60px]">
+                        <div class="text-center font-bold border-b border-black py-1 text-[11px]">KEPUTUSAN</div>
+                        <div class="p-1.5 flex-1 leading-tight flex items-center justify-start text-left w-full"><div>${teksKeputusan}</div></div>
+                    </div>
+                </div>
+
+<div class="flex justify-between text-center font-bold text-black mt-5 text-[11px] relative z-10">
+                    <div class="w-1/3 flex flex-col justify-between items-center" style="height: 95px;">
+                        <div class="w-full relative z-10"><p class="font-normal mb-0.5">&nbsp;</p><p>Orang Tua/Wali</p></div>
+                        <div class="w-full relative z-10"><div class="border-b border-black inline-block min-w-[180px] pb-0.5 whitespace-nowrap">&nbsp;</div></div>
+                    </div>
+                    
+                    <div class="w-1/3 flex flex-col justify-between items-center relative" style="height: 95px;">
+                        <div class="w-full relative z-10"><p class="font-normal mb-0.5">&nbsp;</p><p>Guru Wali Kelas</p></div>
+                        
+                        <div class="absolute inset-0 flex items-center justify-center z-30 pt-4 pointer-events-none">
+                            <img src="${setUmum.url_wali || ''}" class="h-20 max-w-[180px] object-contain relative z-20 ${setUmum.url_wali ? '' : 'hidden'}" alt="TTD Wali">
+                        </div>
+                        
+                        <div class="w-full relative z-10"><div class="border-b border-black inline-block min-w-[180px] pb-0.5 uppercase whitespace-nowrap">${setUmum.wali || '&nbsp;'}</div></div>
+                    </div>
+                    
+                    <div class="w-1/3 flex flex-col justify-between items-center relative" style="height: 95px;">
+                        <div class="w-full relative z-10"><p class="font-normal mb-0.5">${setUmum.tanggal || 'Bangkalan, ........................'}</p><p>Kepala Madrasah</p></div>
+                        
+                        <div class="absolute inset-0 flex items-center justify-center z-30 pt-4 pointer-events-none">
+                            <img src="${setUmum.url_kepala || ''}" class="relative z-20 h-20 max-w-[180px] object-contain ${setUmum.url_kepala ? '' : 'hidden'}" alt="TTD Kepala">
+                            <img src="${setUmum.url_stempel || ''}" class="absolute z-30 h-24 max-w-[180px] object-contain -ml-8 mt-2 ${setUmum.url_stempel ? '' : 'hidden'}" alt="Stempel">
+                        </div>
+                        
+                        <div class="w-full relative z-10"><div class="border-b border-black inline-block min-w-[180px] pb-0.5 uppercase whitespace-nowrap">${setUmum.kepala || '&nbsp;'}</div></div>
+                    </div>
+                </div>
+            `;
+            
+            kertas.classList.remove('hidden');
+        }
+
+        function cetakRapor() { 
+            const kertas = document.getElementById('kertasRapor');
+            if(!kertas || kertas.innerHTML.trim() === '') {
+                return Swal.fire('Perhatian', 'Silakan klik tombol "Nilai" terlebih dahulu sebelum mencetak.', 'warning');
+            }
+            
+            const nis = document.getElementById('raporSantri').value;
+            const santriInfo = GLOBAL_DATA_SANTRI.find(x => x.nis == nis);
+            const nama = santriInfo ? santriInfo.nama : 'Santri';
+
+            const judulAsli = document.title;
+            document.title = "Rapor_Ibtidaiyah_" + nis + "_" + nama.replace(/\s+/g,"_");
+
+            setTimeout(() => {
+                window.print();
+                document.title = judulAsli;
+            }, 500);
+        }
+        
+        function cetakSampulBiodata() {
+            const nis = document.getElementById('raporSantri').value;
+            const kelasLengkap = document.getElementById('raporKelas').value;
+            
+            if(!nis || !kelasLengkap) return Swal.fire('Perhatian', 'Pilih kelas dan nama santri terlebih dahulu.', 'warning');
+
+            const santriInfo = GLOBAL_DATA_SANTRI.find(x => x.nis == nis);
+            if(!santriInfo) return Swal.fire('Error', 'Data santri tidak ditemukan.', 'error');
+
+            showLoading(true, "Menarik Data Pengaturan...");
+            
+            const fdSet = new URLSearchParams(); 
+            fdSet.append('action', 'getPengaturan'); 
+            fdSet.append('kelas', kelasLengkap);
+            
+            const tokenTersimpan = sessionStorage.getItem('tokenMadasa');
+            if (tokenTersimpan) fdSet.append('token', tokenTersimpan);
+
+            gasFetch( { method: 'POST', body: fdSet })
+                .then(r => r.json())
+                .then(resSet => {
+                    showLoading(false);
+                    
+                    let setUmum = {};
+                    if(resSet.status === 'success') {
+                        setUmum = resSet.umum || {};
+                    }
+
+                    const bersihkanTeks = (teks) => {
+                        if (!teks) return '-';
+                        return teks.toString().replace(/\uFFFD/g, "'").replace(/[’‘`]/g, "'");
+                    };
+
+                    const namaB = bersihkanTeks(santriInfo.nama);
+                    const ayahB = bersihkanTeks(santriInfo.ayah);
+                    const ibuB  = bersihkanTeks(santriInfo.ibu);
+                    const almtB = bersihkanTeks(santriInfo.alamat);
+
+                    const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+                    const tanggalCetakDefault = new Date().toLocaleDateString('id-ID', opsiTanggal);
+                    
+                    const tanggalTampil = setUmum.tanggal || ('Bangkalan, ' + tanggalCetakDefault);
+                    const namaKepala = setUmum.kepala || '..............................';
+                    const urlKepala = '../asset/ttdibt.PNG';
+                    const urlStempel = '../asset/stempelibt.png';
+
+                    const kertas = document.getElementById('kertasRapor');
+                    kertas.classList.remove('hidden');
+                    
+                    kertas.innerHTML = `
+                        <!-- SAMPUL IBTIDAIYAH -->
+                        <div class="flex flex-col justify-center items-center text-center" style="height: 270mm; page-break-after: always; box-sizing: border-box; padding: 20px;">
+                            <img src="../asset/logo.png" class="w-48 h-48 object-contain mb-8" alt="Logo">
+                            <h1 class="text-3xl font-black uppercase tracking-widest mb-1 text-emerald-800">Buku Laporan Penilaian</h1>
+                           <h2 class="text-2xl font-bold uppercase tracking-widest text-black mb-2">Hasil Belajar Santri</h2>
+                            <div class="w-3/4 border-b-2 border-emerald-800 mb-12"></div>
+                            <h1 class="text-[40px] font-bold leading-none mb-2 text-emerald-800" style="font-family: 'Traditional Arabic', serif;">مدرسة دينية دار السلام</h1>
+                            <h2 class="text-xl font-black uppercase tracking-widest text-black mb-1">MADRASAH DINIYAH DARUSSALAM</h2>
+                            <p class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-12">Bhetoran Batukessel Bandang Laok Kokop Bangkalan</p>
+                            
+                            <div class="w-3/4 border-2 border-emerald-800 p-6 rounded-lg bg-white relative mt-4">
+                                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-4 text-xs font-bold uppercase tracking-wider text-emerald-800">Nama Santri</div>
+                                <h3 class="text-2xl font-black uppercase tracking-widest text-black mb-3">${namaB}</h3>
+                                <div class="flex justify-center items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-700">
+                                    <span>NIS / NISN :</span>
+                                    <span class="border-b border-black border-dashed px-4 text-black">${santriInfo.nis || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BIODATA IBTIDAIYAH -->
+                        <div class="flex flex-col" style="font-family: 'Times New Roman', Times, serif; padding: 5mm 10mm; color: #000; min-height: 270mm; position: relative; box-sizing: border-box;">
+                            
+                            <style>
+                                #tabelBiodata td { padding: 6px 0; }
+                            </style>
+
+                            <div class="text-center mb-8 shrink-0">
+                                <img src="../asset/logo.png" class="w-20 h-20 object-contain mx-auto mb-4" alt="Logo">
+                                <h2 class="text-[16px] font-bold uppercase tracking-wider m-0 text-emerald-800">LAPORAN HASIL BELAJAR SANTRI</h2>
+                                <h1 class="text-[18px] font-bold uppercase tracking-widest m-0">MADRASAH DINIYAH DARUSSALAM</h1>
+                            </div>
+
+                            <div class="text-[14px] font-bold underline mb-4 tracking-wide text-emerald-800 shrink-0">IDENTITAS SANTRI</div>
+
+                            <table id="tabelBiodata" class="w-full text-[13px] leading-relaxed no-border shrink-0" style="border: none !important;">
+                                <tr style="border:none;"><td class="w-[4%] align-top" style="border:none;">1.</td><td class="w-[38%] align-top" style="border:none;">Nama Lengkap</td><td class="w-[2%] align-top" style="border:none;">:</td><td class="align-top uppercase font-bold" style="border:none;">${namaB}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">2.</td><td class="align-top" style="border:none;">Nomor Induk Santri</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">${santriInfo.nis || '-'}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">3.</td><td class="align-top" style="border:none;">Jenis Kelamin</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${santriInfo.jk || '-'}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">4.</td><td class="align-top" style="border:none;">Tempat Tanggal Lahir</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${santriInfo.ttl || '-'}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">5.</td><td class="align-top" style="border:none;">Agama</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Islam</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">6.</td><td class="align-top" style="border:none;">Alamat Santri</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${almtB}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">7.</td><td class="align-top" style="border:none;">Madrasah</td><td class="align-top" style="border:none;"></td><td class="align-top" style="border:none;"></td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">a. Nama Madrasah</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Madrasah Darussalam</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">b. Alamat Madrasah</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Bhetoran Batukessel Bandang Laok</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">c. Kecamatan</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Kokop</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">d. Kabupaten</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Bangkalan</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">8.</td><td class="align-top" style="border:none;">Nama Orang Tua</td><td class="align-top" style="border:none;"></td><td class="align-top" style="border:none;"></td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">a. Ayah</td><td class="align-top" style="border:none;">:</td><td class="align-top uppercase" style="border:none;">${ayahB}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;"></td><td class="align-top pl-4" style="border:none;">b. Ibu</td><td class="align-top" style="border:none;">:</td><td class="align-top uppercase" style="border:none;">${ibuB}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">9.</td><td class="align-top" style="border:none;">Alamat Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top capitalize" style="border:none;">${almtB}</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">10.</td><td class="align-top" style="border:none;">Agama Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Islam</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">11.</td><td class="align-top" style="border:none;">Pekerjaan Orang Tua</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">12.</td><td class="align-top" style="border:none;">Nama Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">13.</td><td class="align-top" style="border:none;">Alamat Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">14.</td><td class="align-top" style="border:none;">Nomor Telepon</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">15.</td><td class="align-top" style="border:none;">Agama Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">Islam</td></tr>
+                                <tr style="border:none;"><td class="align-top" style="border:none;">16.</td><td class="align-top" style="border:none;">Pekerjaan Wali</td><td class="align-top" style="border:none;">:</td><td class="align-top" style="border:none;">............................................................</td></tr>
+                            </table>
+
+                            <div class="flex justify-between items-end px-4 mt-11 pb-4">
+                                <div class="w-[3cm] h-[4cm] border-2 border-emerald-800 flex flex-col items-center justify-center text-center relative z-10 bg-white">
+                                    <span class="text-[11px] text-emerald-800">Pas Photo</span><br>
+                                    <span class="text-[11px] font-bold text-emerald-800">3 x 4</span>
+                                </div>
+                                
+                                <div class="text-center w-[250px] relative">
+                                    <div class="relative z-10">
+                                        <p class="m-0 text-[13px] mb-1">${tanggalTampil}</p>
+                                        <p class="m-0 text-[13px] font-bold mb-1">Kepala Madrasah</p>
+                                    </div>
+                                    
+                                    <div class="relative flex justify-center items-center h-[75px] w-full my-1 pointer-events-none z-30">
+                                        <img src="${urlKepala}" class="relative h-20 z-20 ${urlKepala ? '' : 'hidden'}" alt="TTD Kepala">
+                                        <img src="${urlStempel}" class="absolute h-24 -ml-16 z-30 ${urlStempel ? '' : 'hidden'}" alt="Stempel">
+                                    </div>
+
+                                    <div class="relative z-10">
+                                        <p class="m-0 text-[14px] font-bold underline tracking-wide uppercase">${namaKepala}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    const judulAsli = document.title;
+                    document.title = "Biodata_Ibtidaiyah_" + santriInfo.nis + "_" + namaB;
+
+                    setTimeout(() => {
+                        window.print();
+                        document.title = judulAsli;
+                    }, 500);
+                    
+                }).catch(err => {
+                    showLoading(false);
+                    Swal.fire('Error', 'Gagal memuat pengaturan dari server.', 'error');
+                });
+        }
+    </script>
+</body>
+</html>

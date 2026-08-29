@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Barcode - Madrasah Darussalam</title>
+	
+    <link rel="icon" type="image/png" href="../asset/logoweb.png">
+    <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    
+    <link rel="manifest" href="../manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <script>
+        tailwind.config = { theme: { extend: { colors: { emerald: { 600: '#059669', 700: '#047857', 800: '#065f46' } }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+    
+<style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+
+        /* DESAIN CUSTOM DROPDOWN KELAS */
+        .custom-option-group {
+            font-weight: 700;
+            color: #047857;
+            background-color: #f1f5f9;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: default;
+        }
+        .custom-option-group:not(:first-child) {
+            border-top: 1px dashed #cbd5e1;
+        }
+        .custom-option-item {
+            padding: 10px 12px 10px 24px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8fafc;
+            transition: all 0.2s ease;
+        }
+        .custom-option-item:hover {
+            background-color: #ecfdf5;
+            color: #059669;
+            padding-left: 28px;
+        }
+        /* Custom scrollbar tipis */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+    </style>
+	
+</head>
+<body class="text-gray-800 p-4 sm:p-8">
+
+    <!-- LAYAR LOADING -->
+    <div id="loadingScreen" class="fixed inset-0 z-[99] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm hidden px-6">
+        <div class="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 border-emerald-600 mb-3 sm:mb-4"></div>
+        <h2 id="teksLoading" class="text-sm sm:text-xl font-bold text-gray-800 font-heading text-center w-full max-w-xs sm:max-w-md leading-relaxed">Memuat Data...</h2>
+    </div>
+
+    <div class="max-w-5xl mx-auto">
+        <!-- HEADER -->
+        <div class="bg-white p-3 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between gap-3 mb-5 sm:mb-6">
+            <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                <div class="w-10 h-10 sm:w-14 sm:h-14 bg-emerald-50 rounded-full flex items-center justify-center shrink-0 border border-emerald-100 overflow-hidden p-1">
+                    <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-mosque text-xl sm:text-2xl text-emerald-600 hidden"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-base sm:text-xl font-heading font-bold text-gray-800 truncate leading-tight">Absensi Digital</h1>
+                    <p class="text-[10px] sm:text-sm text-gray-500 mt-0.5 truncate flex items-center gap-2">
+                        Madrasah Diniyah Darussalam
+                        <span id="badgeStatus" class="px-2 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-600"><i class="fas fa-sync fa-spin"></i> Cek Status...</span>
+                    </p>
+                </div>
+            </div>
+            <button onclick="window.location.href='../index.html'" class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center bg-gray-100 text-gray-600 rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-all shadow-sm" title="Kembali ke Beranda">
+                <i class="fas fa-arrow-left sm:text-lg"></i>
+            </button>
+        </div>
+
+        <!-- 2 TAB MENU -->
+        <div class="grid grid-cols-2 gap-1 sm:gap-2 mb-6 bg-white p-1.5 sm:p-2 rounded-2xl shadow-sm border border-gray-100">
+            <button onclick="switchTab('scan')" id="tabScan" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 bg-emerald-600 text-white rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm">
+                <i class="fas fa-qrcode text-lg sm:text-base"></i> <span>Scanner</span>
+            </button>
+            <button onclick="switchTab('manual')" id="tabManual" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+                <i class="fas fa-list-check text-lg sm:text-base"></i> <span>Manual</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- AREA 1: SCANNER -->
+    <div id="areaScan" class="max-w-md mx-auto">
+        <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
+            <p class="text-sm text-gray-500 mb-3 font-medium">Arahkan kamera ke Barcode ID Card Santri</p>
+            
+            <!-- Notifikasi Scan Sukses -->
+            <div id="scanResult" class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl hidden shadow-sm transition-all">
+                <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
+                <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">Berhasil Discan</div>
+                <div id="namaTerscan" class="text-gray-800 text-lg font-black uppercase mt-1 leading-tight"></div>
+                <div id="nisTerscan" class="text-emerald-700 text-sm font-bold tracking-widest mt-1"></div>
+            </div>
+
+            <!-- Kamera -->
+            <div id="reader" class="w-full rounded-2xl overflow-hidden border border-gray-200"></div>
+        </div>
+    </div>
+
+    <!-- AREA 2: MANUAL -->
+    <div id="areaManual" class="max-w-5xl mx-auto hidden">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            
+             <div class="mb-5 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 relative z-20" id="customSelectWrapper">
+                <label class="block text-sm font-bold text-emerald-800 mb-2">Pilih Kelas:</label>
+                
+                <!-- Tampilan Kotak Custom -->
+                <div id="customSelectDisplay" class="w-full p-3.5 border border-emerald-200 rounded-xl bg-white text-gray-700 text-sm font-bold flex justify-between items-center cursor-pointer hover:border-emerald-400 transition-all shadow-sm">
+                    <span id="customSelectText">-- Silakan Pilih Kelas --</span>
+                    <i class="fas fa-chevron-down text-emerald-600 transition-transform duration-300" id="customSelectIcon"></i>
+                </div>
+                
+                <!-- Input Tersembunyi untuk Data Absensi -->
+                <input type="hidden" id="filterKelasManual" value="">
+
+                <!-- Daftar Pilihan Custom -->
+                <ul id="customSelectList" class="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden custom-scrollbar" style="width: calc(100% - 2rem);">
+                    <!-- Opsi Kelas akan muncul di sini -->
+                </ul>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm w-full">
+                <table class="w-full text-left border-collapse min-w-[500px]">
+                    <thead class="bg-gray-50 text-gray-500 text-[10px] sm:text-xs uppercase border-b border-gray-100">
+                        <tr>
+                            <th class="p-3 text-center border-r border-gray-100 w-10">No</th>
+                            <th class="p-3 border-r border-gray-100">Nama Santri</th>
+                            <th class="p-3 text-center border-r border-gray-100 w-40">Status</th>
+                            <th class="p-3 text-center w-32">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTabelManual" class="text-sm divide-y divide-gray-50 bg-white">
+                        <tr><td colspan="4" class="p-8 text-center text-gray-400">Silakan pilih kelas terlebih dahulu.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- KONFIGURASI BACKEND -->
+    <script src="../config.js?v=16"></script>
+    <script>
+        const beepSound = new Audio('../asset/notif.mp3');
+        
+        let DATA_SANTRI = [];
+        let html5QrcodeScanner;
+        let isScanning = false;
+
+        let JAM_BUKA = 0; 
+        let JAM_TUTUP = 24; 
+        let STATUS_SISTEM = 'Buka';
+
+        function showLoading(show, teks="Memproses...") { 
+            document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none'; 
+            document.getElementById('teksLoading').innerText = teks;
+        }
+
+        window.onload = () => {
+            showLoading(true, "Mempersiapkan Scanner...");
+            cekStatusSistemLaluAmbilDataSantri();
+        }
+
+        function cekStatusSistemLaluAmbilDataSantri() {
+            const fdStatus = new URLSearchParams();
+            fdStatus.append('action', 'getStatusAbsen');
+            fdStatus.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fdStatus })
+            .then(r=>r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    STATUS_SISTEM = res.status_absen;
+                    if(res.jam_buka !== undefined) JAM_BUKA = parseInt(res.jam_buka);
+                    if(res.jam_tutup !== undefined) JAM_TUTUP = parseInt(res.jam_tutup);
+                    renderBadgeStatus(STATUS_SISTEM);
+                }
+                ambilDataSantri();
+            })
+            .catch(e => {
+                console.log('Gagal ambil status:', e);
+                ambilDataSantri();
+            });
+        }
+
+        function ambilDataSantri() {
+            const formData = new URLSearchParams(); 
+            formData.append('action', 'getSantri');
+            formData.append('token', sessionStorage.getItem('tokenMadasa'));
+            
+            gasFetch( { method: 'POST', body: formData })
+            .then(r => r.json()) 
+            .then(res => {
+                showLoading(false);
+                if(res.status === 'success') {
+                    DATA_SANTRI = res.data;
+                    mulaiScanner(); 
+                    
+                    // --- PANGGIL FUNGSI PEMBUAT DROPDOWN KELAS OTOMATIS & BERURUTAN ---
+                    buatOpsiKelasDinamisAbsensi();
+                } else {
+                    Swal.fire('Peringatan', 'Data santri kosong.', 'warning');
+                }
+            })
+            .catch(e => { 
+                showLoading(false); 
+                Swal.fire('Error Koneksi', 'Gagal memuat data santri. Pastikan internet stabil.', 'error'); 
+            });
+        }
+
+// ==========================================================
+// FUNGSI MEMBUAT OPSI KELAS OTOMATIS (CUSTOM SELECT)
+// ==========================================================
+function buatOpsiKelasDinamisAbsensi() {
+    const listEl = document.getElementById('customSelectList');
+    if (!listEl) return;
+
+    // 1. Ambil seluruh nama kelas unik dari data santri dan urutkan
+    // MODIFIKASI: Sembunyikan yang mengandung lulus, alumni, atau diberhentikan
+    const kelasUnik = [...new Set(DATA_SANTRI.map(s => s.kelas))]
+        .filter(k => k && !k.toLowerCase().includes('lulus') && !k.toLowerCase().includes('alumni') && !k.toLowerCase().includes('diberhentikan'))
+        .sort();
+
+    // 2. Tentukan bobot urutan jenjang pendidikan
+    let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
+
+            // 3. Kelompokkan secara otomatis berdasarkan kata kunci nama kelas
+            let kelompokKelas = {};
+            kelasUnik.forEach(k => {
+                let kUpper = k.toUpperCase();
+                let kategori = "LAINNYA";
+
+                if (kUpper.includes('TK') || kUpper.includes('RA')) kategori = "TK / RA";
+                else if (kUpper.includes('IBT') || kUpper.includes('IBTIDAIYAH')) kategori = "IBTIDAIYAH";
+                else if (kUpper.includes('SANA') || kUpper.includes('SANAWIYAH') || kUpper.includes('MTS')) kategori = "SANAWIYAH";
+                else if (kUpper.includes('ALIYAH') || kUpper.includes('MA')) kategori = "ALIYAH";
+                else kategori = k.split(/[\s-]+/)[0].toUpperCase();
+
+                if (!kelompokKelas[kategori]) kelompokKelas[kategori] = [];
+                kelompokKelas[kategori].push(k);
+            });
+
+            // Urutkan kategori berdasarkan bobot jenjang dari TK ke Aliyah
+            let kategoriUrut = Object.keys(kelompokKelas).sort((a, b) => (bobotJenjang[a] || 99) - (bobotJenjang[b] || 99));
+
+            // 4. Susun elemen HTML <li> sesuai urutan baru
+            let htmlList = `<li class="custom-option-item text-gray-400 text-center !pl-3" onclick="pilihKelasCustom('', '-- Silakan Pilih Kelas --')">-- Reset Pilihan --</li>`;
+            
+            kategoriUrut.forEach(kategori => {
+                htmlList += `<li class="custom-option-group"><i class="fas fa-layer-group mr-2 opacity-50"></i>${kategori}</li>`;
+                kelompokKelas[kategori].forEach(kelas => {
+                    let safeKelas = kelas.replace(/'/g, "\\'"); // Mencegah error jika ada tanda petik
+                    htmlList += `<li class="custom-option-item" onclick="pilihKelasCustom('${safeKelas}', '${safeKelas}')">${kelas}</li>`;
+                });
+            });
+
+            listEl.innerHTML = htmlList;
+        }
+
+        // ==========================================================
+        // LOGIKA INTERAKSI BUKA TUTUP MENU CUSTOM KELAS
+        // ==========================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            const displayBox = document.getElementById('customSelectDisplay');
+            if (displayBox) {
+                displayBox.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    toggleCustomSelect();
+                });
+            }
+
+            // Menutup daftar jika mengeklik area mana saja di luar kotak
+            document.addEventListener('click', (e) => {
+                const list = document.getElementById('customSelectList');
+                const wrapper = document.getElementById('customSelectWrapper');
+                if (list && wrapper && !wrapper.contains(e.target)) {
+                    list.classList.add('hidden');
+                    document.getElementById('customSelectIcon')?.classList.remove('rotate-180');
+                }
+            });
+        });
+
+        function toggleCustomSelect() {
+            const list = document.getElementById('customSelectList');
+            const icon = document.getElementById('customSelectIcon');
+            list.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function pilihKelasCustom(nilai, teks) {
+            document.getElementById('filterKelasManual').value = nilai; 
+            document.getElementById('customSelectText').innerText = teks; 
+            
+            toggleCustomSelect(); 
+            renderTabelManual(); // Panggil fungsi absensi agar tabel otomatis muncul
+        }
+
+        function renderBadgeStatus(status) {
+            const badge = document.getElementById('badgeStatus');
+            if(status === 'Libur') {
+                badge.className = 'px-2 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600 shadow-sm border border-red-200';
+                badge.innerHTML = '<i class="fas fa-lock mr-1"></i> DITUTUP';
+            } else {
+                badge.className = 'px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-200';
+                badge.innerHTML = '<i class="fas fa-unlock mr-1"></i> BUKA';
+            }
+        }
+
+        function switchTab(tab) {
+            const btnScan = document.getElementById('tabScan');
+            const btnManual = document.getElementById('tabManual');
+            
+            const areaScan = document.getElementById('areaScan');
+            const areaManual = document.getElementById('areaManual');
+
+            const baseStyle = 'flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm';
+            const classAktif = baseStyle + ' bg-emerald-600 text-white';
+            const classMati = baseStyle + ' text-gray-500 bg-white hover:bg-gray-50';
+
+            btnScan.className = classMati; 
+            btnManual.className = classMati;
+            
+            areaScan.classList.add('hidden'); 
+            areaManual.classList.add('hidden'); 
+
+            if(tab === 'scan') {
+                btnScan.className = classAktif; 
+                areaScan.classList.remove('hidden');
+                if(html5QrcodeScanner) html5QrcodeScanner.resume();
+            } else {
+                btnManual.className = classAktif; 
+                areaManual.classList.remove('hidden');
+                if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            }
+        }
+
+        async function mulaiScanner() {
+            try {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                const cameras = await Html5Qrcode.getCameras();
+                if (!cameras || cameras.length === 0) throw new Error("Kamera tidak ditemukan");
+                
+                let cameraId = cameras[0].id;
+                const backCamera = cameras.find(cam => cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("rear"));
+                if (backCamera) cameraId = backCamera.id;
+
+                await html5QrcodeScanner.start(
+                    cameraId,
+                    { 
+                        fps: 15, 
+                        qrbox: { width: 250, height: 200 },
+                        aspectRatio: 1.0 
+                    },
+                    onScanSuccess,
+                    (err) => {}
+                );
+            } catch (err) {
+                console.error(err);
+                Swal.fire({ icon: 'error', title: 'Kamera Gagal', text: 'Kamera tidak dapat diakses. Pastikan Anda telah memberikan izin.' });
+            }
+        }
+
+        function cekIzinAbsen() {
+            if (STATUS_SISTEM === 'Libur') {
+                Swal.fire({ icon: 'error', title: 'Sistem Ditutup', text: 'Admin telah meliburkan atau menutup absensi untuk hari ini.' });
+                return false;
+            }
+
+            const waktu = new Date();
+            const hari = waktu.getDay();
+            const jam = waktu.getHours(); 
+
+            if (hari === 5) {
+                Swal.fire({ icon: 'info', title: 'Libur Rutin', text: 'Hari ini hari Jum\'at. Sistem absen sedang diliburkan.' });
+                return false;
+            }
+
+            if (jam < JAM_BUKA || jam >= JAM_TUTUP) {
+                Swal.fire({ 
+                    icon: 'warning', 
+                    title: 'Batas Waktu', 
+                    text: `Absensi hanya dibuka dari jam ${JAM_BUKA}.00 hingga ${JAM_TUTUP}.00 WIB.` 
+                });
+                return false;
+            }
+            return true;
+        }
+
+        function onScanSuccess(decodedText) {
+            if(isScanning) return; 
+
+            if (!cekIzinAbsen()) {
+                setTimeout(() => { if(html5QrcodeScanner) html5QrcodeScanner.resume(); }, 3000);
+                return; 
+            }
+
+            const santri = DATA_SANTRI.find(s => s.nis == decodedText);
+            if (!santri) return; 
+
+            isScanning = true;
+            html5QrcodeScanner.pause(true); 
+            
+            if (typeof beepSound !== 'undefined') {
+                beepSound.play().catch(e => console.log("Audio diblokir browser"));
+            }
+
+            simpanAbsen(decodedText, santri.nama, santri.kelas, 'Hadir', true);
+        }
+
+        function simpanAbsenManual(nis, namaTampil, kelasTampil) {
+            if (!cekIzinAbsen()) return;
+
+            const statusTerpilih = document.getElementById('status_' + nis).value;
+            if (!statusTerpilih) {
+                Swal.fire({ icon: 'warning', title: 'Pilih Status', text: 'Silakan tentukan status kehadiran santri terlebih dahulu.' });
+                return; 
+            }
+            
+            simpanAbsen(nis, namaTampil, kelasTampil, statusTerpilih, false);
+        }
+
+        function simpanAbsen(nis, nama, kelas, status, isScan) {
+            if(!isScan) showLoading(true, "Menyimpan...");
+
+            const fd = new URLSearchParams();
+            fd.append('action', 'simpanAbsenBarcode');
+            fd.append('nis', nis);
+            fd.append('nama', nama);
+            fd.append('kelas', kelas);
+            fd.append('status', status); 
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            gasFetch( { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if(!isScan) showLoading(false);
+                
+                if (res.status === 'success') {
+                    if (isScan) {
+                        document.getElementById('scanResult').classList.remove('hidden');
+                        document.getElementById('namaTerscan').innerText = nama;
+                        document.getElementById('nisTerscan').innerText = nis;
+                        
+                        Swal.fire({ toast: true, position: 'top', customClass: { popup: 'mt-24' }, icon: 'success', title: `${nama} Hadir! 😊`, timer: 2000, showConfirmButton: false });
+                        
+                        setTimeout(() => { 
+                            document.getElementById('scanResult').classList.add('hidden');
+                            isScanning = false; 
+                            html5QrcodeScanner.resume(); 
+                        }, 2500); 
+                    } else {
+                        Swal.fire({ toast: true, position: 'top', customClass: { popup: 'mt-24' }, icon: 'success', title: `${nama} (${status}) tersimpan!`, timer: 2500, showConfirmButton: false });
+                        document.getElementById('baris_' + nis).classList.add('bg-gray-50', 'opacity-60');
+                    }
+                } else {
+                    Swal.fire({ icon: 'info', title: 'Informasi', text: res.message });
+                    if(isScan) setTimeout(() => { isScanning = false; html5QrcodeScanner.resume(); }, 2000);
+                }
+            }).catch(e => {
+                if(!isScan) showLoading(false);
+                Swal.fire('Error', 'Gagal menyambung ke server.', 'error');
+                if(isScan) setTimeout(() => { isScanning = false; html5QrcodeScanner.resume(); }, 2000);
+            });
+        }
+
+        function renderTabelManual() {
+            const kelas = document.getElementById('filterKelasManual').value;
+            const tbody = document.getElementById('bodyTabelManual');
+            
+            if (DATA_SANTRI.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
+                return;
+            }
+
+            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+
+            if (santriKelas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            santriKelas.forEach((s, i) => {
+                tbody.innerHTML += `
+                <tr id="baris_${s.nis}" class="hover:bg-emerald-50/50 transition-all border-b border-gray-100 last:border-none">
+                    <td class="p-4 text-center border-r border-gray-100 text-gray-500 font-medium">${i + 1}</td>
+                    <td class="p-4 border-r border-gray-100">
+                        <p class="font-bold text-sm text-gray-800">${s.nama}</p>
+                        <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
+                    </td>
+                    <td class="p-3 text-center border-r border-gray-100 align-middle">
+                        <select id="status_${s.nis}" class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50 text-gray-700 font-semibold cursor-pointer text-center transition-all">
+                            <option value="" disabled selected>- Status -</option>
+                            <option value="Hadir">✅ Hadir</option>
+                            <option value="Izin">✉️ Izin</option>
+                            <option value="Sakit">🤒 Sakit</option>
+                            <option value="Alfa">❌ Alfa</option>
+                        </select>
+                    </td>
+                    <td class="p-3 text-center align-middle">
+                        <button onclick="simpanAbsenManual('${s.nis}', '${s.nama}', '${s.kelas}')" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition-all w-full sm:w-auto">
+                            Simpan
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        }
+    </script>
+</body>
+</html>

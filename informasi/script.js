@@ -871,14 +871,20 @@ function tutupModalPengumumanAdmin(dariTombolBack = false) {
 }
 
 // 3. Mengembalikan form ke mode "Tambah Baru"
+
 function resetFormPengumuman() {
     document.getElementById('adminIdPengumuman').value = "0";
     document.getElementById('adminTglPengumuman').value = "";
     document.getElementById('adminJdlPengumuman').value = "";
     document.getElementById('adminIsiPengumuman').value = "";
-    document.getElementById('adminKatPengumuman').value = "Akademik";
+    
+    // Ubah nilai bawaan dropdown menjadi kosong (kembali ke "-- Pilih Kategori --")
+    document.getElementById('adminKatPengumuman').value = ""; 
+    
     document.getElementById('titleFormPengumuman').innerText = "Tambah Pengumuman Baru";
     document.getElementById('badgeEditMode').classList.add('hidden');
+    
+    gantiContohPengumuman();
 }
 
 // 4. Menarik data list pengumuman untuk ditampilkan ke Admin
@@ -1083,6 +1089,46 @@ function hapusPengumuman(id) {
             .catch(err => Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error'));
         }
     });
+}
+
+// Mengganti teks petunjuk (placeholder) sesuai kategori yang dipilih
+function gantiContohPengumuman() {
+    // Jangan ubah form jika admin sedang mengedit pengumuman yang sudah ada
+    if (document.getElementById('adminIdPengumuman').value !== "0") return;
+
+    const kategori = document.getElementById('adminKatPengumuman').value;
+    const judul = document.getElementById('adminJdlPengumuman');
+    const isi = document.getElementById('adminIsiPengumuman');
+
+    // Kosongkan isian asli agar Admin mengetik sendiri
+    judul.value = "";
+    isi.value = "";
+
+    // Berikan teks bayangan (penjelasan) berdasarkan kategori
+    if (kategori === "") {
+        judul.placeholder = "Pilih kategori terlebih dahulu...";
+        isi.placeholder = "Pilih kategori untuk melihat petunjuk penulisan isi pengumuman...";
+    }
+    else if (kategori === "Akademik") {
+        judul.placeholder = "Contoh: Info Pembagian Rapor / Evaluasi Belajar";
+        isi.placeholder = "Petunjuk: Jelaskan informasi akademik di sini. Misal: Kapan rapor dibagikan, syarat pengambilan rapor, atau info kegiatan belajar mengajar lainnya.";
+    } 
+    else if (kategori === "Libur") {
+        judul.placeholder = "Contoh: Libur Hari Raya / Libur Semester";
+        isi.placeholder = "Petunjuk: Jelaskan detail libur di sini. Sebutkan tanggal mulai libur dan tegaskan tanggal berapa santri wajib masuk kembali ke madrasah.";
+    } 
+    else if (kategori === "Ujian") {
+        judul.placeholder = "Contoh: Jadwal Ujian Penilaian Akhir Semester (PAS)";
+        isi.placeholder = "Petunjuk: Jelaskan detail pelaksanaan ujian. Misal: Tanggal pelaksanaan ujian, himbauan untuk memantau jam belajar anak di rumah, atau persyaratan ujian.";
+    } 
+    else if (kategori === "Lomba") {
+        judul.placeholder = "Contoh: Rangkaian Lomba Peringatan Hari Santri";
+        isi.placeholder = "Petunjuk: Sebutkan jenis-jenis perlombaan yang diadakan, kapan pelaksanaannya (siang/malam), dan ketentuan untuk santri atau wali santri.";
+    } 
+    else if (kategori === "Kegiatan") {
+        judul.placeholder = "Contoh: Pengajian Akbar & Haflah Akhirussanah";
+        isi.placeholder = "Petunjuk: Jelaskan detail kegiatan madrasah. Sebutkan waktu pelaksanaan, lokasi acara, dan himbauan kehadiran untuk wali santri.";
+    }
 }
 
 // =========================================================

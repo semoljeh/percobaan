@@ -404,24 +404,73 @@
                         </div>
                     </div>
                     
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-2 border-b pb-1">Pilih Bulan (Bisa centang lebih dari 1)</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Muharram" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Muharram</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Safar" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Safar</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Rabiul Awal" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Rabiul Awal</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Rabiul Akhir" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Rabiul Akhir</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Jumadil Awal" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Jumadil Awal</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Jumadil Akhir" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Jumadil Akhir</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Rajab" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Rajab</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Sya'ban" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Sya'ban</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Ramadhan" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Ramadhan</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Syawal" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Syawal</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Dzulqa'dah" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Dzulqa'dah</label>
-                            <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm"><input type="checkbox" value="Dzulhijjah" class="cek-bulan w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> Dzulhijjah</label>
-                        </div>
-                    </div>
-                </div>
+                   <div>
+    <label class="block text-xs font-bold text-gray-700 mb-2 border-b pb-1">Pilih Bulan (Bisa centang lebih dari 1)</label>
+    <div class="grid grid-cols-2 gap-2 mt-2">
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Muharram" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">01.</span>Muharram</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Safar" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">02.</span>Safar</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Rabiul Awal" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">03.</span>Rabiul Awal</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Rabiul Akhir" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">04.</span>Rabiul Akhir</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Jumadil Awal" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">05.</span>Jumadil Awal</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Jumadil Akhir" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">06.</span>Jumadil Akhir</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Rajab" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">07.</span>Rajab</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Sya'ban" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">08.</span>Sya'ban</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Ramadhan" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">09.</span>Ramadhan</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Syawal" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">10.</span>Syawal</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Dzulqa'dah" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">11.</span>Dzulqa'dah</span>
+        </label>
+        
+        <label class="flex items-center w-full gap-2 p-2 border border-gray-200 rounded-lg bg-white cursor-pointer hover:border-emerald-400 transition-all text-xs font-bold text-gray-700 shadow-sm overflow-hidden">
+            <input type="checkbox" value="Dzulhijjah" class="cek-bulan shrink-0 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" onchange="kalkulasiOtomatisBulan()"> 
+            <span class="whitespace-nowrap"><span class="text-gray-400 font-medium mr-1">12.</span>Dzulhijjah</span>
+        </label>
+    </div>
+</div>
+  
+  
+                
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

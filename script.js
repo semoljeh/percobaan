@@ -150,7 +150,6 @@ function loadDataSantri(silent = false) {
             } catch (e) {
                 if (i === retry - 1) throw e; // Lempar error jika percobaan habis
                 console.warn(`Server Google merespons 404/Error, mencoba ulang... (Percobaan ${i + 1})`);
-                // Tunggu 1 detik sebelum mencoba lagi
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
@@ -180,6 +179,7 @@ function loadDataSantri(silent = false) {
                     let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
                     let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
                     let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                    let amanFoto = s.foto ? s.foto.toString() : ''; // Penambahan penarik link foto dari database
 
                     const tombolHapus = (!roleSaatIni.includes('Guru')) 
                         ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
@@ -193,7 +193,7 @@ function loadDataSantri(silent = false) {
                         <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
                         <td class="p-3 sm:p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
+                                <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`, \`${amanFoto}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
                                 ${tombolHapus}
                             </div>
                         </td>
@@ -779,60 +779,6 @@ function reverseTanggalIndo(teksTanggal) {
     return "";
 }
 
-function openModalEditSantri(nis, nama, jk, kelas, alamat, ayah, ibu, hp, ttl) { 
-    document.getElementById('edit_nis_lama').value = nis; 
-    document.getElementById('edit_nis').value = nis; 
-    
-    document.getElementById('edit_nama').value = nama; 
-    
-    // ========================================================
-    // PERBAIKAN: Normalisasi Jenis Kelamin (Case Insensitive)
-    // ========================================================
-    let jkBersih = jk ? jk.toString().trim().toLowerCase() : "";
-    if (jkBersih === "l" || jkBersih === "laki-laki" || jkBersih === "laki - laki") {
-        document.getElementById('edit_jk').value = "Laki-laki";
-    } else if (jkBersih === "p" || jkBersih === "perempuan") {
-        document.getElementById('edit_jk').value = "Perempuan";
-    } else {
-        document.getElementById('edit_jk').value = jk; // Fallback
-    }
-    // ========================================================
-
-    document.getElementById('edit_kelas').value = kelas; 
-    document.getElementById('text_edit_kelas').innerText = kelas;
-    document.getElementById('edit_alamat').value = alamat; 
-    document.getElementById('edit_ayah').value = ayah; 
-    document.getElementById('edit_ibu').value = ibu; 
-    document.getElementById('edit_hp').value = hp; 
-    
-    if (ttl && ttl.includes(',')) {
-        let parts = ttl.split(',');
-        document.getElementById('edit_tempat_lahir').value = parts[0].trim();
-        document.getElementById('edit_tanggal_lahir').value = reverseTanggalIndo(ttl);
-    } else {
-        document.getElementById('edit_tempat_lahir').value = ttl || "";
-        document.getElementById('edit_tanggal_lahir').value = "";
-    }
-
-    const userRole = document.getElementById('userRoleDisplay').innerText;
-    const inputNisEdit = document.getElementById('edit_nis');
-    const labelNisEdit = document.getElementById('labelEditNisRole');
-
-    if (userRole.includes('Guru')) {
-        inputNisEdit.readOnly = true;
-        inputNisEdit.classList.add('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
-        labelNisEdit.innerText = "(Terkunci)";
-        labelNisEdit.classList.replace('text-blue-500', 'text-red-500');
-    } else {
-        inputNisEdit.readOnly = false;
-        inputNisEdit.classList.remove('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
-        labelNisEdit.innerText = "(Bisa diedit Admin)";
-        labelNisEdit.classList.replace('text-red-500', 'text-blue-500');
-    }
-
-    window.history.pushState({ modal: 'edit' }, "", "#modalEdit"); 
-    document.getElementById('modalEditSantri').classList.remove('hidden'); 
-}
 
 function filterSantri() { 
     const searchText = document.getElementById('searchSantri').value.toLowerCase(); 
@@ -926,85 +872,6 @@ document.getElementById('formTambahSantri').addEventListener('submit', function(
     }); 
 });
 
-document.getElementById('formEditSantri').addEventListener('submit', function(e) { 
-    e.preventDefault(); 
-    
-    const cekKelas = document.getElementById('edit_kelas').value;
-    if (!cekKelas || cekKelas === "") {
-        Swal.fire('Perhatian', 'Silakan pilih Penempatan Kelas terlebih dahulu!', 'warning');
-        return; 
-    }
-
-    const btnSubmit = this.querySelector('button[type="submit"]');
-    const btnBatal = this.querySelector('button[type="button"]'); 
-    const btnClose = document.querySelector('#modalEditSantri button[onclick="closeModalEditSantri()"]');
-    
-    const originalText = btnSubmit.innerHTML; 
-    
-    btnSubmit.disabled = true; 
-    btnSubmit.classList.add('pointer-events-none', 'cursor-not-allowed');
-    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memperbarui...'; 
-    
-    if(btnBatal) { 
-        btnBatal.disabled = true; 
-        btnBatal.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); 
-    }
-    if(btnClose) { 
-        btnClose.disabled = true; 
-        btnClose.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); 
-    }
-    
-    showLoading(true); 
-    
-    const formData = new URLSearchParams();
-    formData.append('action', 'updateSantri');
-    formData.append('token', sessionStorage.getItem('tokenMadasa'));
-    formData.append('nis_lama', document.getElementById('edit_nis_lama').value);
-    formData.append('nis', document.getElementById('edit_nis').value);
-    formData.append('nama', document.getElementById('edit_nama').value); 
-    formData.append('jk', document.getElementById('edit_jk').value); 
-    formData.append('kelas', document.getElementById('edit_kelas').value); 
-    formData.append('alamat', document.getElementById('edit_alamat').value); 
-    formData.append('ayah', document.getElementById('edit_ayah').value); 
-    formData.append('ibu', document.getElementById('edit_ibu').value); 
-    formData.append('hp', document.getElementById('edit_hp').value); 
-    
-    const tempatEdit = document.getElementById('edit_tempat_lahir').value;
-    const tglEdit = formatTanggalIndo(document.getElementById('edit_tanggal_lahir').value);
-    formData.append('ttl', `${tempatEdit}, ${tglEdit}`);
-    
-    gasFetch( { method: 'POST', body: formData }).then(res => res.json()).then(data => { 
-        showLoading(false); 
-        
-        btnSubmit.disabled = false; 
-        btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed');
-        btnSubmit.innerHTML = originalText; 
-        
-        if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
-        if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
-        
-        if(data.status === 'success') { 
-            closeModalEditSantri(); 
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 3000 });
-            loadDataSantri(true); 
-        } 
-        else { 
-            Swal.fire('Gagal', data.message, 'error'); 
-        }
-	   
-    }).catch(err => { 
-        showLoading(false); 
-        
-        btnSubmit.disabled = false; 
-        btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed');
-        btnSubmit.innerHTML = originalText; 
-        
-        if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
-        if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
-        
-        Swal.fire('Error', 'Gagal update data. Periksa jaringan Anda.', 'error'); 
-    }); 
-});
 
 function validasiInputNilai(el) { 
     let val = parseFloat(el.value); 
@@ -3296,3 +3163,290 @@ window.bukaOpsiKepribadian = function(inputEl, namaKolom) {
         customClass: { popup: 'rounded-2xl p-4 sm:p-6' }
     });
 };
+
+
+// ==========================================
+// 1. FUNGSI PREVIEW & CROP FOTO SANTRI (3x4)
+// ==========================================
+let cropper;
+let finalCroppedBase64 = ''; // Variabel penyimpan hasil potongan
+
+function previewFotoSantri(input) {
+    const previewImg = document.getElementById('preview_edit_foto');
+    const iconImg = document.getElementById('icon_preview_foto');
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 10485760) { // Tolak jika file mentah lebih dari 10MB
+            Swal.fire('Terlalu Besar', 'Maksimal ukuran foto adalah 10 MB.', 'error');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Tampilkan Modal Crop
+            const imageToCrop = document.getElementById('imageToCrop');
+            imageToCrop.src = e.target.result;
+            document.getElementById('modalCropFoto').classList.remove('hidden');
+            
+            // Hancurkan cropper lama jika ada, lalu buat baru
+            if (cropper) cropper.destroy();
+            
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 3 / 4, // Mengunci rasio potong ke 3x4
+                viewMode: 2,
+                autoCropArea: 0.9,
+                background: false
+            });
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // Jika dibatalkan
+        if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+        if (iconImg) iconImg.classList.remove('hidden');
+        finalCroppedBase64 = '';
+    }
+}
+
+function closeModalCrop() {
+    document.getElementById('modalCropFoto').classList.add('hidden');
+    if (cropper) cropper.destroy();
+    
+    // Jika tidak jadi memotong, kosongkan input filenya
+    if (finalCroppedBase64 === '') {
+        document.getElementById('edit_foto').value = '';
+    }
+}
+
+function simpanHasilCrop() {
+    if (!cropper) return;
+    
+    showLoading(true);
+    
+    // Potong gambar dengan resolusi standar pas foto (600x800 pixel)
+    const canvas = cropper.getCroppedCanvas({
+        width: 600,
+        height: 800,
+        imageSmoothingQuality: 'high',
+    });
+    
+    // Ubah hasil potong menjadi URL dan Base64
+    const croppedUrl = canvas.toDataURL('image/jpeg', 0.8);
+    finalCroppedBase64 = croppedUrl.split(',')[1]; 
+    
+    // Tampilkan hasil potong ke kotak preview kecil di form
+    const previewImg = document.getElementById('preview_edit_foto');
+    const iconImg = document.getElementById('icon_preview_foto');
+    
+    if (previewImg) {
+        previewImg.src = croppedUrl;
+        previewImg.classList.remove('hidden');
+    }
+    if (iconImg) iconImg.classList.add('hidden');
+    
+    showLoading(false);
+    document.getElementById('modalCropFoto').classList.add('hidden');
+    cropper.destroy();
+}
+
+// ==========================================
+// 2. FUNGSI BUKA MODAL EDIT (MENAMPILKAN PREVIEW FOTO DARI DATABASE)
+// ==========================================
+function openModalEditSantri(nis, nama, jk, kelas, alamat, ayah, ibu, hp, ttl, fotoUrl) { 
+    document.getElementById('edit_nis_lama').value = nis; 
+    document.getElementById('edit_nis').value = nis; 
+    document.getElementById('edit_nama').value = nama; 
+    
+    let jkBersih = jk ? jk.toString().trim().toLowerCase() : "";
+    if (jkBersih === "l" || jkBersih === "laki-laki" || jkBersih === "laki - laki") {
+        document.getElementById('edit_jk').value = "Laki-laki";
+    } else if (jkBersih === "p" || jkBersih === "perempuan") {
+        document.getElementById('edit_jk').value = "Perempuan";
+    } else {
+        document.getElementById('edit_jk').value = jk; 
+    }
+
+    document.getElementById('edit_kelas').value = kelas; 
+    document.getElementById('text_edit_kelas').innerText = kelas;
+    document.getElementById('edit_alamat').value = alamat; 
+    document.getElementById('edit_ayah').value = ayah; 
+    document.getElementById('edit_ibu').value = ibu; 
+    document.getElementById('edit_hp').value = hp; 
+    
+    if (ttl && ttl.includes(',')) {
+        let parts = ttl.split(',');
+        document.getElementById('edit_tempat_lahir').value = parts[0].trim();
+        document.getElementById('edit_tanggal_lahir').value = reverseTanggalIndo(ttl);
+    } else {
+        document.getElementById('edit_tempat_lahir').value = ttl || "";
+        document.getElementById('edit_tanggal_lahir').value = "";
+    }
+
+    const userRole = document.getElementById('userRoleDisplay').innerText;
+    const inputNisEdit = document.getElementById('edit_nis');
+    const labelNisEdit = document.getElementById('labelEditNisRole');
+
+    if (userRole.includes('Guru')) {
+        inputNisEdit.readOnly = true;
+        inputNisEdit.classList.add('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
+        if (labelNisEdit) {
+            labelNisEdit.innerText = "(Terkunci)";
+            labelNisEdit.classList.replace('text-blue-500', 'text-red-500');
+        }
+    } else {
+        inputNisEdit.readOnly = false;
+        inputNisEdit.classList.remove('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
+        if (labelNisEdit) {
+            labelNisEdit.innerText = "(Bisa diedit Admin)";
+            labelNisEdit.classList.replace('text-red-500', 'text-blue-500');
+        }
+    }
+
+    // TAMPILKAN PREVIEW FOTO DARI DATABASE JIKA ADA
+    const inputFoto = document.getElementById('edit_foto');
+    const previewImg = document.getElementById('preview_edit_foto');
+    const iconImg = document.getElementById('icon_preview_foto');
+    
+    if (inputFoto) inputFoto.value = ''; 
+    
+    if (fotoUrl && fotoUrl.trim() !== '') {
+        let finalUrl = fotoUrl;
+        if (fotoUrl.includes('drive.google.com')) {
+            let fileId = '';
+            if (fotoUrl.includes('id=')) fileId = fotoUrl.split('id=')[1].split('&')[0];
+            else if (fotoUrl.includes('/d/')) fileId = fotoUrl.split('/d/')[1].split('/')[0];
+            
+            if (fileId) finalUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
+        }
+
+        if (previewImg) {
+            previewImg.src = finalUrl;
+            previewImg.classList.remove('hidden');
+        }
+        if (iconImg) iconImg.classList.add('hidden');
+    } else {
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.classList.add('hidden');
+        }
+        if (iconImg) iconImg.classList.remove('hidden');
+    }
+
+    window.history.pushState({ modal: 'edit' }, "", "#modalEdit"); 
+    document.getElementById('modalEditSantri').classList.remove('hidden'); 
+}
+
+// ==========================================
+// 3. FUNGSI SUBMIT EDIT SANTRI (MODAL TETAP TERBUKA & NOTIFIKASI JELAS)
+// ==========================================
+document.getElementById('formEditSantri').addEventListener('submit', async function(e) { 
+    e.preventDefault(); 
+    
+    const btnSubmit = this.querySelector('button[type="submit"]');
+    if (btnSubmit.disabled) return; 
+
+    const cekKelas = document.getElementById('edit_kelas').value;
+    if (!cekKelas || cekKelas === "") {
+        Swal.fire('Perhatian', 'Silakan pilih Penempatan Kelas terlebih dahulu!', 'warning');
+        return; 
+    }
+
+    const btnBatal = this.querySelector('button[type="button"]'); 
+    const btnClose = document.querySelector('#modalEditSantri button[onclick="closeModalEditSantri()"]');
+    const originalText = '<i class="fas fa-save"></i> Perbarui Data'; 
+    
+    btnSubmit.disabled = true; 
+    btnSubmit.classList.add('pointer-events-none', 'cursor-not-allowed');
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memperbarui...'; 
+    
+    if(btnBatal) { btnBatal.disabled = true; btnBatal.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+    if(btnClose) { btnClose.disabled = true; btnClose.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+    
+    showLoading(true); 
+
+    const fileInput = document.getElementById('edit_foto');
+    let fotoBase64 = '';
+    
+    if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (file.size > 5242880) { 
+            showLoading(false);
+            btnSubmit.disabled = false; btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed'); btnSubmit.innerHTML = originalText;
+            if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+            if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+            Swal.fire('Terlalu Besar', 'Maksimal ukuran foto adalah 5 MB.', 'error'); 
+            return;
+        }
+        try {
+            fotoBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (evt) => resolve(evt.target.result.split(',')[1]);
+                reader.onerror = (err) => reject(err);
+                reader.readAsDataURL(file);
+            });
+        } catch (error) {
+            showLoading(false);
+            btnSubmit.disabled = false; btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed'); btnSubmit.innerHTML = originalText;
+            if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+            if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+            Swal.fire('Error', 'Gagal membaca file foto.', 'error'); 
+            return;
+        }
+    }
+    
+    const formData = new URLSearchParams();
+    formData.append('action', 'updateSantri');
+    formData.append('token', sessionStorage.getItem('tokenMadasa'));
+    formData.append('nis_lama', document.getElementById('edit_nis_lama').value);
+    formData.append('nis', document.getElementById('edit_nis').value);
+    formData.append('nama', document.getElementById('edit_nama').value); 
+    formData.append('jk', document.getElementById('edit_jk').value); 
+    formData.append('kelas', document.getElementById('edit_kelas').value); 
+    formData.append('alamat', document.getElementById('edit_alamat').value); 
+    formData.append('ayah', document.getElementById('edit_ayah').value); 
+    formData.append('ibu', document.getElementById('edit_ibu').value); 
+    formData.append('hp', document.getElementById('edit_hp').value); 
+    
+    if (fotoBase64 !== '') {
+        formData.append('foto_base64', fotoBase64);
+    }
+    
+    const tempatEdit = document.getElementById('edit_tempat_lahir').value;
+    const tglEdit = formatTanggalIndo(document.getElementById('edit_tanggal_lahir').value);
+    formData.append('ttl', `${tempatEdit}, ${tglEdit}`);
+    
+    gasFetch( { method: 'POST', body: formData }).then(res => res.json()).then(data => { 
+        showLoading(false); 
+        
+        btnSubmit.disabled = false; btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed'); btnSubmit.innerHTML = originalText; 
+        if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+        if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+        
+        if(data.status === 'success') { 
+            // 1. Menampilkan notifikasi popup yang jelas di tengah layar
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Diperbarui!',
+                text: data.message,
+                confirmButtonColor: '#059669',
+                customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl' }
+            });
+
+            // 2. Kosongkan file input agar foto tidak ter-upload ulang jika tombol diklik lagi
+            if (fileInput) fileInput.value = '';
+
+            // 3. Memperbarui tabel di belakang layar secara diam-diam
+            loadDataSantri(true); 
+        } 
+        else { Swal.fire('Gagal', data.message, 'error'); }
+       
+    }).catch(err => { 
+        console.error(err);
+        showLoading(false); 
+        btnSubmit.disabled = false; btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed'); btnSubmit.innerHTML = originalText; 
+        if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+        if(btnClose) { btnClose.disabled = false; btnClose.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
+        Swal.fire('Error', 'Gagal memproses. Pastikan jaringan stabil.', 'error'); 
+    }); 
+});

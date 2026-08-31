@@ -606,9 +606,30 @@
                     const namaB = bersihkanTeks(santriInfo.nama);
                     const ayahB = bersihkanTeks(santriInfo.ayah);
                     const ibuB  = bersihkanTeks(santriInfo.ibu);
-                    const almtB = bersihkanTeks(santriInfo.alamat);
+					
+                   const almtB = bersihkanTeks(santriInfo.alamat);
 
-                    const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+// --- KODE PENARIK FOTO OTOMATIS ---
+let fotoUrl = santriInfo.foto || '';
+let elemenFoto = `<span class="text-[11px] text-emerald-800">Pas Photo</span><br><span class="text-[11px] font-bold text-emerald-800">3 x 4</span>`;
+
+if (fotoUrl && fotoUrl.trim() !== '') {
+    let finalUrl = fotoUrl;
+    if (fotoUrl.includes('drive.google.com')) {
+        let fileId = '';
+        if (fotoUrl.includes('id=')) fileId = fotoUrl.split('id=')[1].split('&')[0];
+        else if (fotoUrl.includes('/d/')) fileId = fotoUrl.split('/d/')[1].split('/')[0];
+        
+        if (fileId) finalUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
+    }
+    elemenFoto = `<img src="${finalUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto Santri">`;
+}
+// ---------------------------------
+
+const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
+					
+					
+					
                     const tanggalCetakDefault = new Date().toLocaleDateString('id-ID', opsiTanggal);
                     
                     const tanggalTampil = setUmum.tanggal || ('Bangkalan, ' + tanggalCetakDefault);
@@ -681,10 +702,10 @@
                             </table>
 
                             <div class="flex justify-between items-end px-4 mt-11 pb-4">
-                                <div class="w-[3cm] h-[4cm] border-2 border-emerald-800 flex flex-col items-center justify-center text-center relative z-10 bg-white">
-                                    <span class="text-[11px] text-emerald-800">Pas Photo</span><br>
-                                    <span class="text-[11px] font-bold text-emerald-800">3 x 4</span>
-                                </div>
+                                
+								<div class="w-[3cm] h-[4cm] border-2 border-emerald-800 flex flex-col items-center justify-center text-center relative z-10 bg-white overflow-hidden p-0">
+    ${elemenFoto}
+</div>
                                 
                                 <div class="text-center w-[250px] relative">
                                     <div class="relative z-10">

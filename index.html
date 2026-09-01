@@ -836,14 +836,23 @@ OneSignalDeferred.push(async function(OneSignal) {
      </div>
 									
 									
+                                   <div>
+    <label class="text-xs font-bold text-gray-600">Semester</label>
+    <select id="set_semester" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer">
+        <option value="1 (Ganjil)">1 (Ganjil)</option>
+        <option value="2 (Genap)" selected>2 (Genap)</option>
+        <option value="Cawu - I">Cawu - I</option>
+        <option value="Cawu - II">Cawu - II</option>
+        <option value="Cawu - III">Cawu - III</option>
+    </select>
+</div>
+									   
                                        <div>
-                                           <label class="text-xs font-bold text-gray-600">Semester</label>
-                                           <select id="set_semester" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer">
-                                               <option value="1 (Ganjil)">1 (Ganjil)</option>
-                                               <option value="2 (Genap)" selected>2 (Genap)</option>
-                                           </select>
-                                       </div>
-                                        <div><label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label><input type="text" id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: 2025/2026"></div>
+    <label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label>
+    <input type="text" id="set_tahun" list="list_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Pilih atau ketik manual...">
+    <datalist id="list_tahun"></datalist>
+</div>
+										
                                         <div><label class="text-xs font-bold text-gray-600">Tanggal Rapor</label><input type="text" id="set_tanggal" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: Bangkalan, 5 April 2026"></div>
                                     </div>
                                 </div>

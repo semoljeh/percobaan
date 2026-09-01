@@ -3450,3 +3450,24 @@ document.getElementById('formEditSantri').addEventListener('submit', async funct
         Swal.fire('Error', 'Gagal memproses. Pastikan jaringan stabil.', 'error'); 
     }); 
 });
+
+
+// =========================================================
+// FUNGSI GENERATE TAHUN PELAJARAN OTOMATIS
+// =========================================================
+function buatOpsiTahunPelajaran() {
+    const dataList = document.getElementById('list_tahun');
+    if (!dataList) return;
+    
+    const tahunSekarangMasehi = new Date().getFullYear();
+    // Rumus pendekatan konversi tahun Masehi ke Hijriyah
+    const tahunSekarangHijriyah = Math.round((tahunSekarangMasehi - 622) * (33 / 32)); 
+    
+    // Hanya membuat satu opsi untuk tahun saat ini
+    let opsi = document.createElement('option');
+    opsi.value = `${tahunSekarangHijriyah} H/${tahunSekarangMasehi} M`;
+    dataList.appendChild(opsi);
+}
+
+// Jalankan fungsi saat halaman selesai dimuat
+document.addEventListener("DOMContentLoaded", buatOpsiTahunPelajaran);

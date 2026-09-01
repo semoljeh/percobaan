@@ -847,10 +847,11 @@ OneSignalDeferred.push(async function(OneSignal) {
     </select>
 </div>
 									   
-                                       <div>
+<div>
     <label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label>
-    <input type="text" id="set_tahun" list="list_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Pilih atau ketik manual...">
-    <datalist id="list_tahun"></datalist>
+    <select id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer">
+        <!-- Opsi akan diisi otomatis oleh JavaScript -->
+    </select>
 </div>
 										
                                         <div><label class="text-xs font-bold text-gray-600">Tanggal Rapor</label><input type="text" id="set_tanggal" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: Bangkalan, 5 April 2026"></div>

@@ -849,9 +849,14 @@ OneSignalDeferred.push(async function(OneSignal) {
 									   
 <div>
     <label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label>
-    <select id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer">
-        <!-- Opsi akan diisi otomatis oleh JavaScript -->
+    
+    <!-- Dropdown 2 Pilihan -->
+    <select id="pilih_metode_tahun" onchange="aturModeTahun()" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer mb-2">
+        <!-- Opsi diisi otomatis oleh JS -->
     </select>
+    
+    <!-- Input asli (Disembunyikan secara default, hanya muncul jika pilih manual) -->
+    <input type="text" id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none hidden" placeholder="Ketik Tahun Pelajaran (Ex: 1448 H/2026 M)">
 </div>
 										
                                         <div><label class="text-xs font-bold text-gray-600">Tanggal Rapor</label><input type="text" id="set_tanggal" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: Bangkalan, 5 April 2026"></div>

@@ -1881,7 +1881,24 @@ function loadSettingRapor() {
 
         let u = res.umum || {}; 
         document.getElementById('set_semester').value = u.semester || ''; 
-        document.getElementById('set_tahun').value = u.tahun || ''; 
+      
+        const valTahun = u.tahun || '';
+const inputTahun = document.getElementById('set_tahun');
+const selectMetode = document.getElementById('pilih_metode_tahun');
+
+inputTahun.value = valTahun;
+
+if (selectMetode && selectMetode.options.length > 0) {
+    // Jika tahun di database berbeda dengan tahun otomatis, munculkan kolom manual
+    if (valTahun !== '' && valTahun !== selectMetode.options[0].value) {
+        selectMetode.value = 'manual';
+        inputTahun.classList.remove('hidden');
+    } else {
+        selectMetode.selectedIndex = 0;
+        inputTahun.classList.add('hidden');
+    }
+}
+	  
         document.getElementById('set_tanggal').value = u.tanggal || ''; 
         document.getElementById('set_kepala').value = u.kepala || ''; 
         document.getElementById('set_wali').value = u.wali || ''; 
@@ -3453,24 +3470,42 @@ document.getElementById('formEditSantri').addEventListener('submit', async funct
 
 
 // =========================================================
-// FUNGSI GENERATE TAHUN PELAJARAN OTOMATIS
+// FUNGSI GENERATE TAHUN PELAJARAN (OTOMATIS & MANUAL)
 // =========================================================
 function buatOpsiTahunPelajaran() {
-    const selectTahun = document.getElementById('set_tahun');
-    if (!selectTahun) return;
+    const selectMetode = document.getElementById('pilih_metode_tahun');
+    const inputTahun = document.getElementById('set_tahun');
+    if (!selectMetode || !inputTahun) return;
     
-    const tahunSekarangMasehi = new Date().getFullYear();
-    const tahunSekarangHijriyah = Math.round((tahunSekarangMasehi - 622) * (33 / 32)); 
+    const tahunMasehi = new Date().getFullYear();
+    const tahunHijriyah = Math.round((tahunMasehi - 622) * (33 / 32)); 
+    const teksOtomatis = `${tahunHijriyah} H/${tahunMasehi} M`;
     
-    // Bersihkan isi pilihan sebelumnya
-    selectTahun.innerHTML = '';
+    // Masukkan 2 Opsi ke dalam dropdown
+    selectMetode.innerHTML = `
+        <option value="${teksOtomatis}">1. Pilih Otomatis (${teksOtomatis})</option>
+        <option value="manual">2. Ketik Manual...</option>
+    `;
     
-    // Buat opsi otomatis untuk tahun ini
-    let opsi = document.createElement('option');
-    opsi.value = `${tahunSekarangHijriyah} H/${tahunSekarangMasehi} M`;
-    opsi.text = `${tahunSekarangHijriyah} H/${tahunSekarangMasehi} M`; // Tambahan .text agar muncul di dropdown select
-    selectTahun.appendChild(opsi);
+    // Set input dengan nilai otomatis sebagai default
+    inputTahun.value = teksOtomatis;
 }
 
-// Jalankan fungsi saat halaman selesai dimuat
+// Fungsi untuk memunculkan kolom ketik jika "Manual" dipilih
+function aturModeTahun() {
+    const selectMetode = document.getElementById('pilih_metode_tahun');
+    const inputTahun = document.getElementById('set_tahun');
+    
+    if (selectMetode.value === 'manual') {
+        // Tampilkan kolom input agar bisa diketik
+        inputTahun.classList.remove('hidden');
+        inputTahun.value = ''; // Kosongkan form
+        inputTahun.focus();
+    } else {
+        // Sembunyikan kolom input & gunakan nilai otomatis
+        inputTahun.classList.add('hidden');
+        inputTahun.value = selectMetode.value;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", buatOpsiTahunPelajaran);

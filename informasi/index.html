@@ -36,7 +36,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-   <link rel="stylesheet" href="style.css?v=4">
+<script>
+    var nocache = new Date().getTime();
+    document.write('<link rel="stylesheet" href="style.css?nocache=' + nocache + '">');
+</script>
    
 
     <meta name="theme-color" content="#065f46">
@@ -370,7 +373,11 @@
         </a>
     </div>
 
-   <script src="../config.js?v=16"></script>
-<script src="script.js?v=4"></script>
+
+<script>
+    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+    document.write('<script src="script.js?nocache=' + nocache + '"><\/script>');
+</script>
+
 </body>
 </html>

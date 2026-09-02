@@ -59,15 +59,14 @@ self.addEventListener('fetch', event => {
     req.destination === 'style' ||
     /\.(html|js|css)$/i.test(url.pathname);
 
-  if (isCodeOrDocument) {
-    // NETWORK FIRST: update kode langsung terlihat di browser normal.
+if (isCodeOrDocument) {
+    // ALWAYS FRESH: Tarik dari server, jangan simpan di cache agar HP pengguna tidak penuh
     event.respondWith((async () => {
-      const cache = await caches.open(CACHE_NAME);
       try {
-        const fresh = await fetch(req, { cache: 'no-store' });
-        if (fresh && fresh.ok) await cache.put(req, fresh.clone());
-        return fresh;
+        return await fetch(req, { cache: 'no-store' });
       } catch (e) {
+        // Jika sedang offline / tidak ada sinyal, gunakan fallback
+        const cache = await caches.open(CACHE_NAME);
         return (await cache.match(req)) || (req.mode === 'navigate' ? cache.match('./index.html') : Response.error());
       }
     })());

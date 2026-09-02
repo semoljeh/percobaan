@@ -3472,37 +3472,44 @@ document.getElementById('formEditSantri').addEventListener('submit', async funct
 // =========================================================
 // FUNGSI GENERATE TAHUN PELAJARAN (OTOMATIS & MANUAL)
 // =========================================================
+// =========================================================
+// FUNGSI GENERATE TAHUN PELAJARAN (OTOMATIS & MANUAL)
+// =========================================================
 function buatOpsiTahunPelajaran() {
     const selectMetode = document.getElementById('pilih_metode_tahun');
     const inputTahun = document.getElementById('set_tahun');
-    if (!selectMetode || !inputTahun) return;
+    const dataListManual = document.getElementById('list_tahun_manual');
+    if (!selectMetode || !inputTahun || !dataListManual) return;
     
     const tahunMasehi = new Date().getFullYear();
     const tahunHijriyah = Math.round((tahunMasehi - 622) * (33 / 32)); 
     const teksOtomatis = `${tahunHijriyah} H/${tahunMasehi} M`;
     
-    // Masukkan 2 Opsi ke dalam dropdown
+    // 1. Masukkan Opsi ke Dropdown Utama
     selectMetode.innerHTML = `
-        <option value="${teksOtomatis}">1. Pilih Otomatis (${teksOtomatis})</option>
-        <option value="manual">2. Ketik Manual...</option>
+        <option value="${teksOtomatis}">1. Otomatis: ${teksOtomatis}</option>
+        <option value="manual">2. Pilih/Ketik Manual Lainnya...</option>
     `;
     
-    // Set input dengan nilai otomatis sebagai default
-    inputTahun.value = teksOtomatis;
+    // 2. Buat Pilihan Tambahan untuk DataList Manual (misal 5 tahun ke depan)
+    dataListManual.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        let opsi = document.createElement('option');
+        opsi.value = `${tahunHijriyah + i} H/${tahunMasehi + i} M`;
+        dataListManual.appendChild(opsi);
+    }
 }
 
-// Fungsi untuk memunculkan kolom ketik jika "Manual" dipilih
+// Fungsi Buka Tutup Input Manual
 function aturModeTahun() {
     const selectMetode = document.getElementById('pilih_metode_tahun');
     const inputTahun = document.getElementById('set_tahun');
     
     if (selectMetode.value === 'manual') {
-        // Tampilkan kolom input agar bisa diketik
         inputTahun.classList.remove('hidden');
-        inputTahun.value = ''; // Kosongkan form
+        inputTahun.value = ''; 
         inputTahun.focus();
     } else {
-        // Sembunyikan kolom input & gunakan nilai otomatis
         inputTahun.classList.add('hidden');
         inputTahun.value = selectMetode.value;
     }

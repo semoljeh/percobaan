@@ -80,7 +80,10 @@
     <!-- KERTAS RAPOR -->
     <div id="kertasRapor" class="bg-white shadow-2xl text-black font-sans relative box-border mx-auto hidden mt-4 mb-10" style="width: 210mm; min-height: 330mm; padding: 8mm;"></div>
 
-    <script src="../config.js?v=16"></script>
+<script>
+    var nocache = new Date().getTime();
+    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+</script>
 
     <script>
         let GLOBAL_DATA_SANTRI = [];

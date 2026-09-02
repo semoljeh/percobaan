@@ -7,7 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     
-    <script src="../config.js?v=16"></script>
+<script>
+    var nocache = new Date().getTime();
+    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+</script>
 	
 	<!-- Favicon -->
     <link rel="icon" type="image/png" href="../asset/logoweb.png">

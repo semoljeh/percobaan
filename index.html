@@ -40,7 +40,7 @@
 <!-- TAMBAHKAN SCRIPT INI UNTUK EXCELJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=16">
+
 	
 	
 	<!-- Tambahan Library Cropper JS untuk Potong Foto -->
@@ -78,6 +78,14 @@ OneSignalDeferred.push(async function(OneSignal) {
 });
 
 </script>
+
+<style>
+    /* CSS Kunci untuk mencegah blank screen dan tumpang tindih */
+    #loginPage { visibility: hidden; }
+    body.app-ready #loginPage { visibility: visible; }
+</style>
+
+
 	
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -850,13 +858,12 @@ OneSignalDeferred.push(async function(OneSignal) {
 <div>
     <label class="text-xs font-bold text-gray-600">Tahun Pelajaran</label>
     
-    <!-- Dropdown 2 Pilihan -->
     <select id="pilih_metode_tahun" onchange="aturModeTahun()" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none cursor-pointer mb-2">
-        <!-- Opsi diisi otomatis oleh JS -->
+        <option value="" disabled selected>Memuat data...</option>
     </select>
     
-    <!-- Input asli (Disembunyikan secara default, hanya muncul jika pilih manual) -->
-    <input type="text" id="set_tahun" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none hidden" placeholder="Ketik Tahun Pelajaran (Ex: 1448 H/2026 M)">
+    <input type="text" id="set_tahun" list="list_tahun_manual" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none hidden" placeholder="Pilih / Ketik Tahun Pelajaran (Ex: 1448 H/2026 M)">
+    <datalist id="list_tahun_manual"></datalist>
 </div>
 										
                                         <div><label class="text-xs font-bold text-gray-600">Tanggal Rapor</label><input type="text" id="set_tanggal" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-emerald-500 outline-none" placeholder="Ex: Bangkalan, 5 April 2026"></div>
@@ -1280,10 +1287,17 @@ OneSignalDeferred.push(async function(OneSignal) {
     </div>
 </div>
 
-<script src="config.js?v=18"></script>
-<script src="script.js?v=18"></script>
 
-<script src="widget-wa.js"></script>
+<script>
+    // Membuat angka unik otomatis berdasarkan waktu
+    var nocache = new Date().getTime();
+    
+    // Memuat file secara berurutan dan sinkron
+    document.write('<link rel="stylesheet" href="style.css?nocache=' + nocache + '">');
+    document.write('<script src="config.js?nocache=' + nocache + '"><\/script>');
+    document.write('<script src="script.js?nocache=' + nocache + '"><\/script>');
+    document.write('<script src="widget-wa.js?nocache=' + nocache + '"><\/script>');
+</script>
 
 
 </body>

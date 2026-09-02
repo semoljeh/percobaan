@@ -154,8 +154,13 @@
         </div>
     </div>
 
-    <!-- KONFIGURASI BACKEND -->
-    <script src="../config.js?v=16"></script>
+ <!-- KONFIGURASI BACKEND (AUTO NO-CACHE) -->
+<script>
+    var nocache = new Date().getTime();
+    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+</script>
+	
+	
     <script>
         const beepSound = new Audio('../asset/notif.mp3');
         

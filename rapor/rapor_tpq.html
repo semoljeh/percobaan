@@ -237,7 +237,10 @@
     </div>
 
 
-      <script src="../config.js?v=16"></script>
+<script>
+    var nocache = new Date().getTime();
+    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+</script> 
 		
 <script>
 

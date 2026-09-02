@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Sedang Diperbarui - Madrasah Darussalam</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="asset/logoweb.png">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { emerald: { 400: '#34d399', 600: '#059669', 800: '#065f46' }, dark: '#022c22' }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #022c22 0%, #065f46 100%);
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
+        }
+        
+        .bg-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: 0;
+            animation: moveBg 20s linear infinite;
+        }
+
+        @keyframes moveBg {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 100px; }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            cursor: ew-resize;
+            touch-action: none; /* Cegah scroll layar di HP saat geser papan */
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div class="bg-pattern"></div>
+
+    <div id="mainCard" class="glass-card max-w-xl w-full rounded-3xl p-6 sm:p-10 relative z-10 flex flex-col items-center text-center transition-transform">
+        
+        <div class="w-16 h-16 bg-emerald-600/30 rounded-full flex items-center justify-center border border-emerald-400/30 mb-5 relative shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+            <i class="fas fa-tools text-3xl text-emerald-300 animate-bounce"></i>
+        </div>
+
+        <h1 class="text-2xl sm:text-3xl font-heading font-extrabold text-white mb-2 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-100 to-emerald-400">
+            MOHON TUNGGU SEBENTAR
+        </h1>
+        <p class="text-emerald-100/90 text-sm sm:text-base mb-6 max-w-sm leading-relaxed">
+            Sistem Madasa sedang dalam perawatan rutin. <br>
+            <span class="font-bold text-yellow-300 bg-black/20 px-2 py-0.5 rounded-lg mt-1 inline-block">Yuk, tangkap bintang sambil nunggu! ⭐</span>
+        </p>
+
+        <!-- Area Game -->
+        <div class="relative w-full max-w-[500px] mb-4 group">
+            <canvas id="gameCanvas" width="500" height="280" class="w-full"></canvas>
+            
+            <div id="gameOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] rounded-2xl transition-opacity pointer-events-none">
+                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_15px_#34d399]">
+                    <i class="fas fa-play text-2xl text-white ml-1"></i>
+                </div>
+                <p class="font-heading font-bold tracking-widest text-white text-sm sm:text-base shadow-black drop-shadow-md">KETUK UNTUK MULAI</p>
+                <p class="text-[10px] text-emerald-200 mt-1 uppercase tracking-widest">Geser Layar / Mouse Kiri-Kanan</p>
+            </div>
+        </div>
+
+        <!-- Tombol Cek Halaman -->
+        <button onclick="location.reload()" class="mt-2 px-8 py-3.5 bg-white text-emerald-900 font-bold rounded-full hover:bg-emerald-50 transition-all transform hover:-translate-y-1 shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center gap-2">
+            <i class="fas fa-sync-alt"></i> Cek Ulang Halaman
+        </button>
+
+    </div>
+
+    <!-- LOGIKA GAME & SUARA -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('gameOverlay');
+        const mainCard = document.getElementById('mainCard');
+
+        // ==== SISTEM AUDIO SINTETIS ====
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'catch') {
+                // Suara dapet bintang (ting!)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1500, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'crash') {
+                // Suara kena bom (duerr!)
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        // ==== VARIABEL GAME ====
+        let isPlaying = false;
+        let isGameOver = false;
+        let score = 0;
+        let highScore = 0;
+        let frameCount = 0;
+        let fallSpeed = 2.5;
+
+        // Papan Penangkap (Pemain)
+        const player = {
+            width: 80,
+            height: 15,
+            x: canvas.width / 2 - 40,
+            y: canvas.height - 30,
+            targetX: canvas.width / 2 - 40 // Untuk pergerakan mulus (Lerp)
+        };
+
+        let items = []; // Menyimpan bintang & bom jatuh
+        let particles = []; // Menyimpan efek visual
+
+        function resetGame() {
+            score = 0;
+            fallSpeed = 2.5;
+            items = [];
+            particles = [];
+            isGameOver = false;
+            player.x = canvas.width / 2 - player.width / 2;
+            player.targetX = player.x;
+            overlay.classList.add('opacity-0');
+            mainCard.classList.remove('shake');
+            
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        // Fungsi Efek Partikel
+        function createParticles(x, y, isBomb) {
+            let color = isBomb ? '#ef4444' : '#fcd34d'; // Merah untuk bom, Kuning untuk bintang
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach((p, index) => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                if (p.life <= 0) particles.splice(index, 1);
+            });
+        }
+
+        // Gambar Pemain
+        function drawPlayer() {
+            // Pergerakan mulus mengejar mouse/jari (Linear Interpolation)
+            player.x += (player.targetX - player.x) * 0.2;
+
+            // Batas layar
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            ctx.fillStyle = '#34d399'; // Emerald-400
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#34d399';
+            ctx.beginPath();
+            ctx.roundRect(player.x, player.y, player.width, player.height, 8);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Gambar Item Jatuh (Emoji)
+        function drawItems() {
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            items.forEach(item => {
+                if (item.type === 'star') {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#fcd34d'; // Cahaya kuning
+                    ctx.fillText('⭐', item.x, item.y);
+                } else {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ef4444'; // Cahaya merah
+                    ctx.fillText('🔴', item.x, item.y);
+                }
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Spawner Item
+            if (frameCount % Math.floor(Math.random() * 40 + 40) === 0) {
+                let isBomb = Math.random() < 0.3; // 30% peluang bom merah
+                items.push({
+                    x: Math.random() * (canvas.width - 40) + 20,
+                    y: -20,
+                    type: isBomb ? 'bomb' : 'star',
+                    size: 20
+                });
+            }
+
+            // Gerakan Item & Deteksi Tabrakan
+            for (let i = 0; i < items.length; i++) {
+                let it = items[i];
+                it.y += fallSpeed;
+
+                // Cek tabrakan dengan papan
+                if (
+                    it.y + it.size/2 > player.y &&
+                    it.y - it.size/2 < player.y + player.height &&
+                    it.x + it.size/2 > player.x &&
+                    it.x - it.size/2 < player.x + player.width
+                ) {
+                    if (it.type === 'star') {
+                        score += 10;
+                        if (score > highScore) highScore = score;
+                        playSound('catch');
+                        createParticles(it.x, player.y, false);
+                        // Percepat sedikit setiap 50 skor
+                        if (score % 50 === 0) fallSpeed += 0.3;
+                    } else {
+                        // Kena BOM!
+                        isGameOver = true;
+                        isPlaying = false;
+                        playSound('crash');
+                        createParticles(it.x, player.y, true);
+                        mainCard.classList.add('shake');
+                    }
+                    items.splice(i, 1);
+                    i--;
+                    continue;
+                }
+
+                // Hapus item jika jatuh ke luar layar bawah
+                if (it.y > canvas.height + 20) {
+                    items.splice(i, 1);
+                    i--;
+                }
+            }
+
+            drawPlayer();
+            drawItems();
+            drawParticles();
+
+            // Render Teks Skor
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 16px Poppins, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`SKOR: ${score}`, 15, 25);
+            
+            ctx.fillStyle = '#fcd34d';
+            ctx.textAlign = 'right';
+            ctx.fillText(`TERTINGGI: ${highScore}`, canvas.width - 15, 25);
+
+            // Layar Game Over
+            if (isGameOver) {
+                overlay.classList.remove('opacity-0');
+                overlay.innerHTML = `
+                    <p class="font-heading font-black text-red-400 text-3xl mb-1 drop-shadow-md">Kena Bom!</p>
+                    <p class="text-white text-base font-medium">Bintang Tertangkap: <span class="text-yellow-300 font-bold text-xl">${score/10}</span></p>
+                    <p class="text-gray-300 text-xs mt-3 uppercase tracking-widest animate-pulse border border-gray-400 px-3 py-1 rounded-full cursor-pointer">Ketuk untuk Main Lagi</p>
+                `;
+            }
+
+            frameCount++;
+            if (!isGameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // ==== KONTROL PEMAIN ====
+        
+        // Membaca pergerakan Mouse/Touch
+        function handleMove(e) {
+            let rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            
+            // Hitung skala agar posisi sentuh akurat meski canvas di-resize oleh CSS
+            let scaleX = canvas.width / rect.width;
+            
+            player.targetX = (clientX - rect.left) * scaleX - player.width / 2;
+        }
+
+        function startGame(e) {
+            // Mencegah scroll di HP
+            if (e && e.type === 'touchstart') e.preventDefault();
+
+            // Inisiasi Audio Context
+            if (!audioCtx) audioCtx = new AudioContext();
+
+            if (isGameOver || !isPlaying) {
+                resetGame();
+                isPlaying = true;
+                gameLoop();
+                if (e) handleMove(e); // Posisikan papan langsung ke tempat jari ditekan
+            }
+        }
+
+        // Listener Mouse
+        canvas.addEventListener('mousedown', startGame);
+        canvas.addEventListener('mousemove', (e) => {
+            if (isPlaying && !isGameOver) handleMove(e);
+        });
+
+        // Listener Touch (HP)
+        canvas.addEventListener('touchstart', startGame, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            if (isPlaying && !isGameOver) {
+                e.preventDefault(); // Matikan scroll layar
+                handleMove(e);
+            }
+        }, { passive: false });
+
+        // Tampilan Awal (Gambarkan papan diam di tengah)
+        drawPlayer();
+        
+    </script>
+</body>
+</html>

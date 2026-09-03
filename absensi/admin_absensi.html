@@ -705,31 +705,34 @@ function populateKelasIzin() {
     <h2 class="text-white text-[25px] font-normal leading-none mt-1" style="font-family: 'Diwani Jali', serif;" dir="rtl">دينية دار السلام</h2>
 </div>
 					
-                    <div class="absolute top-[21.5mm] left-1/2 -translate-x-1/2 w-[18mm] h-[18mm] bg-[#FDFBF7] rounded-full p-[1.5px] z-20 shadow-md border-[1.5px] border-[#D4AF37] flex items-center justify-center">
-                        <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'">
-                    </div>
-                    <div class="absolute top-[41.5mm] left-0 w-full flex flex-col items-center px-2 z-10">
-                        <h3 class="font-black text-[#033323] text-[10.5px] uppercase w-full leading-tight text-center px-2 break-words whitespace-normal line-clamp-2">${s.nama}</h3>
-                        <div class="flex items-center justify-center gap-2 mt-[1mm] mb-[1.5mm] w-full px-6">
-                            <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
-                            <svg width="8" height="8" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" fill="none" stroke="#D4AF37" stroke-width="2" transform="rotate(45 12 12)"/></svg>
-                            <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
-                        </div>
-                        <div class="bg-gradient-to-r from-[#033323] to-[#065f46] border border-[#D4AF37] rounded-sm px-2.5 py-[1.5px] shadow-sm"><p class="text-[7.5px] text-white font-bold uppercase tracking-[0.1em] leading-none">${s.kelas}</p></div>
-                    </div>
-                    <div class="absolute top-[55mm] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-[45mm]">
-                        <div class="bg-white p-[2px] rounded shadow-sm border border-gray-200 w-full flex justify-center">
-                            <svg class="barcode-svg" jsbarcode-format="CODE128" jsbarcode-value="${s.nis}" jsbarcode-height="30" jsbarcode-width="1.6" jsbarcode-displayvalue="false" jsbarcode-margin="0" style="max-width: 100%;"></svg>
-                        </div>
-                        <p class="text-[9.5px] font-black text-[#033323] tracking-[0.25em] mt-[2px] leading-none">${s.nis}</p>
-                        <p class="text-[6px] font-semibold text-[#065f46] tracking-wider mt-[2px] leading-normal pb-[1px] w-full text-center truncate px-1">${s.ttl}</p>
-                    </div>
-                    <svg class="absolute bottom-0 left-0 w-full z-0" style="height: 12mm;" viewBox="0 0 200 40" preserveAspectRatio="none">
+                  <div class="absolute top-[23mm] left-1/2 -translate-x-1/2 w-[14mm] h-[14mm] bg-[#FDFBF7] rounded-full p-[1.5px] z-20 shadow-md border-[1.5px] border-[#D4AF37] flex items-center justify-center">
+    <img src="../asset/logo.png" alt="Logo" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'">
+</div>
+					
+                  <div class="absolute top-[38.5mm] left-0 w-full flex flex-col items-center px-2 z-10">
+    <h3 class="font-black text-[#033323] text-[10.5px] uppercase w-full leading-tight text-center px-2 break-words whitespace-normal line-clamp-2">${s.nama}</h3>
+    <div class="flex items-center justify-center gap-2 mt-[1mm] mb-[1.5mm] w-full px-6">
+        <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
+        <svg width="8" height="8" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" fill="none" stroke="#D4AF37" stroke-width="2" transform="rotate(45 12 12)"/></svg>
+        <div class="h-[1px] flex-1 bg-[#D4AF37] opacity-50"></div>
+    </div>
+    <div class="bg-gradient-to-r from-[#033323] to-[#065f46] border border-[#D4AF37] rounded-[2px] px-2 py-[1px] shadow-sm"><p class="text-[6px] text-white font-bold uppercase tracking-[0.1em] leading-none">${s.kelas}</p></div>
+</div>
+					
+                 <div class="absolute top-[52.5mm] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-[48mm]">
+    <div class="bg-white p-[3px] rounded shadow-sm border border-gray-200 w-full flex justify-center">
+        <svg class="barcode-svg" jsbarcode-format="CODE128" jsbarcode-value="${s.nis}" jsbarcode-height="45" jsbarcode-width="2.5" jsbarcode-displayvalue="false" jsbarcode-margin="0" style="width: 100%; height: auto;"></svg>
+    </div>
+    <p class="text-[9.5px] font-black text-[#033323] tracking-[0.25em] mt-[3px] leading-none">${s.nis}</p>
+    <p class="text-[6px] font-semibold text-[#065f46] tracking-wider mt-[2px] leading-normal pb-[1px] w-full text-center truncate px-1">${s.ttl}</p>
+</div>
+					
+                   <svg class="absolute bottom-0 left-0 w-full z-0" style="height: 10mm;" viewBox="0 0 200 40" preserveAspectRatio="none">
                         <path d="M0,40 L200,40 L200,6 Q150,6 100,0 Q50,6 0,6 Z" fill="#D4AF37"/>
                         <path d="M0,40 L200,40 L200,9 Q150,9 100,3 Q50,9 0,9 Z" fill="#033323"/>
                     </svg>
-                    <div class="absolute bottom-[2mm] left-0 w-full text-center px-2 z-20">
-                        <p class="text-[4.5px] text-[#FDFBF7] font-medium leading-[1.4]">Kartu ini jangan sampai hilang.<br>Jika menemukan, mohon kembalikan ke<br><span class="font-bold text-[#D4AF37]">Kantor Madrasah Darussalam</span></p>
+                    <div class="absolute bottom-[1.5mm] left-0 w-full text-center px-2 z-20">
+                        <p class="text-[4.5px] text-[#FDFBF7] font-medium leading-tight">Kartu ini jangan sampai hilang.<br>Jika menemukan, mohon kembalikan ke<br><span class="font-bold text-[#D4AF37]">Kantor Madrasah Darussalam</span></p>
                     </div>
                 </div>`;
                 kumpulanIdCardHtml += cardHtml;
@@ -857,7 +860,7 @@ function populateKelasIzin() {
             }).catch(e => console.error('Gagal memuat bulan:', e));
         }
 
-        function tarikDataRekap() {
+function tarikDataRekap() {
             const bulanTahun = document.getElementById('filterBulanRekap').value;
             const kelas = document.getElementById('filterKelasRekap').value;
             const tbody = document.getElementById('bodyTabelRekap');
@@ -898,11 +901,13 @@ function populateKelasIzin() {
                     });
                 } else {
                     tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">${res.message}</td></tr>`;
+                    console.error("Error dari Server:", res.message); // Menampilkan pesan error di console
                 }
             }).catch(e => {
                 showLoading(false);
-                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">Gagal terhubung ke server.</td></tr>';
-                Swal.fire('Error', 'Gagal memuat rekap bulanan.', 'error');
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-500 font-bold">Gagal terhubung ke server atau format data salah.</td></tr>';
+                console.error("Error Jaringan:", e); // Laporan error yang spesifik
+                Swal.fire('Error', 'Gagal memuat rekap bulanan. Cek koneksi.', 'error');
             });
         }
 

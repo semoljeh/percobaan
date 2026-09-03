@@ -172,15 +172,19 @@
                     <tbody id="bodyTabelManual" class="text-sm divide-y divide-gray-50 bg-white">
                         <tr><td colspan="3" class="p-8 text-center text-gray-400">Silakan pilih kelas terlebih dahulu.</td></tr>
                     </tbody>
-                    <tbody id="bodyTabelManual" class="text-sm divide-y divide-gray-50 bg-white">
-                        <tr><td colspan="4" class="p-8 text-center text-gray-400">Silakan pilih kelas terlebih dahulu.</td></tr>
-                    </tbody>
+                   
                </table>
             </div>
             
-          <!-- TOMBOL AKSI MASSAL (Simpan Semua) -->
-<div id="wadahAksiMassal" class="mt-5 flex flex-col sm:flex-row items-center justify-end gap-3 hidden">
-    <button onclick="simpanSemuaAbsenManual()" class="w-full sm:w-auto px-8 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2">
+<!-- TOMBOL AKSI MASSAL (Simpan Semua & Rekap) -->
+<div id="wadahAksiMassal" class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 hidden">
+    
+    <!-- KOTAK REKAP REAL-TIME -->
+    <div id="ringkasanAbsen" class="text-xs sm:text-sm font-medium text-gray-600 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 w-full sm:w-auto text-center sm:text-left flex-1">
+        Memuat rekapitulasi...
+    </div>
+
+    <button onclick="simpanSemuaAbsenManual()" class="w-full sm:w-auto px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2">
         <i class="fas fa-save text-lg"></i> Simpan Semua
     </button>
 </div>
@@ -345,13 +349,34 @@ function buatOpsiKelasDinamisAbsensi() {
             icon.classList.toggle('rotate-180');
         }
 
-        function pilihKelasCustom(nilai, teks) {
-            document.getElementById('filterKelasManual').value = nilai; 
-            document.getElementById('customSelectText').innerText = teks; 
-            
-            toggleCustomSelect(); 
-            renderTabelManual(); // Panggil fungsi absensi agar tabel otomatis muncul
+async function pilihKelasCustom(nilai, teks) {
+    document.getElementById('filterKelasManual').value = nilai; 
+    document.getElementById('customSelectText').innerText = teks; 
+    
+    toggleCustomSelect(); 
+    
+    // Tarik data absen yang sudah masuk hari ini dari server
+    if (nilai) {
+        showLoading(true, `Mengecek data absen hari ini...`);
+        const fd = new URLSearchParams();
+        fd.append('action', 'getAbsenHariIni');
+        fd.append('kelas', nilai);
+        fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+        try {
+            const response = await gasFetch({ method: 'POST', body: fd });
+            const res = await response.json();
+            window.ABSEN_HARI_INI = res.data || {}; // Simpan ke memori sementara
+        } catch(e) {
+            window.ABSEN_HARI_INI = {};
         }
+        showLoading(false);
+    } else {
+        window.ABSEN_HARI_INI = {};
+    }
+    
+    renderTabelManual(); 
+}
 
         function renderBadgeStatus(status) {
             const badge = document.getElementById('badgeStatus');
@@ -571,47 +596,62 @@ function switchTab(tab) {
         }
 
 function renderTabelManual() {
-            const kelas = document.getElementById('filterKelasManual').value;
-            const tbody = document.getElementById('bodyTabelManual');
-            const wadahAksi = document.getElementById('wadahAksiMassal');
-            
-            if (DATA_SANTRI.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
-                if(wadahAksi) wadahAksi.classList.add('hidden');
-                return;
-            }
+    const kelas = document.getElementById('filterKelasManual').value;
+    const tbody = document.getElementById('bodyTabelManual');
+    const wadahAksi = document.getElementById('wadahAksiMassal');
+    
+    if (DATA_SANTRI.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
+        if(wadahAksi) wadahAksi.classList.add('hidden');
+        return;
+    }
 
-            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+    const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
 
-            if (santriKelas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
-                if(wadahAksi) wadahAksi.classList.add('hidden');
-                return;
-            }
+    if (santriKelas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
+        if(wadahAksi) wadahAksi.classList.add('hidden');
+        return;
+    }
 
-            if(wadahAksi) wadahAksi.classList.remove('hidden');
-            tbody.innerHTML = '';
-            
-            santriKelas.forEach((s, i) => {
-                tbody.innerHTML += `
-                <tr id="baris_${s.nis}" class="hover:bg-emerald-50/50 transition-all border-b border-gray-100 last:border-none">
-                    <td class="p-4 text-center border-r border-gray-100 text-gray-500 font-medium">${i + 1}</td>
-                    <td class="p-4 border-r border-gray-100">
-                        <p class="font-bold text-sm text-gray-800">${s.nama}</p>
-                        <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
-                    </td>
-                    <td class="p-3 text-center align-middle">
-                        <select id="status_${s.nis}" class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50 text-gray-700 font-semibold cursor-pointer text-center transition-all">
-                            <option value="" disabled selected>- Status -</option>
-                            <option value="Hadir">✅ Hadir</option>
-                            <option value="Izin">✉️ Izin</option>
-                            <option value="Sakit">🤒 Sakit</option>
-                            <option value="Alfa">❌ Alfa</option>
-                        </select>
-                    </td>
-                </tr>`;
-            });
-        }
+    if(wadahAksi) wadahAksi.classList.remove('hidden');
+    tbody.innerHTML = '';
+    
+    // Ambil data rekam jejak hari ini dari memori
+    const absenHariIni = window.ABSEN_HARI_INI || {};
+    
+    santriKelas.forEach((s, i) => {
+        const statusTersimpan = absenHariIni[s.nis];
+        const isTersimpan = !!statusTersimpan; // True jika sudah diabsen
+        
+        // Baris meredup otomatis jika sudah absen
+        const classRow = isTersimpan ? 'bg-gray-50 opacity-60' : 'hover:bg-emerald-50/50';
+        // Kunci tombol agar tidak berubah jika sudah absen
+        const disableSelect = isTersimpan ? 'disabled' : '';
+        const bgSelect = isTersimpan ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 text-gray-700 cursor-pointer focus:ring-2 focus:ring-emerald-500';
+        
+        tbody.innerHTML += `
+        <tr id="baris_${s.nis}" class="${classRow} transition-all border-b border-gray-100 last:border-none">
+            <td class="p-4 text-center border-r border-gray-100 text-gray-500 font-medium">${i + 1}</td>
+            <td class="p-4 border-r border-gray-100">
+                <p class="font-bold text-sm text-gray-800">${s.nama}</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
+            </td>
+            <td class="p-3 text-center align-middle">
+                <select id="status_${s.nis}" onchange="hitungRekapRealtime()" ${disableSelect} class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none font-semibold text-center transition-all ${bgSelect}">
+                    <option value="" ${!isTersimpan ? 'selected' : ''} disabled>- Status -</option>
+                    <option value="Hadir" ${statusTersimpan === 'Hadir' ? 'selected' : ''}>✅ Hadir</option>
+                    <option value="Izin" ${statusTersimpan === 'Izin' ? 'selected' : ''}>✉️ Izin</option>
+                    <option value="Sakit" ${statusTersimpan === 'Sakit' ? 'selected' : ''}>🤒 Sakit</option>
+                    <option value="Alfa" ${statusTersimpan === 'Alfa' ? 'selected' : ''}>❌ Alfa</option>
+                </select>
+            </td>
+        </tr>`;
+    });
+
+    // Panggil ulang perhitungan rekap real-time
+    hitungRekapRealtime();
+}
 		
 		
 async function simpanSemuaAbsenManual() {
@@ -690,6 +730,49 @@ async function simpanSemuaAbsenManual() {
         Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: 'Koneksi terputus saat mengirim paket data.' });
     }
 }
+
+
+function hitungRekapRealtime() {
+            const kelas = document.getElementById('filterKelasManual').value;
+            if (!kelas) return;
+
+            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+            let hadir = 0, izin = 0, sakit = 0, alfa = 0, belum = 0;
+
+            santriKelas.forEach(s => {
+                const selectEl = document.getElementById('status_' + s.nis);
+                if (selectEl) {
+                    if (selectEl.value === 'Hadir') hadir++;
+                    else if (selectEl.value === 'Izin') izin++;
+                    else if (selectEl.value === 'Sakit') sakit++;
+                    else if (selectEl.value === 'Alfa') alfa++;
+                    else belum++;
+                }
+            });
+
+            const tgl = new Date();
+            const namaBulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+            const tglFormat = `${tgl.getDate()} ${namaBulan[tgl.getMonth()]} ${tgl.getFullYear()}`;
+            const ringkasanEl = document.getElementById('ringkasanAbsen');
+
+            if (ringkasanEl) {
+                if (belum > 0) {
+                    ringkasanEl.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-exclamation-triangle"></i> Ada ${belum} santri belum diabsen</span>`;
+                } else {
+                    ringkasanEl.innerHTML = `
+                        <div class="flex items-center justify-between px-2">
+                            <span class="font-bold text-gray-800"><i class="fas fa-calendar-check text-emerald-600 mr-1"></i> ${tglFormat}</span>
+                            <div class="flex gap-3">
+                                <span class="text-emerald-600 font-bold" title="Hadir">H: ${hadir}</span>
+                                <span class="text-blue-500 font-bold" title="Izin">I: ${izin}</span>
+                                <span class="text-orange-500 font-bold" title="Sakit">S: ${sakit}</span>
+                                <span class="text-red-600 font-bold" title="Alfa">A: ${alfa}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
 		
 		
     </script>

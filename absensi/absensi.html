@@ -614,7 +614,7 @@ function renderTabelManual() {
         }
 		
 		
-		async function simpanSemuaAbsenManual() {
+async function simpanSemuaAbsenManual() {
     if (!cekIzinAbsen()) return;
 
     const kelas = document.getElementById('filterKelasManual').value;
@@ -625,76 +625,69 @@ function renderTabelManual() {
 
     const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
     
-    // --- 1. PROSES VALIDASI WAJIB ISI SEMUA ---
     let adaYangKosong = false;
     let namaSantriKosong = "";
+    let paketDataAbsen = []; // Penampung 1 kelas
 
+    // 1. PROSES VALIDASI & PEMBUNGKUSAN DATA
     for (let i = 0; i < santriKelas.length; i++) {
-        const s = santriKelas[i];
-        const selectEl = document.getElementById('status_' + s.nis);
-        
+        const selectEl = document.getElementById('status_' + santriKelas[i].nis);
         if (!selectEl || selectEl.value === "") {
             adaYangKosong = true;
-            namaSantriKosong = s.nama; 
+            namaSantriKosong = santriKelas[i].nama; 
             break; 
         }
+        
+        // Kumpulkan data ke dalam paket
+        paketDataAbsen.push({
+            nis: santriKelas[i].nis,
+            nama: santriKelas[i].nama,
+            kelas: santriKelas[i].kelas,
+            status: selectEl.value
+        });
     }
 
     if (adaYangKosong) {
         Swal.fire({ 
             icon: 'error', 
             title: 'Absensi Belum Lengkap', 
-            text: `Silakan isi status kehadiran untuk SEMUA santri. (${namaSantriKosong} belum diisi)` 
+            text: `Silakan pilih status kehadiran untuk SEMUA santri. (${namaSantriKosong} belum dipilih)` 
         });
         return; 
     }
 
-    // --- 2. PROSES PENYIMPANAN (ANTREAN SATU PER SATU) ---
-    let dataTersimpan = 0;
-    let dataGagal = 0;
+    // 2. PROSES PENGIRIMAN 1 KALI (BATCH)
+    showLoading(true, `Menyimpan absensi Kelas ${kelas}...`);
 
-    // Tampilkan loading dengan indikator angka
-    showLoading(true, `Menyimpan absen... (0/${santriKelas.length})`);
+    const fd = new URLSearchParams();
+    fd.append('action', 'simpanAbsenMassal'); // Panggil endpoint backend baru
+    fd.append('data_absen', JSON.stringify(paketDataAbsen)); 
+    fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-    for (let i = 0; i < santriKelas.length; i++) {
-        const s = santriKelas[i];
-        const selectEl = document.getElementById('status_' + s.nis);
+    try {
+        const response = await gasFetch({ method: 'POST', body: fd });
+        const res = await response.json();
         
-        const fd = new URLSearchParams();
-        fd.append('action', 'simpanAbsenBarcode');
-        fd.append('nis', s.nis);
-        fd.append('nama', s.nama);
-        fd.append('kelas', s.kelas);
-        fd.append('status', selectEl.value); 
-        fd.append('token', sessionStorage.getItem('tokenMadasa'));
-
-        try {
-            // Perintah 'await' memaksa sistem menunggu 1 data tersimpan sebelum lanjut ke santri berikutnya
-            const response = await gasFetch({ method: 'POST', body: fd });
-            const res = await response.json();
-            
-            if (res.status === 'success') {
+        showLoading(false);
+        
+        if (res.status === 'success') {
+            // Beri efek visual redup untuk seluruh baris di layar
+            santriKelas.forEach(s => {
                 document.getElementById('baris_' + s.nis).classList.add('bg-gray-50', 'opacity-60');
-                dataTersimpan++;
-            } else {
-                dataGagal++;
-            }
-        } catch (error) {
-            console.error("Gagal simpan:", s.nama, error);
-            dataGagal++;
-        }
-        
-        // Update teks loading agar pengguna tahu progresnya
-        document.getElementById('teksLoading').innerText = `Menyimpan absen... (${i + 1}/${santriKelas.length})`;
-    }
+            });
 
-    showLoading(false);
-    
-    // --- 3. NOTIFIKASI HASIL AKHIR ---
-    if (dataGagal === 0) {
-        Swal.fire({ icon: 'success', title: 'Selesai!', text: `${dataTersimpan} data absensi kelas ini berhasil disimpan seluruhnya.` });
-    } else {
-        Swal.fire({ icon: 'warning', title: 'Selesai dengan Catatan', text: `${dataTersimpan} data berhasil disimpan, namun ada ${dataGagal} data yang gagal (mungkin kendala sinyal).` });
+            if (res.dilewati > 0) {
+                Swal.fire({ icon: 'warning', title: 'Selesai dengan Catatan', text: `Sebagian data berhasil disimpan, namun ada ${res.dilewati} santri yang dilewati (sudah diabsen sebelumnya).` });
+            } else {
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Seluruh data absensi Kelas ${kelas} berhasil disimpan.` });
+            }
+        } else {
+            // Jika res.status error, tampilkan pop-up elegan
+            Swal.fire({ icon: 'error', title: 'Data Sudah Tercatat', text: `Absensi untuk Kelas ${kelas} sepertinya sudah terekam penuh di database hari ini.` });
+        }
+    } catch (error) {
+        showLoading(false);
+        Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: 'Koneksi terputus saat mengirim paket data.' });
     }
 }
 		

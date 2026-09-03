@@ -85,37 +85,61 @@
             </button>
         </div>
 
-        <!-- 2 TAB MENU -->
+<!-- 2 TAB MENU -->
         <div class="grid grid-cols-2 gap-1 sm:gap-2 mb-6 bg-white p-1.5 sm:p-2 rounded-2xl shadow-sm border border-gray-100">
-            <button onclick="switchTab('scan')" id="tabScan" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 bg-emerald-600 text-white rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm">
-                <i class="fas fa-qrcode text-lg sm:text-base"></i> <span>Scanner</span>
-            </button>
-            <button onclick="switchTab('manual')" id="tabManual" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+            <!-- Tombol Manual (Kiri - AKTIF DEFAULT) -->
+            <button onclick="switchTab('manual')" id="tabManual" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 bg-emerald-600 text-white rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm">
                 <i class="fas fa-list-check text-lg sm:text-base"></i> <span>Manual</span>
+            </button>
+
+            <!-- Tombol Scanner (Kanan - MATI DEFAULT) -->
+            <button onclick="switchTab('scan')" id="tabScan" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-[10px] sm:text-sm transition-all">
+                <i class="fas fa-qrcode text-lg sm:text-base"></i> <span>Scanner</span>
             </button>
         </div>
     </div>
 
-    <!-- AREA 1: SCANNER -->
-    <div id="areaScan" class="max-w-md mx-auto">
+<!-- AREA 1: SCANNER -->
+   <div id="areaScan" class="max-w-md mx-auto hidden">
         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
-            <p class="text-sm text-gray-500 mb-3 font-medium">Arahkan kamera ke Barcode ID Card Santri</p>
             
-            <!-- Notifikasi Scan Sukses -->
-            <div id="scanResult" class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl hidden shadow-sm transition-all">
-                <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
-                <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">Berhasil Discan</div>
-                <div id="namaTerscan" class="text-gray-800 text-lg font-black uppercase mt-1 leading-tight"></div>
-                <div id="nisTerscan" class="text-emerald-700 text-sm font-bold tracking-widest mt-1"></div>
+            <!-- TOMBOL BUKA KAMERA -->
+            <div id="wadahTombolMulai" class="py-10 flex flex-col items-center justify-center border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50 mb-4 transition-all">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm border border-emerald-200">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <p class="text-sm text-gray-600 mb-5 font-medium px-4">Kamera belum aktif. Klik tombol di bawah untuk mulai memindai barcode santri.</p>
+                <button onclick="mulaiScannerSekarang()" class="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 hover:shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
+                    <i class="fas fa-power-off"></i> Buka Kamera Scanner
+                </button>
             </div>
 
-            <!-- Kamera -->
-            <div id="reader" class="w-full rounded-2xl overflow-hidden border border-gray-200"></div>
+            <!-- AREA KAMERA (Sembunyi by default) -->
+            <div id="wadahKamera" class="hidden relative">
+                <p class="text-sm text-gray-500 mb-3 font-medium">Arahkan kamera ke Barcode ID Card Santri</p>
+                
+                <!-- Notifikasi Scan Sukses -->
+                <div id="scanResult" class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl hidden shadow-sm transition-all">
+                    <i class="fas fa-check-circle text-emerald-500 text-2xl mb-1"></i>
+                    <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">Berhasil Discan</div>
+                    <div id="namaTerscan" class="text-gray-800 text-lg font-black uppercase mt-1 leading-tight"></div>
+                    <div id="nisTerscan" class="text-emerald-700 text-sm font-bold tracking-widest mt-1"></div>
+                </div>
+
+                <!-- Kamera -->
+                <div id="reader" class="w-full rounded-2xl overflow-hidden border border-gray-200 bg-black"></div>
+                
+                <!-- Tombol Tutup Kamera -->
+                <button onclick="hentikanScanner()" class="mt-4 px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 font-bold rounded-xl shadow-sm hover:bg-red-100 transition-all w-full flex items-center justify-center gap-2">
+                    <i class="fas fa-times-circle"></i> Tutup Kamera
+                </button>
+            </div>
+
         </div>
     </div>
 
     <!-- AREA 2: MANUAL -->
-    <div id="areaManual" class="max-w-5xl mx-auto hidden">
+  <div id="areaManual" class="max-w-5xl mx-auto">
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
             
              <div class="mb-5 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 relative z-20" id="customSelectWrapper">
@@ -138,19 +162,29 @@
 
             <div class="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm w-full">
                 <table class="w-full text-left border-collapse min-w-[500px]">
-                    <thead class="bg-gray-50 text-gray-500 text-[10px] sm:text-xs uppercase border-b border-gray-100">
+               <thead class="bg-gray-50 text-gray-500 text-[10px] sm:text-xs uppercase border-b border-gray-100">
                         <tr>
                             <th class="p-3 text-center border-r border-gray-100 w-10">No</th>
                             <th class="p-3 border-r border-gray-100">Nama Santri</th>
-                            <th class="p-3 text-center border-r border-gray-100 w-40">Status</th>
-                            <th class="p-3 text-center w-32">Aksi</th>
+                            <th class="p-3 text-center w-48">Status Kehadiran</th>
                         </tr>
                     </thead>
                     <tbody id="bodyTabelManual" class="text-sm divide-y divide-gray-50 bg-white">
+                        <tr><td colspan="3" class="p-8 text-center text-gray-400">Silakan pilih kelas terlebih dahulu.</td></tr>
+                    </tbody>
+                    <tbody id="bodyTabelManual" class="text-sm divide-y divide-gray-50 bg-white">
                         <tr><td colspan="4" class="p-8 text-center text-gray-400">Silakan pilih kelas terlebih dahulu.</td></tr>
                     </tbody>
-                </table>
+               </table>
             </div>
+            
+          <!-- TOMBOL AKSI MASSAL (Simpan Semua) -->
+<div id="wadahAksiMassal" class="mt-5 flex flex-col sm:flex-row items-center justify-end gap-3 hidden">
+    <button onclick="simpanSemuaAbsenManual()" class="w-full sm:w-auto px-8 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2">
+        <i class="fas fa-save text-lg"></i> Simpan Semua
+    </button>
+</div>
+
         </div>
     </div>
 
@@ -204,21 +238,24 @@
             });
         }
 
-        function ambilDataSantri() {
+function ambilDataSantri() {
             const formData = new URLSearchParams(); 
             formData.append('action', 'getSantri');
             formData.append('token', sessionStorage.getItem('tokenMadasa'));
             
             gasFetch( { method: 'POST', body: formData })
             .then(r => r.json()) 
-            .then(res => {
+           .then(res => {
                 showLoading(false);
                 if(res.status === 'success') {
                     DATA_SANTRI = res.data;
-                    mulaiScanner(); 
                     
                     // --- PANGGIL FUNGSI PEMBUAT DROPDOWN KELAS OTOMATIS & BERURUTAN ---
                     buatOpsiKelasDinamisAbsensi();
+                    
+                    // --- KUNCI SISTEM KE TAB MANUAL SAAT PERTAMA KALI DIBUKA ---
+                    switchTab('manual');
+                    
                 } else {
                     Swal.fire('Peringatan', 'Data santri kosong.', 'warning');
                 }
@@ -327,10 +364,9 @@ function buatOpsiKelasDinamisAbsensi() {
             }
         }
 
-        function switchTab(tab) {
+function switchTab(tab) {
             const btnScan = document.getElementById('tabScan');
             const btnManual = document.getElementById('tabManual');
-            
             const areaScan = document.getElementById('areaScan');
             const areaManual = document.getElementById('areaManual');
 
@@ -347,12 +383,62 @@ function buatOpsiKelasDinamisAbsensi() {
             if(tab === 'scan') {
                 btnScan.className = classAktif; 
                 areaScan.classList.remove('hidden');
-                if(html5QrcodeScanner) html5QrcodeScanner.resume();
+                // Biarkan pengguna klik Buka Kamera secara manual
             } else {
                 btnManual.className = classAktif; 
                 areaManual.classList.remove('hidden');
-                if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
+                // Otomatis matikan kamera jika berpindah ke tab Manual
+                hentikanScanner();
             }
+        }
+
+        async function mulaiScannerSekarang() {
+            // Sembunyikan tombol, munculkan area kamera
+            document.getElementById('wadahTombolMulai').classList.add('hidden');
+            document.getElementById('wadahKamera').classList.remove('hidden');
+
+            try {
+                if (!html5QrcodeScanner) {
+                    html5QrcodeScanner = new Html5Qrcode("reader");
+                }
+                
+                const cameras = await Html5Qrcode.getCameras();
+                if (!cameras || cameras.length === 0) throw new Error("Kamera tidak ditemukan");
+                
+                let cameraId = cameras[0].id;
+                const backCamera = cameras.find(cam => cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("rear"));
+                if (backCamera) cameraId = backCamera.id;
+
+                await html5QrcodeScanner.start(
+                    cameraId,
+                    { 
+                        fps: 15, 
+                        qrbox: { width: 250, height: 200 },
+                        aspectRatio: 1.0 
+                    },
+                    onScanSuccess,
+                    (err) => {}
+                );
+                isScanning = false;
+            } catch (err) {
+                console.error(err);
+                hentikanScanner();
+                Swal.fire({ icon: 'error', title: 'Kamera Gagal', text: 'Kamera tidak dapat diakses. Pastikan Anda telah memberikan izin pada browser.' });
+            }
+        }
+
+        function hentikanScanner() {
+            if (html5QrcodeScanner) {
+                // Hentikan kamera secara total untuk menghemat baterai
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }).catch(e => console.log(e));
+            }
+            
+            // Kembalikan tampilan UI ke tombol Mulai
+            document.getElementById('wadahKamera').classList.add('hidden');
+            document.getElementById('wadahTombolMulai').classList.remove('hidden');
         }
 
         async function mulaiScanner() {
@@ -484,23 +570,28 @@ function buatOpsiKelasDinamisAbsensi() {
             });
         }
 
-        function renderTabelManual() {
+function renderTabelManual() {
             const kelas = document.getElementById('filterKelasManual').value;
             const tbody = document.getElementById('bodyTabelManual');
+            const wadahAksi = document.getElementById('wadahAksiMassal');
             
             if (DATA_SANTRI.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
+                if(wadahAksi) wadahAksi.classList.add('hidden');
                 return;
             }
 
             const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
 
             if (santriKelas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
+                if(wadahAksi) wadahAksi.classList.add('hidden');
                 return;
             }
 
+            if(wadahAksi) wadahAksi.classList.remove('hidden');
             tbody.innerHTML = '';
+            
             santriKelas.forEach((s, i) => {
                 tbody.innerHTML += `
                 <tr id="baris_${s.nis}" class="hover:bg-emerald-50/50 transition-all border-b border-gray-100 last:border-none">
@@ -509,7 +600,7 @@ function buatOpsiKelasDinamisAbsensi() {
                         <p class="font-bold text-sm text-gray-800">${s.nama}</p>
                         <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
                     </td>
-                    <td class="p-3 text-center border-r border-gray-100 align-middle">
+                    <td class="p-3 text-center align-middle">
                         <select id="status_${s.nis}" class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50 text-gray-700 font-semibold cursor-pointer text-center transition-all">
                             <option value="" disabled selected>- Status -</option>
                             <option value="Hadir">✅ Hadir</option>
@@ -518,14 +609,96 @@ function buatOpsiKelasDinamisAbsensi() {
                             <option value="Alfa">❌ Alfa</option>
                         </select>
                     </td>
-                    <td class="p-3 text-center align-middle">
-                        <button onclick="simpanAbsenManual('${s.nis}', '${s.nama}', '${s.kelas}')" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition-all w-full sm:w-auto">
-                            Simpan
-                        </button>
-                    </td>
                 </tr>`;
             });
         }
+		
+		
+		async function simpanSemuaAbsenManual() {
+    if (!cekIzinAbsen()) return;
+
+    const kelas = document.getElementById('filterKelasManual').value;
+    if (!kelas) {
+        Swal.fire({ icon: 'warning', title: 'Pilih Kelas', text: 'Silakan pilih kelas terlebih dahulu.' });
+        return;
+    }
+
+    const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+    
+    // --- 1. PROSES VALIDASI WAJIB ISI SEMUA ---
+    let adaYangKosong = false;
+    let namaSantriKosong = "";
+
+    for (let i = 0; i < santriKelas.length; i++) {
+        const s = santriKelas[i];
+        const selectEl = document.getElementById('status_' + s.nis);
+        
+        if (!selectEl || selectEl.value === "") {
+            adaYangKosong = true;
+            namaSantriKosong = s.nama; 
+            break; 
+        }
+    }
+
+    if (adaYangKosong) {
+        Swal.fire({ 
+            icon: 'error', 
+            title: 'Absensi Belum Lengkap', 
+            text: `Silakan isi status kehadiran untuk SEMUA santri. (${namaSantriKosong} belum diisi)` 
+        });
+        return; 
+    }
+
+    // --- 2. PROSES PENYIMPANAN (ANTREAN SATU PER SATU) ---
+    let dataTersimpan = 0;
+    let dataGagal = 0;
+
+    // Tampilkan loading dengan indikator angka
+    showLoading(true, `Menyimpan absen... (0/${santriKelas.length})`);
+
+    for (let i = 0; i < santriKelas.length; i++) {
+        const s = santriKelas[i];
+        const selectEl = document.getElementById('status_' + s.nis);
+        
+        const fd = new URLSearchParams();
+        fd.append('action', 'simpanAbsenBarcode');
+        fd.append('nis', s.nis);
+        fd.append('nama', s.nama);
+        fd.append('kelas', s.kelas);
+        fd.append('status', selectEl.value); 
+        fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+        try {
+            // Perintah 'await' memaksa sistem menunggu 1 data tersimpan sebelum lanjut ke santri berikutnya
+            const response = await gasFetch({ method: 'POST', body: fd });
+            const res = await response.json();
+            
+            if (res.status === 'success') {
+                document.getElementById('baris_' + s.nis).classList.add('bg-gray-50', 'opacity-60');
+                dataTersimpan++;
+            } else {
+                dataGagal++;
+            }
+        } catch (error) {
+            console.error("Gagal simpan:", s.nama, error);
+            dataGagal++;
+        }
+        
+        // Update teks loading agar pengguna tahu progresnya
+        document.getElementById('teksLoading').innerText = `Menyimpan absen... (${i + 1}/${santriKelas.length})`;
+    }
+
+    showLoading(false);
+    
+    // --- 3. NOTIFIKASI HASIL AKHIR ---
+    if (dataGagal === 0) {
+        Swal.fire({ icon: 'success', title: 'Selesai!', text: `${dataTersimpan} data absensi kelas ini berhasil disimpan seluruhnya.` });
+    } else {
+        Swal.fire({ icon: 'warning', title: 'Selesai dengan Catatan', text: `${dataTersimpan} data berhasil disimpan, namun ada ${dataGagal} data yang gagal (mungkin kendala sinyal).` });
+    }
+}
+		
+		
     </script>
 </body>
 </html>

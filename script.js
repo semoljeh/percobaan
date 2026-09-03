@@ -1631,6 +1631,18 @@ document.getElementById('formEditNilai').addEventListener('submit', function(e) 
 });
 
 function loadBintangPelajar() {
+    // --- TAMBAHAN PENGAMAN LOADING BALAPAN ---
+    if (GLOBAL_DATA_SANTRI.length === 0) {
+        const wadah = document.getElementById('wadahBintangPelajar');
+        if (wadah) {
+            wadah.innerHTML = '<div class="col-span-full text-center text-white p-6"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Menyiapkan foto santri...</div>';
+        }
+        // Tunggu setengah detik, lalu coba panggil fungsi ini lagi
+        setTimeout(loadBintangPelajar, 500);
+        return;
+    }
+    // -----------------------------------------
+
     const wadah = document.getElementById('wadahBintangPelajar');
 
     wadah.innerHTML =
@@ -1657,16 +1669,32 @@ function loadBintangPelajar() {
 
             const upper = v => String(v || '').toUpperCase();
 
-            let dataTK = res.data.filter(s => /(^|\s|-)TK|TPQ|RA/.test(upper(s.kelas)));
-            let dataIBT = res.data.filter(s => /IBT|IBTIDAIYAH|\bMI\b|\bSD\b/.test(upper(s.kelas)));
-            let dataSANA = res.data.filter(s => /SANA|TSANAW|MTS|ALIYAH|\bMA\b/.test(upper(s.kelas)));
+          let dataTK = res.data.filter(s => /(^|\s|-)TK|TPQ|RA/.test(upper(s.kelas)) && parseFloat(s.total || 0) > 0);
+            let dataIBT = res.data.filter(s => /IBT|IBTIDAIYAH|\bMI\b|\bSD\b/.test(upper(s.kelas)) && parseFloat(s.total || 0) > 0);
+            let dataSANA = res.data.filter(s => /SANA|TSANAW|MTS|ALIYAH|\bMA\b/.test(upper(s.kelas)) && parseFloat(s.total || 0) > 0);
 
-            const urutkanJuaraUmum = arr => {
+            // Tampilkan pesan jika semua data kosong setelah difilter
+            if (dataTK.length === 0 && dataIBT.length === 0 && dataSANA.length === 0) {
+                wadah.innerHTML =
+                    '<div class="bg-white/20 backdrop-blur-md border border-white/30 rounded-xl p-8 text-center text-white col-span-full shadow-lg">' +
+                    '<i class="fas fa-folder-open text-4xl mb-3 block text-white/80"></i>' +
+                    '<p class="font-bold text-lg mb-1">Belum Ada Bintang Pelajar</p>' +
+                    '<p class="text-sm text-white/80">Papan peringkat masih kosong. Silakan input nilai santri terlebih dahulu.</p>' +
+                    '</div>';
+                return;
+            }
+
+          const urutkanJuaraUmum = arr => {
                 arr.sort((a, b) => {
+                    // 1. Prioritaskan TOTAL NILAI agar posisi bergeser realtime saat diinput
+                    const totalB = parseFloat(b.total || 0);
+                    const totalA = parseFloat(a.total || 0);
+                    if (totalB !== totalA) return totalB - totalA;
+                    
+                    // 2. Jika totalnya seri (sama persis), baru adu Rata-rata
                     const rataB = parseFloat(b.rata_asli ?? b.rata ?? 0);
                     const rataA = parseFloat(a.rata_asli ?? a.rata ?? 0);
-                    if (rataB !== rataA) return rataB - rataA;
-                    return parseFloat(b.total || 0) - parseFloat(a.total || 0);
+                    return rataB - rataA;
                 });
             };
 
@@ -1676,8 +1704,39 @@ function loadBintangPelajar() {
 
             wadah.innerHTML = '';
 
-            const renderKategori = (judul, icon, dataKategori, warnaBadge) => {
+         const renderKategori = (judul, icon, dataKategori, warnaBadge) => {
                 if (dataKategori.length === 0) return;
+
+                // --- 1. KELOMPOKKAN SANTRI BERDASARKAN KELAS MASING-MASING ---
+                let grupKelas = {};
+                dataKategori.forEach(s => {
+                    if (!grupKelas[s.kelas]) grupKelas[s.kelas] = [];
+                    grupKelas[s.kelas].push(s);
+                });
+
+                // --- 2. CARI JUARA 1 DARI SETIAP KELAS ---
+                let juaraPerKelas = [];
+                for (let k in grupKelas) {
+                    let santriDiKelas = grupKelas[k];
+                    urutkanJuaraUmum(santriDiKelas); // Urutkan anak di kelas ini
+                    
+                    let topTotalKelas = parseFloat(santriDiKelas[0].total || 0);
+                    let topRataKelas = parseFloat(santriDiKelas[0].rata_asli ?? santriDiKelas[0].rata ?? 0);
+                    
+                    santriDiKelas.forEach(s => {
+                        let total = parseFloat(s.total || 0);
+                        let rata = parseFloat(s.rata_asli ?? s.rata ?? 0);
+                        // Ambil yang nilainya sama dengan peringkat 1 di kelasnya
+                        if (total === topTotalKelas && rata === topRataKelas) {
+                            juaraPerKelas.push(s);
+                        }
+                    });
+                }
+
+                // --- 3. URUTKAN PARA JUARA KELAS INI (Untuk mencari Juara Umum se-Tingkat) ---
+                urutkanJuaraUmum(juaraPerKelas);
+
+                if (juaraPerKelas.length === 0) return;
 
                 wadah.innerHTML += `
                     <div class="col-span-full text-white font-bold text-lg mt-4 mb-2 border-b border-white/30 pb-2 shadow-sm">
@@ -1685,20 +1744,35 @@ function loadBintangPelajar() {
                     </div>
                 `;
 
-                const topRata = parseFloat(dataKategori[0].rata_asli ?? dataKategori[0].rata ?? 0);
-                const topTotal = parseFloat(dataKategori[0].total || 0);
+                // Nilai tertinggi di antara para juara kelas = Juara Umum
+                const topTotalUmum = parseFloat(juaraPerKelas[0].total || 0);
+                const topRataUmum = parseFloat(juaraPerKelas[0].rata_asli ?? juaraPerKelas[0].rata ?? 0);
 
-                // TAMBAHAN: Masukkan parameter (santri, index)
-                dataKategori.forEach((santri, index) => {
-                    const nomorUrut = index + 1; // Membuat urutan otomatis mulai dari 1
-                    
+                let rankAktual = 1;
+
+                juaraPerKelas.forEach((santri, index) => {
                     const rata = parseFloat(santri.rata_asli ?? santri.rata ?? 0);
                     const total = parseFloat(santri.total || 0);
-                    const isJuaraUmum = rata === topRata && total === topTotal;
+                    
+                    // Logika ranking di papan Bintang Pelajar
+                    if (index > 0) {
+                        const prevTotal = parseFloat(juaraPerKelas[index-1].total || 0);
+                        const prevRata = parseFloat(juaraPerKelas[index-1].rata_asli ?? juaraPerKelas[index-1].rata ?? 0);
+                        if (total !== prevTotal || rata !== prevRata) {
+                            rankAktual = index + 1;
+                        }
+                    }
+                    // Nomor di avatar menunjukkan ranking dia di antara para juara kelas lainnya
+                    const nomorUrut = rankAktual;
+                    
+                    const isLengkap = santri.lengkap === true || santri.status_ranking === 'LENGKAP';
+                    
+                    // Badge Juara Umum HANYA untuk pemuncak klasemen dari seluruh juara kelas
+                    const isJuaraUmum = (total === topTotalUmum && rata === topRataUmum && isLengkap && total > 0);
+                    
                     const namaWali = santri.wali || 'Belum Diatur';
                     const rataBenar = rata.toFixed(2);
                     
-                    // Label Peringatan Belum Lengkap
                     let badgeBelumLengkap = '';
                     if (!santri.lengkap) {
                         let teksMapel = /(TK|TPQ|RA)/i.test(santri.kelas) 
@@ -1715,17 +1789,37 @@ function loadBintangPelajar() {
                     ` : '';
 
                     const colorAvatar = isJuaraUmum ? 'bg-amber-100 text-amber-500' : 'bg-gray-100 text-gray-400';
-                    const colorNumber = isJuaraUmum ? warnaBadge.split(' ')[0] : 'bg-emerald-600';
+                    
+                    // Lingkaran berwarna sesuai tema jika Juara Umum, jika Juara Kelas biasa warnanya netral
+                    const colorNumber = isJuaraUmum ? warnaBadge.split(' ')[0] : 'bg-gray-400'; 
+
+                    // --- TARIK DATA FOTO DARI DATABASE ---
+                    const nisBersih = String(santri.nis).replace(/[^0-9]/g, '');
+                    const masterSantri = GLOBAL_DATA_SANTRI.find(s => String(s.nis).replace(/[^0-9]/g, '') === nisBersih);
+                    
+                    let fotoUrl = masterSantri ? masterSantri.foto : (santri.foto || '');
+                    let elemenFoto = '<i class="fas fa-user-graduate"></i>'; 
+
+                    if (fotoUrl && fotoUrl.trim() !== '') {
+                        let finalUrl = fotoUrl;
+                        if (fotoUrl.includes('drive.google.com')) {
+                            let fileId = '';
+                            if (fotoUrl.includes('id=')) fileId = fotoUrl.split('id=')[1].split('&')[0];
+                            else if (fotoUrl.includes('/d/')) fileId = fotoUrl.split('/d/')[1].split('/')[0];
+                            if (fileId) finalUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`; 
+                        }
+                        elemenFoto = `<img src="${finalUrl}" class="w-full h-full object-cover rounded-full" alt="Foto" onerror="this.outerHTML='<i class=\\'fas fa-user-graduate\\'></i>'">`;
+                    }
 
                     wadah.innerHTML += `
                     <div class="bg-white rounded-xl p-5 shadow-lg transform transition hover:-translate-y-1 relative overflow-hidden group">
                         ${badgeJuara}
                         <div class="flex items-center gap-4 mb-3">
                             <div class="w-14 h-14 rounded-full ${colorAvatar} flex items-center justify-center text-2xl font-bold shadow-inner shrink-0 relative">
-                                <i class="fas fa-user-graduate"></i>
-                                <!-- MENGGUNAKAN VARIABEL nomorUrut DI SINI -->
+                                ${elemenFoto}
                                 <div class="absolute -bottom-1 -right-1 w-6 h-6 ${colorNumber} text-white text-xs flex items-center justify-center rounded-full border-2 border-white font-bold">${nomorUrut}</div>
                             </div>
+							
                             <div class="flex-1 min-w-0">
                                 <p class="text-[10px] font-bold text-amber-600 tracking-wider uppercase mb-0.5">${escapeHTML(santri.kelas)}</p>
                                 <h4 class="font-bold text-gray-800 text-sm sm:text-base truncate leading-tight">${escapeHTML(santri.nama)}</h4>

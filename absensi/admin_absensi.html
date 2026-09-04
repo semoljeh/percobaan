@@ -132,6 +132,19 @@
                     <option value="Nonaktif">Nonaktif (Buka)</option>
                 </select>
             </div>
+			
+			
+			<!-- KOTAK TAMBAHAN: PENGATURAN AUTO ALFA -->
+            <div class="bg-red-50 p-4 sm:p-5 rounded-2xl border border-red-100 mb-6 flex justify-between items-center shadow-sm">
+                <div>
+                    <label class="text-sm font-bold text-red-800 block"><i class="fas fa-user-times mr-2"></i>Auto Alfa Harian</label>
+                    <p class="text-[10px] sm:text-[11px] text-red-600 mt-0.5">Otomatis catat "Alfa" setiap hari bagi santri yang tidak absen.</p>
+                </div>
+                <select id="optAutoAlfa" onchange="simpanAutoAlfa()" class="p-2 sm:p-2.5 rounded-xl border border-red-200 text-xs sm:text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-red-500 bg-white shadow-sm cursor-pointer">
+                    <option value="Nonaktif">Nonaktif</option>
+                    <option value="Aktif">Aktif</option>
+                </select>
+            </div>
 
             <!-- KOTAK 2: JAM ABSEN -->
             <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-6">
@@ -151,6 +164,16 @@
                 
                 <button onclick="simpanJamAbsen()" class="w-full flex items-center justify-center px-4 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm transition-all shadow-sm">
                     <i class="fas fa-save mr-2"></i> Simpan Pengaturan Jam
+                </button>
+            </div>
+			
+			
+			<!-- KOTAK TAMBAHAN: EKSEKUSI ALFA MANUAL (FORCE CLOSE) -->
+            <div class="bg-red-50 p-5 rounded-2xl border border-red-100 mb-6">
+                <label class="text-sm font-bold text-red-800 block mb-1"><i class="fas fa-user-times mr-2"></i>Tutup Absen & Catat Alfa Sekarang</label>
+                <p class="text-[11px] text-red-600 mb-4">Fitur ini akan mengecek santri yang belum absen HARI INI dan langsung menandai mereka sebagai <b>"Alfa"</b>. Sangat berguna untuk dijalankan saat jam madrasah telah berakhir.</p>
+                <button onclick="eksekusiAlfaOtomatis()" class="w-full flex items-center justify-center px-4 py-3.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm transition-all shadow-sm">
+                    <i class="fas fa-bolt mr-2"></i> Eksekusi Alfa Sekarang
                 </button>
             </div>
             
@@ -396,6 +419,23 @@
             const fd = new URLSearchParams();
             fd.append('action', 'setLiburJumat');
             fd.append('status_jumat', statusJumat);
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                showLoading(false);
+                if(res.status === 'success') Swal.fire({toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000});
+                else Swal.fire('Gagal', res.message, 'error');
+            }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal menyambung ke server', 'error'); });
+        }
+		
+		
+		
+		function simpanAutoAlfa() {
+            showLoading(true, "Menyimpan pengaturan Auto Alfa...");
+            const statusAlfa = document.getElementById('optAutoAlfa').value;
+            const fd = new URLSearchParams();
+            fd.append('action', 'setAutoAlfa');
+            fd.append('auto_alfa', statusAlfa);
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
             fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
@@ -819,6 +859,7 @@ function populateKelasIzin() {
                     if(res.lng) document.getElementById('inputLng').value = res.lng;
                     if(res.radius) document.getElementById('inputRadius').value = res.radius;
 					if(res.libur_jumat) document.getElementById('optLiburJumat').value = res.libur_jumat;
+					if(res.auto_alfa) document.getElementById('optAutoAlfa').value = res.auto_alfa;
                 }
             }).catch(e => console.log('Gagal cek status sistem:', e));
         }
@@ -1005,6 +1046,42 @@ function tarikDataRekap() {
                 }
             });
         }
+		
+		function eksekusiAlfaOtomatis() {
+            Swal.fire({
+                title: 'Jalankan Proses Alfa?',
+                text: 'Sistem akan mengecek seluruh santri dan menandai "Alfa" bagi yang belum memiliki rekam jejak absen HARI INI.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Jalankan',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading(true, "Mengecek & Mencatat Alfa...");
+                    const fd = new URLSearchParams();
+                    fd.append('action', 'eksekusiAlfaOtomatis');
+                    fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+                    fetch(GAS_URL, { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(res => {
+                        showLoading(false);
+                        if (res.status === 'success') {
+                            Swal.fire('Informasi Sistem', res.message, 'success');
+                        } else { 
+                            Swal.fire('Gagal', res.message, 'error'); 
+                        }
+                    }).catch(e => { 
+                        showLoading(false); 
+                        Swal.fire('Error', 'Gagal menyambung ke server.', 'error'); 
+                    });
+                }
+            });
+        }
+		
+		
     </script>
 </body>
 </html>

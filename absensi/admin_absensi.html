@@ -115,24 +115,22 @@
                     <h2 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Pengaturan Absensi</h2>
                     <p class="text-xs text-gray-500 mt-1">Atur status dan jam operasional absensi harian.</p>
                 </div>
-                <span id="badgeStatus" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-600 shadow-sm border border-gray-200 whitespace-nowrap shrink-0"><i class="fas fa-sync fa-spin mr-1"></i> Memuat...</span>
+               <div id="badgeStatus" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-50 text-gray-500 border border-gray-200 rounded-full shadow-sm whitespace-nowrap shrink-0">
+                <i class="fas fa-sync fa-spin text-xs"></i> 
+                <span class="text-[10px] sm:text-xs font-bold tracking-wider uppercase">Cek...</span>
+            </div>
             </div>
 
-            <!-- KOTAK 1: STATUS -->
-            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-6">
-                <label class="text-sm font-bold text-gray-700 block mb-1"><i class="fas fa-toggle-on text-emerald-600 mr-2"></i>Status Operasional</label>
-                <p class="text-[11px] text-gray-500 mb-4">Masukkan keterangan jika ingin menutup/meliburkan absensi hari ini.</p>
-                
-                <input type="text" id="ketStatus" placeholder="Contoh: Libur Maulid Nabi / Cuaca Buruk" class="w-full p-3.5 mb-4 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white shadow-sm font-medium transition-all">
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button onclick="ubahStatusSistem('Libur')" class="w-full flex items-center justify-center px-4 py-3 bg-white text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-bold text-sm transition-all shadow-sm">
-                        <i class="fas fa-lock mr-2"></i> Tutup & Libur
-                    </button>
-                    <button onclick="ubahStatusSistem('Buka')" class="w-full flex items-center justify-center px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm transition-all shadow-sm">
-                        <i class="fas fa-unlock mr-2"></i> Buka Absen
-                    </button>
+<!-- KOTAK TAMBAHAN: PENGATURAN JUM'AT -->
+            <div class="bg-emerald-50 p-4 sm:p-5 rounded-2xl border border-emerald-100 mb-6 flex justify-between items-center shadow-sm">
+                <div>
+                    <label class="text-sm font-bold text-emerald-800 block"><i class="fas fa-calendar-week mr-2"></i>Libur Rutin Jum'at</label>
+                    <p class="text-[10px] sm:text-[11px] text-emerald-600 mt-0.5">Otomatis tolak absen setiap hari Jum'at.</p>
                 </div>
+                <select id="optLiburJumat" onchange="simpanLiburJumat()" class="p-2 sm:p-2.5 rounded-xl border border-emerald-200 text-xs sm:text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm cursor-pointer">
+                    <option value="Aktif">Aktif (Liburkan)</option>
+                    <option value="Nonaktif">Nonaktif (Buka)</option>
+                </select>
             </div>
 
             <!-- KOTAK 2: JAM ABSEN -->
@@ -339,7 +337,7 @@
         </div>
     </div>
 
-<!-- PANGGIL KONFIGURASI BACKEND (AUTO NO-CACHE) -->
+
 <script>
     var nocache = new Date().getTime();
     document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
@@ -364,7 +362,8 @@
             formData.append('action', 'getSantri');
             formData.append('token', sessionStorage.getItem('tokenMadasa'));
             
-            gasFetch( { method: 'POST', body: formData })
+            // PERBAIKAN 1: gasFetch diganti fetch(GAS_URL
+            fetch(GAS_URL, { method: 'POST', body: formData })
             .then(r => r.text()) 
             .then(text => {
                 showLoading(false);
@@ -387,6 +386,27 @@
                 Swal.fire('Error Koneksi', 'Gagal memuat data santri. Pastikan internet stabil.', 'error'); 
             });
         }
+		
+		
+		
+		
+		function simpanLiburJumat() {
+            showLoading(true, "Menyimpan pengaturan Jum'at...");
+            const statusJumat = document.getElementById('optLiburJumat').value;
+            const fd = new URLSearchParams();
+            fd.append('action', 'setLiburJumat');
+            fd.append('status_jumat', statusJumat);
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                showLoading(false);
+                if(res.status === 'success') Swal.fire({toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000});
+                else Swal.fire('Gagal', res.message, 'error');
+            }).catch(e => { showLoading(false); Swal.fire('Error', 'Gagal menyambung ke server', 'error'); });
+        }
+		
+		
+		
 
 // ==========================================================
 // FUNGSI MEMBUAT OPSI KELAS REKAP (CUSTOM SELECT DIPERBAIKI)
@@ -762,7 +782,8 @@ function populateKelasIzin() {
                     fd.append('keterangan', ket);
                     fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-                    gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                    // PERBAIKAN 2
+                    fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
                         showLoading(false);
                         if (res.status === 'success') {
                             Swal.fire('Berhasil', res.message, 'success');
@@ -779,7 +800,8 @@ function populateKelasIzin() {
             fd.append('action', 'getStatusAbsen');
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+            // PERBAIKAN 3
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
                 if (res.status === 'success') {
                     renderBadgeStatus(res.status_absen);
                     if(res.status_absen === 'Libur' && res.keterangan !== "-") {
@@ -796,18 +818,19 @@ function populateKelasIzin() {
                     if(res.lat) document.getElementById('inputLat').value = res.lat;
                     if(res.lng) document.getElementById('inputLng').value = res.lng;
                     if(res.radius) document.getElementById('inputRadius').value = res.radius;
+					if(res.libur_jumat) document.getElementById('optLiburJumat').value = res.libur_jumat;
                 }
             }).catch(e => console.log('Gagal cek status sistem:', e));
         }
 
-        function renderBadgeStatus(status) {
+function renderBadgeStatus(status) {
             const badge = document.getElementById('badgeStatus');
             if(status === 'Libur') {
-                badge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 shadow-sm border border-red-200 whitespace-nowrap shrink-0';
-                badge.innerHTML = '<i class="fas fa-lock mr-1"></i> STATUS: TUTUP';
+                badge.className = 'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-red-50 text-red-600 border border-red-200 rounded-full shadow-sm whitespace-nowrap shrink-0 transition-all';
+                badge.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span></span><span class="text-[10px] sm:text-xs font-bold tracking-wider uppercase">Ditutup</span>';
             } else {
-                badge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 shadow-sm border border-red-200 whitespace-nowrap shrink-0';
-                badge.innerHTML = '<i class="fas fa-unlock mr-1"></i> STATUS: BUKA';
+                badge.className = 'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full shadow-sm whitespace-nowrap shrink-0 transition-all';
+                badge.innerHTML = '<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span><span class="text-[10px] sm:text-xs font-bold tracking-wider uppercase">Buka</span>';
             }
         }
 
@@ -827,7 +850,8 @@ function populateKelasIzin() {
             fd.append('jam_tutup', valTutup);
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+            // PERBAIKAN 4
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
                 showLoading(false);
                 if (res.status === 'success') {
                     Swal.fire('Berhasil', res.message, 'success');
@@ -847,7 +871,8 @@ function populateKelasIzin() {
             fd.append('action', 'getBulanTersedia');
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+            // PERBAIKAN 5
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
                 const selectBulan = document.getElementById('filterBulanRekap');
                 if (res.status === 'success' && res.data.length > 0) {
                     selectBulan.innerHTML = ''; 
@@ -877,7 +902,8 @@ function tarikDataRekap() {
             fd.append('kelas', kelas);
             fd.append('token', sessionStorage.getItem('tokenMadasa')); 
 
-            gasFetch( { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+            // PERBAIKAN 6
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
                 showLoading(false);
                 tbody.innerHTML = '';
                 
@@ -948,7 +974,8 @@ function tarikDataRekap() {
             fd.append('radius', radius || 50);
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+            // PERBAIKAN 7
+            fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
                 showLoading(false);
                 if (res.status === 'success') {
                     Swal.fire('Berhasil', res.message, 'success');
@@ -962,11 +989,12 @@ function tarikDataRekap() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     showLoading(true, "Menghapus...");
-                    const fd = new URLSearchParams();
+                   const fd = new URLSearchParams();
                     fd.append('action', 'hapusLokasiAbsen');
                     fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-                    gasFetch( { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+                    // PERBAIKAN 8
+                    fetch(GAS_URL, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
                         showLoading(false);
                         if (res.status === 'success') {
                             document.getElementById('inputLat').value = '';

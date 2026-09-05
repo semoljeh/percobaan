@@ -8,7 +8,6 @@
     <link rel="icon" type="image/png" href="../asset/logoweb.png">
     <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
     
-    <link rel="manifest" href="../manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -20,7 +19,7 @@
         tailwind.config = { theme: { extend: { colors: { emerald: { 600: '#059669', 700: '#047857', 800: '#065f46' } }, fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] } } } }
     </script>
     
-<style>
+    <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
 
         /* DESAIN CUSTOM DROPDOWN KELAS */
@@ -54,7 +53,6 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
     </style>
-	
 </head>
 <body class="text-gray-800 p-4 sm:p-8">
 
@@ -85,7 +83,7 @@
             </button>
         </div>
 
-<!-- 2 TAB MENU -->
+        <!-- 2 TAB MENU -->
         <div class="grid grid-cols-2 gap-1 sm:gap-2 mb-6 bg-white p-1.5 sm:p-2 rounded-2xl shadow-sm border border-gray-100">
             <!-- Tombol Manual (Kiri - AKTIF DEFAULT) -->
             <button onclick="switchTab('manual')" id="tabManual" class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 bg-emerald-600 text-white rounded-xl font-bold text-[10px] sm:text-sm transition-all shadow-sm">
@@ -99,8 +97,8 @@
         </div>
     </div>
 
-<!-- AREA 1: SCANNER -->
-   <div id="areaScan" class="max-w-md mx-auto hidden">
+    <!-- AREA 1: SCANNER -->
+    <div id="areaScan" class="max-w-md mx-auto hidden">
         <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
             
             <!-- TOMBOL BUKA KAMERA -->
@@ -139,7 +137,7 @@
     </div>
 
     <!-- AREA 2: MANUAL -->
-  <div id="areaManual" class="max-w-5xl mx-auto">
+    <div id="areaManual" class="max-w-5xl mx-auto">
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
             
              <div class="mb-5 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 relative z-20" id="customSelectWrapper">
@@ -176,28 +174,27 @@
                </table>
             </div>
             
-<!-- TOMBOL AKSI MASSAL (Simpan Semua & Rekap) -->
-<div id="wadahAksiMassal" class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 hidden">
-    
-    <!-- KOTAK REKAP REAL-TIME -->
-    <div id="ringkasanAbsen" class="text-xs sm:text-sm font-medium text-gray-600 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 w-full sm:w-auto text-center sm:text-left flex-1">
-        Memuat rekapitulasi...
-    </div>
+            <!-- TOMBOL AKSI MASSAL (Simpan Semua & Rekap) -->
+            <div id="wadahAksiMassal" class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 hidden">
+                
+                <!-- KOTAK REKAP REAL-TIME -->
+                <div id="ringkasanAbsen" class="text-xs sm:text-sm font-medium text-gray-600 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 w-full sm:w-auto text-center sm:text-left flex-1">
+                    Memuat rekapitulasi...
+                </div>
 
-    <button onclick="simpanSemuaAbsenManual()" class="w-full sm:w-auto px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2">
-        <i class="fas fa-save text-lg"></i> Simpan Semua
-    </button>
-</div>
+                <button onclick="simpanSemuaAbsenManual()" class="w-full sm:w-auto px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-save text-lg"></i> Simpan Semua
+                </button>
+            </div>
 
         </div>
     </div>
 
- <!-- KONFIGURASI BACKEND (AUTO NO-CACHE) -->
-<script>
-    var nocache = new Date().getTime();
-    document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
-</script>
-	
+    <!-- KONFIGURASI BACKEND (AUTO NO-CACHE) -->
+    <script>
+        var nocache = new Date().getTime();
+        document.write('<script src="../config.js?nocache=' + nocache + '"><\/script>');
+    </script>
 	
     <script>
         const beepSound = new Audio('../asset/notif.mp3');
@@ -209,6 +206,7 @@
         let JAM_BUKA = 0; 
         let JAM_TUTUP = 24; 
         let STATUS_SISTEM = 'Buka';
+		let LIBUR_JUMAT = 'Aktif';
 
         function showLoading(show, teks="Memproses...") { 
             document.getElementById('loadingScreen').style.display = show ? 'flex' : 'none'; 
@@ -225,13 +223,14 @@
             fdStatus.append('action', 'getStatusAbsen');
             fdStatus.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fdStatus })
+            fetch(GAS_URL, { method: 'POST', body: fdStatus })
             .then(r=>r.json())
             .then(res => {
                 if (res.status === 'success') {
                     STATUS_SISTEM = res.status_absen;
                     if(res.jam_buka !== undefined) JAM_BUKA = parseInt(res.jam_buka);
                     if(res.jam_tutup !== undefined) JAM_TUTUP = parseInt(res.jam_tutup);
+                    if(res.libur_jumat !== undefined) LIBUR_JUMAT = res.libur_jumat; 
                     renderBadgeStatus(STATUS_SISTEM);
                 }
                 ambilDataSantri();
@@ -242,14 +241,14 @@
             });
         }
 
-function ambilDataSantri() {
+        function ambilDataSantri() {
             const formData = new URLSearchParams(); 
             formData.append('action', 'getSantri');
             formData.append('token', sessionStorage.getItem('tokenMadasa'));
             
-            gasFetch( { method: 'POST', body: formData })
+            fetch(GAS_URL, { method: 'POST', body: formData })
             .then(r => r.json()) 
-           .then(res => {
+            .then(res => {
                 showLoading(false);
                 if(res.status === 'success') {
                     DATA_SANTRI = res.data;
@@ -270,23 +269,20 @@ function ambilDataSantri() {
             });
         }
 
-// ==========================================================
-// FUNGSI MEMBUAT OPSI KELAS OTOMATIS (CUSTOM SELECT)
-// ==========================================================
-function buatOpsiKelasDinamisAbsensi() {
-    const listEl = document.getElementById('customSelectList');
-    if (!listEl) return;
+        // ==========================================================
+        // FUNGSI MEMBUAT OPSI KELAS OTOMATIS (CUSTOM SELECT)
+        // ==========================================================
+        function buatOpsiKelasDinamisAbsensi() {
+            const listEl = document.getElementById('customSelectList');
+            if (!listEl) return;
 
-    // 1. Ambil seluruh nama kelas unik dari data santri dan urutkan
-    // MODIFIKASI: Sembunyikan yang mengandung lulus, alumni, atau diberhentikan
-    const kelasUnik = [...new Set(DATA_SANTRI.map(s => s.kelas))]
-        .filter(k => k && !k.toLowerCase().includes('lulus') && !k.toLowerCase().includes('alumni') && !k.toLowerCase().includes('diberhentikan'))
-        .sort();
+            // MODIFIKASI: Sembunyikan yang mengandung lulus, alumni, atau diberhentikan
+            const kelasUnik = [...new Set(DATA_SANTRI.map(s => s.kelas))]
+                .filter(k => k && !k.toLowerCase().includes('lulus') && !k.toLowerCase().includes('alumni') && !k.toLowerCase().includes('diberhentikan'))
+                .sort();
 
-    // 2. Tentukan bobot urutan jenjang pendidikan
-    let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
+            let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
 
-            // 3. Kelompokkan secara otomatis berdasarkan kata kunci nama kelas
             let kelompokKelas = {};
             kelasUnik.forEach(k => {
                 let kUpper = k.toUpperCase();
@@ -302,16 +298,14 @@ function buatOpsiKelasDinamisAbsensi() {
                 kelompokKelas[kategori].push(k);
             });
 
-            // Urutkan kategori berdasarkan bobot jenjang dari TK ke Aliyah
             let kategoriUrut = Object.keys(kelompokKelas).sort((a, b) => (bobotJenjang[a] || 99) - (bobotJenjang[b] || 99));
 
-            // 4. Susun elemen HTML <li> sesuai urutan baru
             let htmlList = `<li class="custom-option-item text-gray-400 text-center !pl-3" onclick="pilihKelasCustom('', '-- Silakan Pilih Kelas --')">-- Reset Pilihan --</li>`;
             
             kategoriUrut.forEach(kategori => {
                 htmlList += `<li class="custom-option-group"><i class="fas fa-layer-group mr-2 opacity-50"></i>${kategori}</li>`;
                 kelompokKelas[kategori].forEach(kelas => {
-                    let safeKelas = kelas.replace(/'/g, "\\'"); // Mencegah error jika ada tanda petik
+                    let safeKelas = kelas.replace(/'/g, "\\'"); 
                     htmlList += `<li class="custom-option-item" onclick="pilihKelasCustom('${safeKelas}', '${safeKelas}')">${kelas}</li>`;
                 });
             });
@@ -331,7 +325,6 @@ function buatOpsiKelasDinamisAbsensi() {
                 });
             }
 
-            // Menutup daftar jika mengeklik area mana saja di luar kotak
             document.addEventListener('click', (e) => {
                 const list = document.getElementById('customSelectList');
                 const wrapper = document.getElementById('customSelectWrapper');
@@ -349,34 +342,33 @@ function buatOpsiKelasDinamisAbsensi() {
             icon.classList.toggle('rotate-180');
         }
 
-async function pilihKelasCustom(nilai, teks) {
-    document.getElementById('filterKelasManual').value = nilai; 
-    document.getElementById('customSelectText').innerText = teks; 
-    
-    toggleCustomSelect(); 
-    
-    // Tarik data absen yang sudah masuk hari ini dari server
-    if (nilai) {
-        showLoading(true, `Mengecek data absen hari ini...`);
-        const fd = new URLSearchParams();
-        fd.append('action', 'getAbsenHariIni');
-        fd.append('kelas', nilai);
-        fd.append('token', sessionStorage.getItem('tokenMadasa'));
+        async function pilihKelasCustom(nilai, teks) {
+            document.getElementById('filterKelasManual').value = nilai; 
+            document.getElementById('customSelectText').innerText = teks; 
+            
+            toggleCustomSelect(); 
+            
+            if (nilai) {
+                showLoading(true, `Mengecek data absen hari ini...`);
+                const fd = new URLSearchParams();
+                fd.append('action', 'getAbsenHariIni');
+                fd.append('kelas', nilai);
+                fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-        try {
-            const response = await gasFetch({ method: 'POST', body: fd });
-            const res = await response.json();
-            window.ABSEN_HARI_INI = res.data || {}; // Simpan ke memori sementara
-        } catch(e) {
-            window.ABSEN_HARI_INI = {};
+                try {
+                    const response = await fetch(GAS_URL, { method: 'POST', body: fd });
+                    const res = await response.json();
+                    window.ABSEN_HARI_INI = res.data || {}; 
+                } catch(e) {
+                    window.ABSEN_HARI_INI = {};
+                }
+                showLoading(false);
+            } else {
+                window.ABSEN_HARI_INI = {};
+            }
+            
+            renderTabelManual(); 
         }
-        showLoading(false);
-    } else {
-        window.ABSEN_HARI_INI = {};
-    }
-    
-    renderTabelManual(); 
-}
 
         function renderBadgeStatus(status) {
             const badge = document.getElementById('badgeStatus');
@@ -389,7 +381,7 @@ async function pilihKelasCustom(nilai, teks) {
             }
         }
 
-function switchTab(tab) {
+        function switchTab(tab) {
             const btnScan = document.getElementById('tabScan');
             const btnManual = document.getElementById('tabManual');
             const areaScan = document.getElementById('areaScan');
@@ -408,17 +400,14 @@ function switchTab(tab) {
             if(tab === 'scan') {
                 btnScan.className = classAktif; 
                 areaScan.classList.remove('hidden');
-                // Biarkan pengguna klik Buka Kamera secara manual
             } else {
                 btnManual.className = classAktif; 
                 areaManual.classList.remove('hidden');
-                // Otomatis matikan kamera jika berpindah ke tab Manual
                 hentikanScanner();
             }
         }
 
         async function mulaiScannerSekarang() {
-            // Sembunyikan tombol, munculkan area kamera
             document.getElementById('wadahTombolMulai').classList.add('hidden');
             document.getElementById('wadahKamera').classList.remove('hidden');
 
@@ -454,42 +443,13 @@ function switchTab(tab) {
 
         function hentikanScanner() {
             if (html5QrcodeScanner) {
-                // Hentikan kamera secara total untuk menghemat baterai
                 html5QrcodeScanner.stop().then(() => {
                     html5QrcodeScanner.clear();
                     html5QrcodeScanner = null;
                 }).catch(e => console.log(e));
             }
-            
-            // Kembalikan tampilan UI ke tombol Mulai
             document.getElementById('wadahKamera').classList.add('hidden');
             document.getElementById('wadahTombolMulai').classList.remove('hidden');
-        }
-
-        async function mulaiScanner() {
-            try {
-                html5QrcodeScanner = new Html5Qrcode("reader");
-                const cameras = await Html5Qrcode.getCameras();
-                if (!cameras || cameras.length === 0) throw new Error("Kamera tidak ditemukan");
-                
-                let cameraId = cameras[0].id;
-                const backCamera = cameras.find(cam => cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("rear"));
-                if (backCamera) cameraId = backCamera.id;
-
-                await html5QrcodeScanner.start(
-                    cameraId,
-                    { 
-                        fps: 15, 
-                        qrbox: { width: 250, height: 200 },
-                        aspectRatio: 1.0 
-                    },
-                    onScanSuccess,
-                    (err) => {}
-                );
-            } catch (err) {
-                console.error(err);
-                Swal.fire({ icon: 'error', title: 'Kamera Gagal', text: 'Kamera tidak dapat diakses. Pastikan Anda telah memberikan izin.' });
-            }
         }
 
         function cekIzinAbsen() {
@@ -502,7 +462,7 @@ function switchTab(tab) {
             const hari = waktu.getDay();
             const jam = waktu.getHours(); 
 
-            if (hari === 5) {
+            if (hari === 5 && LIBUR_JUMAT === 'Aktif') {
                 Swal.fire({ icon: 'info', title: 'Libur Rutin', text: 'Hari ini hari Jum\'at. Sistem absen sedang diliburkan.' });
                 return false;
             }
@@ -562,7 +522,7 @@ function switchTab(tab) {
             fd.append('status', status); 
             fd.append('token', sessionStorage.getItem('tokenMadasa'));
 
-            gasFetch( { method: 'POST', body: fd })
+            fetch(GAS_URL, { method: 'POST', body: fd })
             .then(r => r.json())
             .then(res => {
                 if(!isScan) showLoading(false);
@@ -595,144 +555,133 @@ function switchTab(tab) {
             });
         }
 
-function renderTabelManual() {
-    const kelas = document.getElementById('filterKelasManual').value;
-    const tbody = document.getElementById('bodyTabelManual');
-    const wadahAksi = document.getElementById('wadahAksiMassal');
-    
-    if (DATA_SANTRI.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
-        if(wadahAksi) wadahAksi.classList.add('hidden');
-        return;
-    }
+        function renderTabelManual() {
+            const kelas = document.getElementById('filterKelasManual').value;
+            const tbody = document.getElementById('bodyTabelManual');
+            const wadahAksi = document.getElementById('wadahAksiMassal');
+            
+            if (DATA_SANTRI.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-red-500">Data santri kosong.</td></tr>';
+                if(wadahAksi) wadahAksi.classList.add('hidden');
+                return;
+            }
 
-    const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
 
-    if (santriKelas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
-        if(wadahAksi) wadahAksi.classList.add('hidden');
-        return;
-    }
+            if (santriKelas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400">Tidak ada santri di kelas ini.</td></tr>';
+                if(wadahAksi) wadahAksi.classList.add('hidden');
+                return;
+            }
 
-    if(wadahAksi) wadahAksi.classList.remove('hidden');
-    tbody.innerHTML = '';
-    
-    // Ambil data rekam jejak hari ini dari memori
-    const absenHariIni = window.ABSEN_HARI_INI || {};
-    
-    santriKelas.forEach((s, i) => {
-        const statusTersimpan = absenHariIni[s.nis];
-        const isTersimpan = !!statusTersimpan; // True jika sudah diabsen
-        
-        // Baris meredup otomatis jika sudah absen
-        const classRow = isTersimpan ? 'bg-gray-50 opacity-60' : 'hover:bg-emerald-50/50';
-        // Kunci tombol agar tidak berubah jika sudah absen
-        const disableSelect = isTersimpan ? 'disabled' : '';
-        const bgSelect = isTersimpan ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 text-gray-700 cursor-pointer focus:ring-2 focus:ring-emerald-500';
-        
-        tbody.innerHTML += `
-        <tr id="baris_${s.nis}" class="${classRow} transition-all border-b border-gray-100 last:border-none">
-            <td class="p-4 text-center border-r border-gray-100 text-gray-500 font-medium">${i + 1}</td>
-            <td class="p-4 border-r border-gray-100">
-                <p class="font-bold text-sm text-gray-800">${s.nama}</p>
-                <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
-            </td>
-            <td class="p-3 text-center align-middle">
-                <select id="status_${s.nis}" onchange="hitungRekapRealtime()" ${disableSelect} class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none font-semibold text-center transition-all ${bgSelect}">
-                    <option value="" ${!isTersimpan ? 'selected' : ''} disabled>- Status -</option>
-                    <option value="Hadir" ${statusTersimpan === 'Hadir' ? 'selected' : ''}>✅ Hadir</option>
-                    <option value="Izin" ${statusTersimpan === 'Izin' ? 'selected' : ''}>✉️ Izin</option>
-                    <option value="Sakit" ${statusTersimpan === 'Sakit' ? 'selected' : ''}>🤒 Sakit</option>
-                    <option value="Alfa" ${statusTersimpan === 'Alfa' ? 'selected' : ''}>❌ Alfa</option>
-                </select>
-            </td>
-        </tr>`;
-    });
-
-    // Panggil ulang perhitungan rekap real-time
-    hitungRekapRealtime();
-}
-		
-		
-async function simpanSemuaAbsenManual() {
-    if (!cekIzinAbsen()) return;
-
-    const kelas = document.getElementById('filterKelasManual').value;
-    if (!kelas) {
-        Swal.fire({ icon: 'warning', title: 'Pilih Kelas', text: 'Silakan pilih kelas terlebih dahulu.' });
-        return;
-    }
-
-    const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
-    
-    let adaYangKosong = false;
-    let namaSantriKosong = "";
-    let paketDataAbsen = []; // Penampung 1 kelas
-
-    // 1. PROSES VALIDASI & PEMBUNGKUSAN DATA
-    for (let i = 0; i < santriKelas.length; i++) {
-        const selectEl = document.getElementById('status_' + santriKelas[i].nis);
-        if (!selectEl || selectEl.value === "") {
-            adaYangKosong = true;
-            namaSantriKosong = santriKelas[i].nama; 
-            break; 
-        }
-        
-        // Kumpulkan data ke dalam paket
-        paketDataAbsen.push({
-            nis: santriKelas[i].nis,
-            nama: santriKelas[i].nama,
-            kelas: santriKelas[i].kelas,
-            status: selectEl.value
-        });
-    }
-
-    if (adaYangKosong) {
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'Absensi Belum Lengkap', 
-            text: `Silakan pilih status kehadiran untuk SEMUA santri. (${namaSantriKosong} belum dipilih)` 
-        });
-        return; 
-    }
-
-    // 2. PROSES PENGIRIMAN 1 KALI (BATCH)
-    showLoading(true, `Menyimpan absensi Kelas ${kelas}...`);
-
-    const fd = new URLSearchParams();
-    fd.append('action', 'simpanAbsenMassal'); // Panggil endpoint backend baru
-    fd.append('data_absen', JSON.stringify(paketDataAbsen)); 
-    fd.append('token', sessionStorage.getItem('tokenMadasa'));
-
-    try {
-        const response = await gasFetch({ method: 'POST', body: fd });
-        const res = await response.json();
-        
-        showLoading(false);
-        
-        if (res.status === 'success') {
-            // Beri efek visual redup untuk seluruh baris di layar
-            santriKelas.forEach(s => {
-                document.getElementById('baris_' + s.nis).classList.add('bg-gray-50', 'opacity-60');
+            if(wadahAksi) wadahAksi.classList.remove('hidden');
+            tbody.innerHTML = '';
+            
+            const absenHariIni = window.ABSEN_HARI_INI || {};
+            
+            santriKelas.forEach((s, i) => {
+                const statusTersimpan = absenHariIni[s.nis];
+                const isTersimpan = !!statusTersimpan; 
+                
+                const classRow = isTersimpan ? 'bg-gray-50 opacity-60' : 'hover:bg-emerald-50/50';
+                const disableSelect = isTersimpan ? 'disabled' : '';
+                const bgSelect = isTersimpan ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 text-gray-700 cursor-pointer focus:ring-2 focus:ring-emerald-500';
+                
+                tbody.innerHTML += `
+                <tr id="baris_${s.nis}" class="${classRow} transition-all border-b border-gray-100 last:border-none">
+                    <td class="p-4 text-center border-r border-gray-100 text-gray-500 font-medium">${i + 1}</td>
+                    <td class="p-4 border-r border-gray-100">
+                        <p class="font-bold text-sm text-gray-800">${s.nama}</p>
+                        <p class="text-[10px] text-gray-500 mt-0.5">NIS: ${s.nis}</p>
+                    </td>
+                    <td class="p-3 text-center align-middle">
+                        <select id="status_${s.nis}" onchange="hitungRekapRealtime()" ${disableSelect} class="w-full min-w-[110px] p-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm outline-none font-semibold text-center transition-all ${bgSelect}">
+                            <option value="" ${!isTersimpan ? 'selected' : ''} disabled>- Status -</option>
+                            <option value="Hadir" ${statusTersimpan === 'Hadir' ? 'selected' : ''}>✅ Hadir</option>
+                            <option value="Izin" ${statusTersimpan === 'Izin' ? 'selected' : ''}>✉️ Izin</option>
+                            <option value="Sakit" ${statusTersimpan === 'Sakit' ? 'selected' : ''}>🤒 Sakit</option>
+                            <option value="Alfa" ${statusTersimpan === 'Alfa' ? 'selected' : ''}>❌ Alfa</option>
+                        </select>
+                    </td>
+                </tr>`;
             });
 
-            if (res.dilewati > 0) {
-                Swal.fire({ icon: 'warning', title: 'Selesai dengan Catatan', text: `Sebagian data berhasil disimpan, namun ada ${res.dilewati} santri yang dilewati (sudah diabsen sebelumnya).` });
-            } else {
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Seluruh data absensi Kelas ${kelas} berhasil disimpan.` });
-            }
-        } else {
-            // Jika res.status error, tampilkan pop-up elegan
-            Swal.fire({ icon: 'error', title: 'Data Sudah Tercatat', text: `Absensi untuk Kelas ${kelas} sepertinya sudah terekam penuh di database hari ini.` });
+            hitungRekapRealtime();
         }
-    } catch (error) {
-        showLoading(false);
-        Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: 'Koneksi terputus saat mengirim paket data.' });
-    }
-}
+		
+        async function simpanSemuaAbsenManual() {
+            if (!cekIzinAbsen()) return;
 
+            const kelas = document.getElementById('filterKelasManual').value;
+            if (!kelas) {
+                Swal.fire({ icon: 'warning', title: 'Pilih Kelas', text: 'Silakan pilih kelas terlebih dahulu.' });
+                return;
+            }
 
-function hitungRekapRealtime() {
+            const santriKelas = DATA_SANTRI.filter(s => s.kelas === kelas);
+            
+            let adaYangKosong = false;
+            let namaSantriKosong = "";
+            let paketDataAbsen = []; 
+
+            for (let i = 0; i < santriKelas.length; i++) {
+                const selectEl = document.getElementById('status_' + santriKelas[i].nis);
+                if (!selectEl || selectEl.value === "") {
+                    adaYangKosong = true;
+                    namaSantriKosong = santriKelas[i].nama; 
+                    break; 
+                }
+                
+                paketDataAbsen.push({
+                    nis: santriKelas[i].nis,
+                    nama: santriKelas[i].nama,
+                    kelas: santriKelas[i].kelas,
+                    status: selectEl.value
+                });
+            }
+
+            if (adaYangKosong) {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Absensi Belum Lengkap', 
+                    text: `Silakan pilih status kehadiran untuk SEMUA santri. (${namaSantriKosong} belum dipilih)` 
+                });
+                return; 
+            }
+
+            showLoading(true, `Menyimpan absensi Kelas ${kelas}...`);
+
+            const fd = new URLSearchParams();
+            fd.append('action', 'simpanAbsenMassal'); 
+            fd.append('data_absen', JSON.stringify(paketDataAbsen)); 
+            fd.append('token', sessionStorage.getItem('tokenMadasa'));
+
+            try {
+                const response = await fetch(GAS_URL, { method: 'POST', body: fd });
+                const res = await response.json();
+                
+                showLoading(false);
+                
+                if (res.status === 'success') {
+                    santriKelas.forEach(s => {
+                        document.getElementById('baris_' + s.nis).classList.add('bg-gray-50', 'opacity-60');
+                    });
+
+                    if (res.dilewati > 0) {
+                        Swal.fire({ icon: 'warning', title: 'Selesai dengan Catatan', text: `Sebagian data berhasil disimpan, namun ada ${res.dilewati} santri yang dilewati (sudah diabsen sebelumnya).` });
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Seluruh data absensi Kelas ${kelas} berhasil disimpan.` });
+                    }
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Data Sudah Tercatat', text: `Absensi untuk Kelas ${kelas} sepertinya sudah terekam penuh di database hari ini.` });
+                }
+            } catch (error) {
+                showLoading(false);
+                Swal.fire({ icon: 'error', title: 'Gagal Memproses', text: 'Koneksi terputus saat mengirim paket data.' });
+            }
+        }
+
+        function hitungRekapRealtime() {
             const kelas = document.getElementById('filterKelasManual').value;
             if (!kelas) return;
 
@@ -773,8 +722,6 @@ function hitungRekapRealtime() {
                 }
             }
         }
-		
-		
     </script>
 </body>
 </html>

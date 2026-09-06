@@ -222,11 +222,11 @@ function showView(viewName, pushToHistory = true) {
     const targetView = document.getElementById('view-' + viewName);
     if (targetView) targetView.classList.remove('hidden');
     
-    if (viewName === 'dataSantri' || viewName === 'inputNilai' || viewName === 'dataNilai' || viewName === 'ranking' || viewName === 'pengaturan' || viewName === 'mutasi') { 
-        if (GLOBAL_DATA_SANTRI.length === 0) {
-            loadDataSantri(); 
-        }
+if (viewName === 'dataSantri' || viewName === 'inputNilai' || viewName === 'dataNilai' || viewName === 'ranking' || viewName === 'pengaturan' || viewName === 'mutasi' || viewName === 'pantauNilai') { 
+    if (GLOBAL_DATA_SANTRI.length === 0) {
+        loadDataSantri(); 
     }
+}
     
     if (viewName === 'ranking') { 
         loadBintangPelajar(); 
@@ -2834,7 +2834,10 @@ function buatOpsiSemuaKelasOtomatis() {
         { id: 'mutasiKelasAsal', defaultText: '-- Pilih Kelas Asal --', defaultValue: '', callback: 'loadTabelMutasi', useAktifOnly: true },
         { id: 'mutasiKelasTujuan', defaultText: '-- Pilih Tujuan --', defaultValue: '', callback: '', useAktifOnly: true },
         { id: 'add_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: true },
-        { id: 'edit_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: false } // Edit bisa jadi perlu mengakses Alumni
+        { id: 'edit_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: false }, // Edit bisa jadi perlu mengakses Alumni
+		
+		// Tambahkan baris ini di dalam array listDropdown (sekitar baris ke-1090)
+        { id: 'filterKelasPantau', defaultText: '-- Pilih Kelas --', defaultValue: '', callback: 'loadPantauNilai', useAktifOnly: true }
     ];
 
     listDropdown.forEach(dropdown => {
@@ -3591,3 +3594,323 @@ function aturModeTahun() {
 }
 
 document.addEventListener("DOMContentLoaded", buatOpsiTahunPelajaran);
+
+// =========================================================
+// FUNGSI REKAP TOP 3 SELURUH KELAS
+// =========================================================
+function openModalRekapTop3() {
+    document.getElementById('modalRekapTop3').classList.remove('hidden');
+    loadDataRekapTop3();
+}
+
+function closeModalRekapTop3() {
+    document.getElementById('modalRekapTop3').classList.add('hidden');
+}
+
+function loadDataRekapTop3() {
+    const tbody = document.getElementById('bodyTabelRekapTop3');
+    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-gray-500"><i class="fas fa-spinner fa-spin text-3xl mb-3 block text-emerald-500"></i>Memproses kalkulasi nilai seluruh kelas...</td></tr>';
+
+    const formData = new URLSearchParams();
+    formData.append('action', 'getRekapTop3');
+    formData.append('token', sessionStorage.getItem('tokenMadasa'));
+
+    gasFetch({ method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === 'success' && res.data.length > 0) {
+            
+            res.data.sort((a, b) => {
+                function getSkor(namaKelas) {
+                    let k = String(namaKelas).toUpperCase();
+                    let bobot = 99; 
+                    if (k.includes('TK') || k.includes('RA')) bobot = 1;
+                    else if (k.includes('IBT') || k.includes('MI')) bobot = 2;
+                    else if (k.includes('SANA') || k.includes('MTS')) bobot = 3;
+                    else if (k.includes('ALIYAH') || k.includes('MA')) bobot = 4;
+
+                    let angka = 0;
+                    let matchAngka = k.match(/\d+/);
+                    let matchRomawi = k.match(/\b(I{1,3}|IV|V|VI{0,3}|IX|X{1,2}|XI{0,2})\b/);
+
+                    if (matchAngka) {
+                        angka = parseInt(matchAngka[0]);
+                    } else if (matchRomawi) {
+                        const mapRomawi = { 'I':1, 'II':2, 'III':3, 'IV':4, 'V':5, 'VI':6, 'VII':7, 'VIII':8, 'IX':9, 'X':10, 'XI':11, 'XII':12 };
+                        angka = mapRomawi[matchRomawi[0]] || 0;
+                    }
+                    return (bobot * 1000) + angka;
+                }
+
+                let skorA = getSkor(a.kelas);
+                let skorB = getSkor(b.kelas);
+
+                if (skorA !== skorB) return skorA - skorB;
+                if (a.kelas !== b.kelas) return String(a.kelas).localeCompare(String(b.kelas));
+                return a.rank - b.rank;
+            });
+
+            let html = '';
+            let kelasAktif = '';
+            
+            res.data.forEach(s => {
+                let borderKelas = (kelasAktif !== s.kelas && kelasAktif !== '') ? 'border-t-4 border-gray-300' : '';
+                kelasAktif = s.kelas;
+                
+                let rankStyle = '';
+                let rankIcon = s.rank;
+                if (s.rank === 1) { rankStyle = 'bg-amber-50 text-amber-600 font-black text-lg'; rankIcon = '<i class="fas fa-medal mr-1"></i>1'; }
+                else if (s.rank === 2) { rankStyle = 'bg-gray-100 text-gray-500 font-bold'; }
+                else if (s.rank === 3) { rankStyle = 'bg-orange-50 text-orange-500 font-bold'; }
+
+                html += `
+                <tr class="hover:bg-emerald-50 transition-colors ${borderKelas}">
+                    <td class="p-3 text-center border-r border-gray-100 font-bold text-xs bg-gray-50/50 text-gray-600 whitespace-nowrap align-top pt-4">${escapeHTML(s.kelas)}</td>
+                    <td class="p-3 text-center border-r border-gray-100 ${rankStyle} align-top pt-4">${rankIcon}</td>
+                    <td class="p-3 border-r border-gray-100 align-top">
+                        <div class="font-bold text-gray-800 text-sm mb-1 uppercase">${escapeHTML(s.nama)}</div>
+                        <div style="font-size: 11px; color: #555; line-height: 1.5;">
+                            <div><b>Ortu:</b> ${escapeHTML(s.ayah)} & ${escapeHTML(s.ibu)}</div>
+                            <div><b>Alamat:</b> ${escapeHTML(s.alamat)}</div>
+                            <div style="margin-top: 3px; color: #047857;"><b>Wali Kelas:</b> ${escapeHTML(s.wali)}</div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center border-r border-gray-100 font-bold text-emerald-700 align-top pt-4">${s.total}</td>
+                    <td class="p-3 text-center font-bold text-blue-600 align-top pt-4">${parseFloat(s.rata).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-red-500 font-medium"><i class="fas fa-exclamation-triangle text-3xl mb-3 block text-red-300"></i>Belum ada data nilai yang memenuhi kriteria Top 3.</td></tr>';
+        }
+    }).catch(e => {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-500">Gagal terhubung ke server.</td></tr>';
+    });
+}
+
+function cetakRekapTop3() {
+    const tabelElemen = document.getElementById('tabelRekapCetak');
+    const tanggalCetak = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const tglTtd = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    const logoUrl = window.location.origin + window.location.pathname.replace(/index\.html$/i, '') + 'asset/logo.png';
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html><html><head><title>Rekap Top 3 Madrasah</title>
+        <style>
+            @page { margin: 15mm; }
+            body { font-family: 'Arial', sans-serif; font-size: 12px; color: #000; background: #fff; margin: 0; padding: 0; }
+            
+            /* ==========================================
+               PERBAIKAN CSS CETAK TABEL (ANTI-POTONG) 
+               ========================================== */
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; page-break-inside: auto; }
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; break-inside: avoid; -webkit-column-break-inside: avoid; }
+            th, td { 
+                border: 1px solid #000; 
+                padding: 10px 8px; /* Padding dilebarkan agar teks tidak menempel garis */
+                text-align: left; 
+                vertical-align: top; 
+            }
+            th { background-color: #065f46 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; text-align: center; font-weight: bold; }
+            
+            td.center { text-align: center; }
+            td.bold { font-weight: bold; }
+            
+            /* Mengatur ketebalan pembatas antar kelas */
+            .border-thick { border-top: 3px solid #000 !important; }
+            
+            /* KOP SURAT MODERN */
+            .kop-container { display: flex; align-items: center; border-bottom: 3px solid #065f46; padding-bottom: 10px; margin-bottom: 20px; }
+            .kop-logo { width: 70px; height: 70px; object-fit: contain; margin-right: 15px; }
+            .kop-teks { flex: 1; text-align: center; padding-right: 85px; }
+            .kop-teks h2 { margin: 0; font-size: 24px; text-transform: uppercase; font-weight: bold; color: #065f46; }
+            .kop-teks p { margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+            
+            /* AREA TANDA TANGAN */
+            .ttd-container { margin-top: 40px; display: flex; justify-content: flex-end; padding-right: 20px; page-break-inside: avoid; }
+            .ttd-box { text-align: center; width: 250px; }
+            .ttd-box p { margin: 0 0 5px 0; font-size: 12px; }
+            .ttd-box .jabatan { font-weight: bold; }
+            .ttd-box .nama-garis { margin-top: 80px; font-weight: bold; text-decoration: underline; }
+            
+            /* CATATAN KAKI */
+            .footer { margin-top: 30px; font-size: 10px; font-style: italic; text-align: center; color: #555; border-top: 1px dashed #aaa; padding-top: 10px; }
+        </style></head><body>
+            
+            <div class="kop-container">
+                <img src="${logoUrl}" class="kop-logo" onerror="this.style.display='none'">
+                <div class="kop-teks">
+                    <h2>Madrasah Darussalam</h2>
+                    <p>Laporan Rekapitulasi Peringkat 1, 2, dan 3 Seluruh Kelas</p>
+                </div>
+            </div>
+            
+            ${tabelElemen.outerHTML.replace(/border-t-4 border-gray-300/g, 'border-thick').replace(/class="p-3 text-center/g, 'class="center').replace(/font-bold/g, 'bold')}
+            
+            <div class="ttd-container">
+                <div class="ttd-box">
+                    <p>Bangkalan, ${tglTtd}</p>
+                    <p class="jabatan">Panitia Ujian Madrasah</p>
+                    <p class="nama-garis">( .................................................... )</p>
+                </div>
+            </div>
+            
+            <div class="footer">Dicetak otomatis dari Sistem Penilaian Santri | Tanggal Cetak: ${tanggalCetak}</div>
+            
+            <script>window.onload=function(){ setTimeout(()=>{window.print();}, 1000); }<\/script>
+        </body></html>
+    `);
+    printWindow.document.close();
+}
+
+// =========================================================
+// FUNGSI PANTAU PROGRESS NILAI MAPEL & SHARE WHATSAPP
+// =========================================================
+
+// Variabel global untuk menyimpan data pantauan terakhir
+let GLOBAL_DATA_PANTAU = null;
+let GLOBAL_KELAS_PANTAU = "";
+
+function loadPantauNilai() {
+    const kelasPilih = document.getElementById('filterKelasPantau').value;
+    if (!kelasPilih) return; // Langsung return jika reset/kosong
+    
+    GLOBAL_KELAS_PANTAU = kelasPilih; // Simpan nama kelas
+
+    showLoading(true, "Memuat Progress Nilai...");
+    
+    const formData = new URLSearchParams();
+    formData.append('action', 'getPantauNilai');
+    formData.append('token', sessionStorage.getItem('tokenMadasa'));
+    formData.append('kelas', kelasPilih);
+
+    gasFetch({ method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        showLoading(false);
+        if (data.status === 'success') {
+            GLOBAL_DATA_PANTAU = data; // Simpan data rekap untuk WA
+            renderPantauNilai(data);
+        } else {
+            Swal.fire('Gagal', data.message, 'error');
+        }
+    })
+    .catch(err => {
+        showLoading(false);
+        Swal.fire('Error', 'Gagal memuat data. Periksa jaringan Anda.', 'error');
+    });
+}
+
+function renderPantauNilai(data) {
+    const wadah = document.getElementById('wadahPantauNilai');
+    wadah.innerHTML = '';
+
+    if (data.total_santri === 0) {
+        wadah.innerHTML = '<div class="col-span-full text-center p-8 text-gray-500 bg-gray-50 rounded-xl border border-gray-200"><i class="fas fa-users-slash text-4xl mb-3 text-gray-300 block"></i>Tidak ada data santri aktif di kelas ini.</div>';
+        return;
+    }
+
+    if (!data.rekap || data.rekap.length === 0) {
+        wadah.innerHTML = '<div class="col-span-full text-center p-8 text-gray-500 bg-gray-50 rounded-xl border border-gray-200"><i class="fas fa-book-open text-4xl mb-3 text-gray-300 block"></i>Mata pelajaran belum diatur/diinput untuk kelas ini.</div>';
+        return;
+    }
+
+    let html = '';
+    data.rekap.forEach(item => {
+        let colorClass = 'bg-red-500';
+        let bgClass = 'bg-red-50';
+        let borderClass = 'border-red-200';
+        let textClass = 'text-red-700';
+        let icon = 'fa-times-circle';
+
+        if (item.persen === 100) {
+            colorClass = 'bg-emerald-500';
+            bgClass = 'bg-emerald-50';
+            borderClass = 'border-emerald-200';
+            textClass = 'text-emerald-700';
+            icon = 'fa-check-circle';
+        } else if (item.persen > 0) {
+            colorClass = 'bg-amber-500';
+            bgClass = 'bg-amber-50';
+            borderClass = 'border-amber-200';
+            textClass = 'text-amber-700';
+            icon = 'fa-clock';
+        }
+
+        html += `
+        <div class="${bgClass} border ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between transition-all hover:-translate-y-1">
+            <div class="flex justify-between items-start mb-3">
+                <h4 class="font-bold ${textClass} text-sm sm:text-base pr-2">${escapeHTML(item.mapel)}</h4>
+                <i class="fas ${icon} ${textClass} text-lg"></i>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-bold mb-1 text-gray-600">
+                    <span>Progress</span>
+                    <span>${item.terisi} / ${item.total} Santri</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div class="${colorClass} h-2.5 rounded-full transition-all duration-1000" style="width: ${item.persen}%"></div>
+                </div>
+                <div class="mt-2 text-right text-[10px] font-bold ${textClass} uppercase tracking-wider">
+                    ${item.persen}% ${item.persen === 100 ? 'Selesai' : 'Belum Selesai'}
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    wadah.innerHTML = html;
+}
+
+// Fitur Bagikan ke WhatsApp
+function bagikanPantauNilaiWA() {
+    if (!GLOBAL_KELAS_PANTAU || !GLOBAL_DATA_PANTAU) {
+        Swal.fire('Pilih Kelas', 'Silakan pilih kelas terlebih dahulu agar data tampil sebelum dibagikan.', 'warning');
+        return;
+    }
+
+    const data = GLOBAL_DATA_PANTAU;
+    if (data.total_santri === 0 || !data.rekap || data.rekap.length === 0) {
+        Swal.fire('Data Kosong', 'Tidak ada progress nilai yang bisa dibagikan.', 'warning');
+        return;
+    }
+
+    let mapelSelesai = [];
+    let mapelBelum = [];
+
+    // Pisahkan mapel yang sudah selesai dan belum
+    data.rekap.forEach(item => {
+        if (item.persen === 100) {
+            mapelSelesai.push(`✅ *${item.mapel}*`);
+        } else {
+            mapelBelum.push(`⏳ *${item.mapel}* _(${item.terisi}/${item.total} Santri)_`);
+        }
+    });
+
+    // Rangkai Pesan WhatsApp dengan format sopan dan rapi
+    let pesan = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\n`;
+    pesan += `Afwan Ustadz/Ustadzah, berikut kami sampaikan update *Progress Input Nilai* untuk kelas *${GLOBAL_KELAS_PANTAU}*.\n\n`;
+
+    if (mapelSelesai.length > 0) {
+        pesan += `*DAFTAR MAPEL SELESAI (100%):*\n`;
+        pesan += mapelSelesai.join('\n') + `\n\n`;
+    }
+
+    if (mapelBelum.length > 0) {
+        pesan += `*DAFTAR MAPEL BELUM SELESAI:*\n`;
+        pesan += mapelBelum.join('\n') + `\n\n`;
+        pesan += `_Mohon perkenan Ustadz/Ustadzah pengampu mata pelajaran terkait untuk dapat segera melengkapi nilainya._\n\n`;
+    } else {
+        pesan += `_Alhamdulillah, seluruh mata pelajaran di kelas ini telah selesai diinput 100%._\n\n`;
+    }
+
+    pesan += `Syukron jazakumullah khairan atas kerjasama dan dedikasi Ustadz/Ustadzah.\n\n`;
+    pesan += `*Sistem Penilaian Santri*\nMadrasah Darussalam`;
+
+    // Arahkan ke WhatsApp
+    const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
+    window.open(urlWA, '_blank');
+}

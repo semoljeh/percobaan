@@ -3419,6 +3419,9 @@ function openModalEditSantri(nis, nama, jk, kelas, alamat, ayah, ibu, hp, ttl, f
 
     window.history.pushState({ modal: 'edit' }, "", "#modalEdit"); 
     document.getElementById('modalEditSantri').classList.remove('hidden'); 
+    
+    // Reset memori crop sebelumnya saat modal edit dibuka
+    finalCroppedBase64 = ''; 
 }
 
 // ==========================================
@@ -3449,12 +3452,16 @@ document.getElementById('formEditSantri').addEventListener('submit', async funct
     
     showLoading(true); 
 
-    const fileInput = document.getElementById('edit_foto');
+const fileInput = document.getElementById('edit_foto');
     let fotoBase64 = '';
     
-    if (fileInput && fileInput.files.length > 0) {
+    // CEK: Gunakan hasil crop jika ada, jika tidak baca file aslinya
+    if (finalCroppedBase64 !== '') {
+        fotoBase64 = finalCroppedBase64;
+    } else if (fileInput && fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        if (file.size > 5242880) { 
+        if (file.size > 5242880) {
+		
             showLoading(false);
             btnSubmit.disabled = false; btnSubmit.classList.remove('pointer-events-none', 'cursor-not-allowed'); btnSubmit.innerHTML = originalText;
             if(btnBatal) { btnBatal.disabled = false; btnBatal.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none'); }
@@ -3519,6 +3526,7 @@ document.getElementById('formEditSantri').addEventListener('submit', async funct
 
             // 2. Kosongkan file input agar foto tidak ter-upload ulang jika tombol diklik lagi
             if (fileInput) fileInput.value = '';
+            finalCroppedBase64 = ''; // <-- TAMBAHKAN BARIS INI
 
             // 3. Memperbarui tabel di belakang layar secara diam-diam
             loadDataSantri(true); 

@@ -1676,18 +1676,17 @@ function loadBintangPelajar() {
                 return;
             }
 
-            const urutkanJuaraUmum = arr => {
-                arr.sort((a, b) => {
-                    const totalB = parseFloat(b.total || 0);
-                    const totalA = parseFloat(a.total || 0);
-                    if (totalB !== totalA) return totalB - totalA;
-                    
-                    const rataB = parseFloat(b.rata_asli ?? b.rata ?? 0);
-                    const rataA = parseFloat(a.rata_asli ?? a.rata ?? 0);
-                    return rataB - rataA;
-                });
-            };
-
+const urutkanJuaraUmum = arr => {
+    arr.sort((a, b) => {
+        const rataB = parseFloat(b.rata_asli ?? b.rata ?? 0);
+        const rataA = parseFloat(a.rata_asli ?? a.rata ?? 0);
+        if (rataB !== rataA) return rataB - rataA; // Urutkan berdasarkan rata-rata terlebih dahulu
+        
+        const totalB = parseFloat(b.total || 0);
+        const totalA = parseFloat(a.total || 0);
+        return totalB - totalA; // Gunakan total sebagai penentu jika rata-rata seri
+    });
+};
             urutkanJuaraUmum(dataTK);
             urutkanJuaraUmum(dataIBT);
             urutkanJuaraUmum(dataSANA);
@@ -3740,13 +3739,19 @@ function cetakRekapTop3() {
             .footer { margin-top: 30px; font-size: 10px; font-style: italic; text-align: center; color: #555; border-top: 1px dashed #aaa; padding-top: 10px; }
         </style></head><body>
             
-            <div class="kop-container">
+           <div class="kop-container">
                 <img src="${logoUrl}" class="kop-logo" onerror="this.style.display='none'">
                 <div class="kop-teks">
-                    <h2>Madrasah Darussalam</h2>
-                    <p>Laporan Rekapitulasi Peringkat 1, 2, dan 3 Seluruh Kelas</p>
+                    <h2>Madrasah Diniyah Darussalam</h2>
+                    <p>Sekretariat: Desa Bandang Laok, Kab. Bangkalan, Jawa Timur</p>
+                    <p>Website: www.madasa.ponpes.id | Email: madasaponpes@gmail.com</p>
                 </div>
             </div>
+            
+            <!-- Elemen Garis Tebal & Tipis -->
+            <div class="kop-garis"></div>
+            
+            <div class="kop-judul">Laporan Rekapitulasi Peringkat 1, 2, dan 3 Seluruh Kelas</div>
             
             ${tabelElemen.outerHTML.replace(/border-t-4 border-gray-300/g, 'border-thick').replace(/class="p-3 text-center/g, 'class="center').replace(/font-bold/g, 'bold')}
             
@@ -3913,4 +3918,255 @@ function bagikanPantauNilaiWA() {
     // Arahkan ke WhatsApp
     const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
     window.open(urlWA, '_blank');
+}
+
+// =========================================================
+// FUNGSI POPUP DAN CETAK SK BINTANG PELAJAR
+// =========================================================
+function bukaOpsiCetakSK() {
+    window.history.pushState({ popup: 'cetakSK' }, "", "#cetakSK");
+
+    Swal.fire({
+        title: `
+            <div class="flex items-center justify-center gap-3">
+                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-lg shadow-sm border border-indigo-100 shrink-0">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <span class="text-indigo-900 font-bold font-heading text-lg">Cetak SK Resmi</span>
+            </div>
+        `,
+        html: `
+            <div class="text-left mt-3">
+                <p class="text-xs text-gray-500 mb-3 text-center leading-relaxed">Tentukan periode semester untuk menyesuaikan format SK.</p>
+                <div class="relative">
+                    <select id="pilihanSemesterSK" class="w-full p-2.5 border-2 border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-bold text-indigo-900 cursor-pointer transition-all appearance-none shadow-sm">
+                        <option value="Ganjil">📚 Semester 1 (Ganjil)</option>
+                        <option value="Genap">🏆 Semester 2 (Genap)</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-indigo-400">
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        buttonsStyling: false,
+        confirmButtonText: '<i class="fas fa-print mr-2"></i> Lanjut',
+        cancelButtonText: 'Batal',
+        customClass: { 
+            popup: 'w-[90%] max-w-sm rounded-2xl p-4 sm:p-5 shadow-xl border border-gray-100', 
+            title: 'p-0',
+            htmlContainer: 'm-0',
+            // flex-row memaksa tombol sejajar kiri-kanan meski di layar kecil
+            actions: 'mt-5 gap-2 w-full flex flex-row', 
+            confirmButton: 'w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex-1 text-sm', 
+            cancelButton: 'w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex-1 text-sm' 
+        },
+        didClose: () => {
+            if (window.location.hash === "#cetakSK") {
+                window.history.back();
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const semester = document.getElementById('pilihanSemesterSK').value;
+            cetakSKResmi(semester);
+        }
+    });
+}
+
+
+function cetakSKResmi(semester) {
+    const tbody = document.getElementById('bodyTabelRekapTop3');
+    if (!tbody || tbody.innerText.includes('Belum ada data')) {
+        return Swal.fire({ icon: 'error', title: 'Data Kosong', text: 'Tidak ada data juara untuk dicetak.' });
+    }
+
+    const isGanjil = semester === 'Ganjil';
+    const teksSemester = isGanjil ? "SEMESTER GANJIL TAHUN AJARAN 2026/2027" : "SEMESTER GENAP TAHUN AJARAN 2026/2027";
+    const teksTentang = isGanjil ? "PENETAPAN BINTANG KELAS" : "PENETAPAN BINTANG KELAS DAN BINTANG PELAJAR";
+    
+    // Variabel dinamis untuk membedakan teks deskripsi di dalam SK
+    const teksPredikat = isGanjil ? "Bintang Kelas" : "Bintang Kelas dan Bintang Pelajar (Juara Umum)";
+    const teksKeputusan = isGanjil ? "Penetapan Bintang Kelas" : "Penetapan Bintang Kelas dan Bintang Pelajar";
+
+    let daftarJuara = [];
+    const baris = tbody.querySelectorAll('tr');
+    
+    baris.forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        if (tds.length >= 5) {
+            let kelas = tds[0].innerText.trim();
+            let rankHtml = tds[1].innerHTML;
+            let rankNum = 0;
+            
+            if (rankHtml.includes('1')) rankNum = 1;
+            else if (rankHtml.includes('2')) rankNum = 2;
+            else if (rankHtml.includes('3')) rankNum = 3;
+
+            let nama = tds[2].querySelector('.font-bold.text-gray-800').innerText.trim();
+
+            // Saring: Selalu ambil Peringkat 1, 2, dan 3 untuk semua kelas sebagai laporan nyata
+            if (rankNum === 0 || rankNum > 3) return;
+
+            daftarJuara.push({ kelas, rank: rankNum, nama });
+        }
+    });
+
+    const tanggalCetak = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    const logoUrl = window.location.origin + window.location.pathname.replace(/index\.html$/i, '') + 'asset/logo.png';
+
+    let skHtml = `
+        <div style="page-break-after: always;">
+            <div style="display: flex; align-items: center; padding-bottom: 5px;">
+                <img src="${logoUrl}" style="width: 85px; height: 85px; object-fit: contain; margin-right: 15px;" onerror="this.style.display='none'">
+                <div style="flex: 1; text-align: center; padding-right: 100px;">
+                    <h2 style="margin: 0; font-size: 22px; text-transform: uppercase; font-weight: bold; color: #065f46; letter-spacing: 0.5px; white-space: nowrap;">Madrasah Diniyah Darussalam</h2>
+                    <p style="margin: 4px 0 2px 0; font-size: 12px;">Jl. Bhetoran Batukessel Bandang Laok Kokop Bangkalan</p>
+                    <p style="margin: 0; font-size: 12px;">Website: www.madasa.ponpes.id | Email: madasaponpes@gmail.com</p>
+                </div>
+            </div>
+            <div style="border-top: 3px solid #000; border-bottom: 1px solid #000; height: 2px; margin-top: 5px; margin-bottom: 20px; width: 100%;"></div>
+
+            <div style="text-align: center; margin-bottom: 15px; line-height: 1.3;">
+                <h3 style="font-size: 14px; font-weight: bold; text-decoration: underline; margin: 0 0 5px 0;">SURAT KEPUTUSAN KEPALA MADRASAH</h3>
+                <p style="font-size: 12px; margin: 0; font-weight: bold;">Nomor: 085/SK/MD/IX/2026</p>
+                <br>
+                <p style="font-size: 12px; margin: 0; font-weight: bold;">TENTANG</p>
+                <p style="font-size: 12px; margin: 0; font-weight: bold;">${teksTentang}</p>
+                <p style="font-size: 12px; margin: 0; font-weight: bold;">${teksSemester}</p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; text-align: justify;">
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">MENIMBANG</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">
+                        <ol type="a" style="margin: 0; padding-left: 15px;">
+                            <li>Bahwa dalam rangka memberikan apresiasi dan motivasi bagi santri yang menunjukkan prestasi akademik terbaik, perlu ditetapkan santri penerima predikat ${teksPredikat};</li>
+                            <li>Bahwa santri yang namanya tercantum dalam lampiran surat keputusan ini dipandang memenuhi syarat, kriteria, dan kompetensi untuk menyandang predikat tersebut;</li>
+                            <li>Bahwa berdasarkan pertimbangan sebagaimana dimaksud pada poin a dan b, perlu menetapkan Surat Keputusan Kepala Madrasah tentang ${teksKeputusan} Tahun Ajaran 2026/2027.</li>
+                        </ol>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">MENGINGAT</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">
+                        <ol type="1" style="margin: 0; padding-left: 15px;">
+                            <li>Undang-Undang Nomor 18 Tahun 2019 tentang Pesantren;</li>
+                            <li>Peraturan Menteri Agama Republik Indonesia Nomor 31 Tahun 2020 tentang Pendidikan Pesantren;</li>
+                            <li>Anggaran Dasar dan Anggaran Rumah Tangga (AD/ART) Yayasan Pendidikan Islam Madrasah Darussalam;</li>
+                            <li>Program Kerja Madrasah Darussalam Tahun Ajaran 2026/2027.</li>
+                        </ol>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">MEMPERHATIKAN</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 15px;">Hasil rapat pleno Dewan Guru Madrasah Darussalam tentang evaluasi hasil belajar santri Semester ${isGanjil ? 'Ganjil' : 'Genap'} tingkat TK, Ibtidaiyah, dan Sanawiyah.</td>
+                </tr>
+            </table>
+
+            <div style="text-align: center; margin: 15px 0; font-size: 12px; font-weight: bold;">MEMUTUSKAN</div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; text-align: justify;">
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">MENETAPKAN</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top;"></td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">PERTAMA</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">Menetapkan nama-nama santri yang tercantum dalam <b>Lampiran I</b> Surat Keputusan ini sebagai <b>${teksPredikat}</b> pada masing-masing tingkatan kelas Madrasah Darussalam Semester ${isGanjil ? 'Ganjil' : 'Genap'} Tahun Ajaran 2026/2027.</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">KEDUA</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">Kepada santri yang bersangkutan diberikan piagam penghargaan serta hak-hak lain yang ditentukan oleh kebijakan madrasah sebagai bentuk apresiasi prestasi.</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">KETIGA</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">Segala biaya yang timbul akibat diterbitkannya Surat Keputusan ini dibebankan pada anggaran madrasah yang relevan.</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px; font-weight: bold; vertical-align: top;">KEEMPAT</td>
+                    <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
+                    <td style="vertical-align: top; padding-bottom: 5px;">Keputusan ini mulai berlaku sejak tanggal ditetapkan, dengan catatan apabila di kemudian hari terdapat kekeliruan dalam penetapannya, maka akan diadakan perbaikan sebagaimana mestinya.</td>
+                </tr>
+            </table>
+
+            <div style="width: 250px; float: right; text-align: center; margin-top: 30px; font-size: 12px;">
+                <p style="margin: 0 0 3px 0;">Ditetapkan di : Bangkalan<br>Pada tanggal : ${tanggalCetak}</p>
+                <p style="margin: 5px 0 0 0; font-weight: bold;">Kepala Madrasah Darussalam,</p>
+                <br><br><br>
+                <p style="margin: 0; text-decoration: underline;"><b>KH. UMAR FARUQ</b></p>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+    `;
+
+    // Halaman 2: Lampiran Nama
+    let lampiranHtml = `
+        <div>
+            <div style="text-align: left; font-size: 11px; margin-bottom: 20px; line-height: 1.5; font-weight: bold;">
+                LAMPIRAN I SURAT KEPUTUSAN KEPALA MADRASAH<br>
+                NOMOR: 085/SK/MD/IX/2026<br>
+                TENTANG: ${teksTentang} SEMESTER ${isGanjil ? 'GANJIL' : 'GENAP'} TAHUN AJARAN 2026/2027
+            </div>
+            
+            <h3 style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 15px;">DAFTAR PENERIMA PENGHARGAAN</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: center;">NO</th>
+                        <th style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: center;">NAMA SANTRI</th>
+                        <th style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: center;">KELAS</th>
+                        <th style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: center;">PERINGKAT</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    daftarJuara.forEach((santri, index) => {
+        lampiranHtml += `
+            <tr>
+                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
+                <td style="border: 1px solid #000; padding: 6px; font-weight: bold;">${santri.nama}</td>
+                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${santri.kelas}</td>
+                <td style="border: 1px solid #000; padding: 6px; text-align: center;">Ke-${santri.rank}</td>
+            </tr>
+        `;
+    });
+
+    lampiranHtml += `
+                </tbody>
+            </table>
+            
+            <div style="width: 250px; float: right; text-align: center; margin-top: 30px; font-size: 12px;">
+                <p style="margin: 0 0 3px 0;">Ditetapkan di : Bangkalan<br>Pada tanggal : ${tanggalCetak}</p>
+                <p style="margin: 5px 0 0 0; font-weight: bold;">Kepala Madrasah Darussalam,</p>
+                <br><br><br>
+                <p style="margin: 0; text-decoration: underline;"><b>KH. UMAR FARUQ</b></p>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html><html><head><title>SK Bintang Kelas MD 2026</title>
+        <style>
+            @page { margin: 20mm; size: A4 portrait; }
+            body { font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; margin: 0; padding: 0; }
+        </style></head><body>
+            ${skHtml}
+            ${lampiranHtml}
+            <script>window.onload=function(){ setTimeout(()=>{window.print();}, 1000); }<\/script>
+        </body></html>
+    `);
+    printWindow.document.close();
 }

@@ -276,7 +276,8 @@ window.addEventListener('popstate', function(event) {
     const modalTambah = document.getElementById('modalTambahSantri');
     const modalEdit = document.getElementById('modalEditSantri');
     const modalImport = document.getElementById('modalImportSantri');
-    const modalEditNilai = document.getElementById('modalEditNilai');
+   const modalEditNilai = document.getElementById('modalEditNilai');
+    const modalRekapTop3 = document.getElementById('modalRekapTop3'); // Tambahkan baris ini
     
     let isModalClosed = false;
 
@@ -305,13 +306,20 @@ window.addEventListener('popstate', function(event) {
         if(form) form.reset();
         isModalClosed = true; 
     }
-    if (modalEditNilai && !modalEditNilai.classList.contains('hidden')) { 
+	
+if (modalEditNilai && !modalEditNilai.classList.contains('hidden')) { 
         modalEditNilai.classList.add('hidden'); 
         const wadah = document.getElementById('wadahInputEditNilai');
         if(wadah) wadah.innerHTML = '';
         isModalClosed = true; 
     }
     
+    // Tambahkan blok kode penutup ini
+    if (modalRekapTop3 && !modalRekapTop3.classList.contains('hidden')) {
+        modalRekapTop3.classList.add('hidden');
+        isModalClosed = true;
+    }
+
     if (isModalClosed) return;
 
     const isDashboard = !document.getElementById('dashboardPage').classList.contains('hidden');
@@ -2835,8 +2843,8 @@ function buatOpsiSemuaKelasOtomatis() {
         { id: 'add_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: true },
         { id: 'edit_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: false }, // Edit bisa jadi perlu mengakses Alumni
 		
-		// Tambahkan baris ini di dalam array listDropdown (sekitar baris ke-1090)
-        { id: 'filterKelasPantau', defaultText: '-- Pilih Kelas --', defaultValue: '', callback: 'loadPantauNilai', useAktifOnly: true }
+		// Ubah defaultText dan defaultValue agar memuat opsi Semua Kelas
+        { id: 'filterKelasPantau', defaultText: 'Pantau Semua Kelas', defaultValue: 'Semua', callback: 'loadPantauNilai', useAktifOnly: true }
     ];
 
     listDropdown.forEach(dropdown => {
@@ -3598,12 +3606,18 @@ document.addEventListener("DOMContentLoaded", buatOpsiTahunPelajaran);
 // FUNGSI REKAP TOP 3 SELURUH KELAS
 // =========================================================
 function openModalRekapTop3() {
+    // Daftarkan modal ke history URL agar terdeteksi oleh tombol back HP
+    window.history.pushState({ modal: 'rekapTop3' }, "", "#modalRekapTop3");
     document.getElementById('modalRekapTop3').classList.remove('hidden');
     loadDataRekapTop3();
 }
 
 function closeModalRekapTop3() {
     document.getElementById('modalRekapTop3').classList.add('hidden');
+    // Bersihkan history URL jika modal ditutup melalui tombol (X)
+    if (window.location.hash === "#modalRekapTop3") {
+        window.history.back();
+    }
 }
 
 function loadDataRekapTop3() {
@@ -3781,9 +3795,15 @@ let GLOBAL_KELAS_PANTAU = "";
 
 function loadPantauNilai() {
     const kelasPilih = document.getElementById('filterKelasPantau').value;
-    if (!kelasPilih) return; // Langsung return jika reset/kosong
+    if (!kelasPilih) return; 
     
-    GLOBAL_KELAS_PANTAU = kelasPilih; // Simpan nama kelas
+    GLOBAL_KELAS_PANTAU = kelasPilih; 
+
+    // Jika yang dipilih adalah Semua Kelas, arahkan ke fungsi khusus
+    if (kelasPilih === 'Semua') {
+        memuatPantauSemuaKelas();
+        return;
+    }
 
     showLoading(true, "Memuat Progress Nilai...");
     
@@ -3797,7 +3817,7 @@ function loadPantauNilai() {
     .then(data => {
         showLoading(false);
         if (data.status === 'success') {
-            GLOBAL_DATA_PANTAU = data; // Simpan data rekap untuk WA
+            GLOBAL_DATA_PANTAU = data; 
             renderPantauNilai(data);
         } else {
             Swal.fire('Gagal', data.message, 'error');
@@ -3807,6 +3827,69 @@ function loadPantauNilai() {
         showLoading(false);
         Swal.fire('Error', 'Gagal memuat data. Periksa jaringan Anda.', 'error');
     });
+}
+
+async function memuatPantauSemuaKelas() {
+    showLoading(true, "Memuat Progress Seluruh Kelas...");
+    const wadah = document.getElementById('wadahPantauNilai');
+    wadah.innerHTML = ''; 
+
+    const kelasUnik = [...new Set(GLOBAL_DATA_SANTRI.map(s => s.kelas))].filter(Boolean);
+    const kelasAktif = kelasUnik.filter(k => {
+        let kLower = k.toLowerCase();
+        return !kLower.includes('lulus') && !kLower.includes('alumni') && !kLower.includes('diberhentikan');
+    });
+
+    let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
+    kelasAktif.sort((a, b) => {
+        let catA = a.toUpperCase().includes('TK') ? "TK / RA" : (a.toUpperCase().includes('IBT') ? "IBTIDAIYAH" : (a.toUpperCase().includes('SANA') ? "SANAWIYAH" : "ALIYAH"));
+        let catB = b.toUpperCase().includes('TK') ? "TK / RA" : (b.toUpperCase().includes('IBT') ? "IBTIDAIYAH" : (b.toUpperCase().includes('SANA') ? "SANAWIYAH" : "ALIYAH"));
+        if (bobotJenjang[catA] !== bobotJenjang[catB]) return bobotJenjang[catA] - bobotJenjang[catB];
+        return a.localeCompare(b);
+    });
+
+    let rekapSemuaKelas = [];
+    
+    for (let i = 0; i < kelasAktif.length; i++) {
+        const kelas = kelasAktif[i];
+        const formData = new URLSearchParams();
+        formData.append('action', 'getPantauNilai');
+        formData.append('token', sessionStorage.getItem('tokenMadasa'));
+        formData.append('kelas', kelas);
+
+        try {
+            let req = await gasFetch({ method: 'POST', body: formData });
+            let data = await req.json();
+            
+            if (data.status === 'success' && data.total_santri > 0 && data.rekap && data.rekap.length > 0) {
+                // Tambahkan judul/header pemisah per kelas
+                rekapSemuaKelas.push({ isHeader: true, namaKelas: kelas });
+                
+                // Masukkan seluruh mapel satu per satu
+                data.rekap.forEach(item => {
+                    rekapSemuaKelas.push({
+                        mapel: item.mapel,
+                        terisi: item.terisi,
+                        total: item.total,
+                        persen: item.persen,
+                        kelasAsal: kelas // Disimpan untuk kebutuhan share WA
+                    });
+                });
+            }
+        } catch (e) {
+            console.error("Gagal memuat kelas " + kelas, e);
+        }
+    }
+
+    showLoading(false);
+    
+    if (rekapSemuaKelas.length === 0) {
+        wadah.innerHTML = '<div class="col-span-full text-center p-8 text-gray-500 bg-gray-50 rounded-xl border border-gray-200"><i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>Belum ada data nilai di semua kelas.</div>';
+        return;
+    }
+
+    GLOBAL_DATA_PANTAU = { total_santri: 1, rekap: rekapSemuaKelas };
+    renderPantauNilai(GLOBAL_DATA_PANTAU);
 }
 
 function renderPantauNilai(data) {
@@ -3825,6 +3908,18 @@ function renderPantauNilai(data) {
 
     let html = '';
     data.rekap.forEach(item => {
+        // Jika data ini adalah header kelas
+        if (item.isHeader) {
+            html += `
+            <div class="col-span-full mt-4 mb-1 border-b-2 border-emerald-600 pb-2 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm shadow-sm shrink-0">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3 class="text-lg font-bold text-emerald-800 font-heading">Kelas ${escapeHTML(item.namaKelas)}</h3>
+            </div>`;
+            return; // Lanjut ke mapel berikutnya
+        }
+
         let colorClass = 'bg-red-500';
         let bgClass = 'bg-red-50';
         let borderClass = 'border-red-200';
@@ -3870,7 +3965,7 @@ function renderPantauNilai(data) {
     wadah.innerHTML = html;
 }
 
-// Fitur Bagikan ke WhatsApp
+
 function bagikanPantauNilaiWA() {
     if (!GLOBAL_KELAS_PANTAU || !GLOBAL_DATA_PANTAU) {
         Swal.fire('Pilih Kelas', 'Silakan pilih kelas terlebih dahulu agar data tampil sebelum dibagikan.', 'warning');
@@ -3886,36 +3981,40 @@ function bagikanPantauNilaiWA() {
     let mapelSelesai = [];
     let mapelBelum = [];
 
-    // Pisahkan mapel yang sudah selesai dan belum
     data.rekap.forEach(item => {
+        if (item.isHeader) return; // Abaikan header saat generate pesan WA
+
+        let labelMapel = GLOBAL_KELAS_PANTAU === 'Semua' ? `${item.kelasAsal} - ${item.mapel}` : item.mapel;
+
         if (item.persen === 100) {
-            mapelSelesai.push(`✅ *${item.mapel}*`);
+            mapelSelesai.push(`✅ *${labelMapel}*`);
         } else {
-            mapelBelum.push(`⏳ *${item.mapel}* _(${item.terisi}/${item.total} Santri)_`);
+            mapelBelum.push(`⏳ *${labelMapel}* _(${item.terisi}/${item.total} Santri)_`);
         }
     });
 
-    // Rangkai Pesan WhatsApp dengan format sopan dan rapi
+    let teksKelasTarget = GLOBAL_KELAS_PANTAU === 'Semua' ? '*Seluruh Kelas*' : `kelas *${GLOBAL_KELAS_PANTAU}*`;
+    let jenisProgress = GLOBAL_KELAS_PANTAU === 'Semua' ? 'KELAS & MAPEL' : 'MAPEL';
+
     let pesan = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\n`;
-    pesan += `Afwan Ustadz/Ustadzah, berikut kami sampaikan update *Progress Input Nilai* untuk kelas *${GLOBAL_KELAS_PANTAU}*.\n\n`;
+    pesan += `Afwan Ustadz/Ustadzah, berikut kami sampaikan update *Progress Input Nilai* untuk ${teksKelasTarget}.\n\n`;
 
     if (mapelSelesai.length > 0) {
-        pesan += `*DAFTAR MAPEL SELESAI (100%):*\n`;
+        pesan += `*DAFTAR ${jenisProgress} SELESAI (100%):*\n`;
         pesan += mapelSelesai.join('\n') + `\n\n`;
     }
 
     if (mapelBelum.length > 0) {
-        pesan += `*DAFTAR MAPEL BELUM SELESAI:*\n`;
+        pesan += `*DAFTAR ${jenisProgress} BELUM SELESAI:*\n`;
         pesan += mapelBelum.join('\n') + `\n\n`;
-        pesan += `_Mohon perkenan Ustadz/Ustadzah pengampu mata pelajaran terkait untuk dapat segera melengkapi nilainya._\n\n`;
+        pesan += `_Mohon perkenan Ustadz/Ustadzah pengampu untuk dapat segera melengkapi nilainya._\n\n`;
     } else {
-        pesan += `_Alhamdulillah, seluruh mata pelajaran di kelas ini telah selesai diinput 100%._\n\n`;
+        pesan += `_Alhamdulillah, seluruh data pada ${teksKelasTarget} telah selesai diinput 100%._\n\n`;
     }
 
     pesan += `Syukron jazakumullah khairan atas kerjasama dan dedikasi Ustadz/Ustadzah.\n\n`;
     pesan += `*Sistem Penilaian Santri*\nMadrasah Darussalam`;
 
-    // Arahkan ke WhatsApp
     const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
     window.open(urlWA, '_blank');
 }
@@ -3928,39 +4027,43 @@ function bukaOpsiCetakSK() {
 
     Swal.fire({
         title: `
-            <div class="flex items-center justify-center gap-3">
-                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-lg shadow-sm border border-indigo-100 shrink-0">
+            <div class="flex items-center gap-3 border-b border-gray-100 pb-3">
+                <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0">
                     <i class="fas fa-file-signature"></i>
                 </div>
-                <span class="text-indigo-900 font-bold font-heading text-lg">Cetak SK Resmi</span>
+                <span class="text-gray-800 font-bold text-base text-left flex-1">Cetak SK Resmi</span>
             </div>
         `,
         html: `
-            <div class="text-left mt-3">
-                <p class="text-xs text-gray-500 mb-3 text-center leading-relaxed">Tentukan periode semester untuk menyesuaikan format SK.</p>
+            <div class="text-left mt-4">
+                <label class="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Pilih Periode Semester</label>
                 <div class="relative">
-                    <select id="pilihanSemesterSK" class="w-full p-2.5 border-2 border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-bold text-indigo-900 cursor-pointer transition-all appearance-none shadow-sm">
-                        <option value="Ganjil">📚 Semester 1 (Ganjil)</option>
-                        <option value="Genap">🏆 Semester 2 (Genap)</option>
+                    <select id="pilihanSemesterSK" onchange="document.getElementById('descSK').innerHTML = this.value === 'Ganjil' ? '<i class=\\'fas fa-info-circle mr-1\\'></i>SK untuk penetapan Bintang Kelas saja.' : '<i class=\\'fas fa-info-circle mr-1\\'></i>SK untuk penetapan Bintang Kelas & Bintang Pelajar (Juara Umum).'" class="w-full p-2.5 border border-gray-200 bg-gray-50 hover:bg-white rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-sm font-bold text-gray-700 cursor-pointer transition-all appearance-none shadow-sm">
+                        <option value="Ganjil">Semester 1 (Ganjil)</option>
+                        <option value="Genap">Semester 2 (Genap)</option>
                     </select>
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-indigo-400">
-                        <i class="fas fa-chevron-down text-sm"></i>
+                    <!-- Ikon Panah Kustom -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                        <i class="fas fa-chevron-down text-xs"></i>
                     </div>
+                </div>
+                <!-- Kotak Deskripsi Dinamis -->
+                <div class="mt-2.5 p-2 bg-indigo-50/50 border border-indigo-100 rounded-lg">
+                    <p id="descSK" class="text-[10px] text-indigo-700 leading-snug font-medium text-center"><i class="fas fa-info-circle mr-1"></i>SK untuk penetapan Bintang Kelas saja.</p>
                 </div>
             </div>
         `,
         showCancelButton: true,
         buttonsStyling: false,
-        confirmButtonText: '<i class="fas fa-print mr-2"></i> Lanjut',
+        confirmButtonText: '<i class="fas fa-print mr-1.5"></i> Cetak SK',
         cancelButtonText: 'Batal',
         customClass: { 
-            popup: 'w-[90%] max-w-sm rounded-2xl p-4 sm:p-5 shadow-xl border border-gray-100', 
+            popup: 'w-[90%] max-w-xs rounded-2xl p-4 shadow-xl border border-gray-100', 
             title: 'p-0',
             htmlContainer: 'm-0',
-            // flex-row memaksa tombol sejajar kiri-kanan meski di layar kecil
             actions: 'mt-5 gap-2 w-full flex flex-row', 
-            confirmButton: 'w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex-1 text-sm', 
-            cancelButton: 'w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex-1 text-sm' 
+            confirmButton: 'w-full px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-all flex-1 text-sm', 
+            cancelButton: 'w-full px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex-1 text-sm' 
         },
         didClose: () => {
             if (window.location.hash === "#cetakSK") {

@@ -171,7 +171,7 @@ function loadDataSantri(silent = false) {
                 let barisHTML = [];
                 const roleSaatIni = sessionStorage.getItem('roleMadasa') || '';
 
-                res.data.forEach(s => { 
+               res.data.forEach(s => { 
                     let amanTampilNama = escapeHTML(s.nama);
                     let amanTampilKelas = escapeHTML(s.kelas);
                     let amanNama = s.nama ? s.nama.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
@@ -179,16 +179,28 @@ function loadDataSantri(silent = false) {
                     let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
                     let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
                     let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                    let amanFoto = s.foto ? s.foto.toString() : ''; // Penambahan penarik link foto dari database
+                    let amanFoto = s.foto ? s.foto.toString() : '';
+
+                    // VALIDASI DATA KOSONG YANG LEBIH AMAN (Mencegah salah deteksi)
+                    const checkValid = (val) => {
+                        if (!val) return false;
+                        const str = val.toString().trim();
+                        if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
+                        return true;
+                    };
+                    
+                    let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
+                    let statusLengkap = isLengkap ? "true" : "false";
+                    let iconPeringatan = !isLengkap ? `<i class="fas fa-exclamation-triangle text-amber-500 ml-2 text-[10px]" title="Biodata Belum Lengkap"></i>` : "";
 
                     const tombolHapus = (!roleSaatIni.includes('Guru')) 
                         ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
 
                     barisHTML.push(`
-                    <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}">
+                    <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}" data-lengkap="${statusLengkap}">
                         <td class="p-3 sm:p-4 text-center font-bold text-gray-500 urut-nomor"></td>
                         <td class="p-3 sm:p-4 font-medium">${escapeHTML(s.nis)}</td>
-                        <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}</td>
+                        <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}${iconPeringatan}</td>
                         <td class="p-3 sm:p-4 text-center whitespace-nowrap">${escapeHTML(s.jk)}</td>
                         <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
                         <td class="p-3 sm:p-4 text-center">
@@ -201,8 +213,9 @@ function loadDataSantri(silent = false) {
                 });
                 
                 tbody.innerHTML = barisHTML.join('');
-                filterSantri(); 
-            } 
+                filterSantri();
+				
+			}
         } 
     }).catch(err => { 
         if (!silent) showLoading(false); 
@@ -800,26 +813,29 @@ function filterSantri() {
         const kelas = row.getAttribute('data-kelas'); 
         const matchSearch = nama.includes(searchText) || nis.includes(searchText); 
         
-        // MODIFIKASI: Filter khusus untuk menyembunyikan Alumni/DO dari tampilan "Semua"
         let matchKelas = false;
+        let isLengkap = row.getAttribute('data-lengkap');
+        const kelasLower = kelas.toLowerCase();
+        
         if (selectedKelas === 'Semua') {
-            const kelasLower = kelas.toLowerCase();
-            // Jika filter "Semua", jangan tampilkan yang sudah Lulus/Alumni atau DO
+            // Sembunyikan Alumni/DO dari tampilan Semua Kelas
             if (!kelasLower.includes('lulus') && !kelasLower.includes('alumni') && !kelasLower.includes('diberhentikan')) {
                 matchKelas = true;
             }
+        } else if (selectedKelas === 'BelumLengkap') {
+            // Hanya tampilkan data yang belum lengkap (kecuali Alumni/DO)
+            if (!kelasLower.includes('lulus') && !kelasLower.includes('alumni') && !kelasLower.includes('diberhentikan')) {
+                matchKelas = (isLengkap === "false");
+            }
         } else {
-            // Jika filter kelas spesifik dipilih (termasuk jika sengaja memilih Lulus/Alumni)
             matchKelas = (kelas === selectedKelas);
         }
         
         if (matchSearch && matchKelas) { 
             row.style.display = ''; 
             visibleCount++; 
-            // Update penomoran otomatis
             row.cells[0].innerText = visibleCount;
-        } 
-        else { 
+        } else { 
             row.style.display = 'none'; 
         } 
     }); 
@@ -2784,7 +2800,6 @@ function buatOpsiSemuaKelasOtomatis() {
     let bobotJenjang = { "TK / RA": 1, "IBTIDAIYAH": 2, "SANAWIYAH": 3, "ALIYAH": 4 };
     
     kelasUnik.forEach(k => {
-        // PERBAIKAN: Ubah paksa data menjadi teks (String) agar tidak crash jika diisi angka
         let strK = String(k).trim(); 
         let kUpper = strK.toUpperCase();
         let kategori = "LAINNYA";
@@ -2801,9 +2816,8 @@ function buatOpsiSemuaKelasOtomatis() {
 
     let kategoriUrut = Object.keys(kelompokKelas).sort((a, b) => (bobotJenjang[a] || 99) - (bobotJenjang[b] || 99));
 
-    // MODIFIKASI: Memisahkan template HTML untuk Semua vs Kelas Aktif
-    let htmlListDasar = ''; // Berisi semua kelas (termasuk Alumni)
-    let htmlListAktif = ''; // Hanya kelas aktif (tanpa Alumni/DO)
+    let htmlListDasar = ''; 
+    let htmlListAktif = ''; 
 
     kategoriUrut.forEach(kategori => {
         let itemDasar = '';
@@ -2819,7 +2833,7 @@ function buatOpsiSemuaKelasOtomatis() {
             
             itemDasar += liHTML;
             if (!isAlumni) {
-                itemAktif += liHTML; // Hanya masukkan jika bukan alumni
+                itemAktif += liHTML; 
             }
         });
 
@@ -2831,27 +2845,32 @@ function buatOpsiSemuaKelasOtomatis() {
         }
     });
 
-    // Menambahkan properti "useAktifOnly" pada setiap konfigurasi dropdown
     const listDropdown = [
         { id: 'filterKelasSantri', defaultText: 'Semua Kelas', defaultValue: 'Semua', callback: 'filterSantri', useAktifOnly: false },
-        { id: 'pilihKelasNilai', defaultText: '-- Silakan Pilih Kelas Dulu --', defaultValue: '', callback: 'aktifkanFilterKedua', useAktifOnly: true },
-        { id: 'filterKelasDataNilai', defaultText: '-- Pilih Kelas Terlebih Dahulu --', defaultValue: '', callback: '', useAktifOnly: true },
-        { id: 'filterKelasRanking', defaultText: '-- Pilih Kelas Untuk Melihat Ranking --', defaultValue: '', callback: '', useAktifOnly: true },
+        { id: 'pilihKelasNilai', defaultText: '-- Pilih Kelas Dulu --', defaultValue: '', callback: 'aktifkanFilterKedua', useAktifOnly: true },
+        { id: 'filterKelasDataNilai', defaultText: '-- Pilih Kelas Dulu --', defaultValue: '', callback: '', useAktifOnly: true },
+        { id: 'filterKelasRanking', defaultText: '-- Pilih Kelas Dulu --', defaultValue: '', callback: '', useAktifOnly: true },
         { id: 'settingKelas', defaultText: '-- Pilih Kelas --', defaultValue: '', callback: 'loadSettingRapor', useAktifOnly: true },
         { id: 'mutasiKelasAsal', defaultText: '-- Pilih Kelas Asal --', defaultValue: '', callback: 'loadTabelMutasi', useAktifOnly: true },
         { id: 'mutasiKelasTujuan', defaultText: '-- Pilih Tujuan --', defaultValue: '', callback: '', useAktifOnly: true },
         { id: 'add_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: true },
-        { id: 'edit_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: false }, // Edit bisa jadi perlu mengakses Alumni
-		
-		// Ubah defaultText dan defaultValue agar memuat opsi Semua Kelas
+        { id: 'edit_kelas', defaultText: 'Pilih...', defaultValue: '', callback: '', useAktifOnly: false },
         { id: 'filterKelasPantau', defaultText: 'Pantau Semua Kelas', defaultValue: 'Semua', callback: 'loadPantauNilai', useAktifOnly: true }
     ];
 
     listDropdown.forEach(dropdown => {
         const listEl = document.getElementById('list_' + dropdown.id);
         if (listEl) {
-            let specificHtml = `<li class="custom-option-item text-gray-400 text-center !pl-3" onclick="pilihKelasCustomGlobal('${dropdown.id}', '${dropdown.defaultValue}', '${dropdown.defaultText}', '${dropdown.callback}')">-- Reset / ${dropdown.defaultText} --</li>`;
+            
+let specificHtml = `<li class="custom-option-item text-gray-400 text-center !pl-3 whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', '${dropdown.defaultValue}', '${dropdown.defaultText}', '${dropdown.callback}')">-- Reset / ${dropdown.defaultText} --</li>`;
 
+// OPSI DATA BELUM LENGKAP
+if (dropdown.id === 'filterKelasSantri') {
+    specificHtml += `
+    <li class="custom-option-item text-amber-500 font-bold whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', 'BelumLengkap', '⚠️ Data Belum Lengkap', 'filterSantri')">⚠️ BELUM LENGKAP</li>`;
+}
+
+            // OPSI MUTASI
             if (dropdown.id === 'mutasiKelasTujuan') {
                 specificHtml += `
                 <li class="custom-option-item text-green-600 font-bold" onclick="pilihKelasCustomGlobal('${dropdown.id}', 'Lulus / Alumni', '🎓 LULUS / ALUMNI', '')">🎓 LULUS / ALUMNI</li>
@@ -2859,7 +2878,6 @@ function buatOpsiSemuaKelasOtomatis() {
                 <li class="custom-option-group text-center text-gray-300">───────────────</li>`;
             }
 
-            // Terapkan list html yang sesuai (semua atau hanya aktif)
             let sourceHtml = dropdown.useAktifOnly ? htmlListAktif : htmlListDasar;
             let finalHtml = sourceHtml.replace(/TARGET_ID/g, dropdown.id).replace(/TARGET_CALLBACK/g, dropdown.callback);
             
@@ -3984,75 +4002,56 @@ function bagikanPantauNilaiWA() {
 
     // JIKA MEMILIH "PANTAU SEMUA KELAS"
     if (GLOBAL_KELAS_PANTAU === 'Semua') {
-        let kelasMapBelum = {};
-        let kelasMapSelesai = {};
+        let kelasMap = {};
+        let adaBelum = false;
 
-        // Kelompokkan data per kelas
+        // Kelompokkan data mapel per kelas menjadi satu wadah tanpa dipisah
         data.rekap.forEach(item => {
             if (item.isHeader) return; // Abaikan data header UI
             let namaKelas = item.kelasAsal;
             
+            if (!kelasMap[namaKelas]) kelasMap[namaKelas] = [];
+            
             if (item.persen === 100) {
-                if (!kelasMapSelesai[namaKelas]) kelasMapSelesai[namaKelas] = [];
-                kelasMapSelesai[namaKelas].push(`✅ ${item.mapel}`);
+                kelasMap[namaKelas].push(`✅ ${item.mapel}`);
             } else {
-                if (!kelasMapBelum[namaKelas]) kelasMapBelum[namaKelas] = [];
-                kelasMapBelum[namaKelas].push(`⏳ ${item.mapel} _(${item.terisi}/${item.total} Santri)_`);
+                adaBelum = true;
+                kelasMap[namaKelas].push(`⏳ ${item.mapel} _(${item.terisi}/${item.total} Santri)_`);
             }
         });
 
-        let adaBelum = Object.keys(kelasMapBelum).length > 0;
-        let adaSelesai = Object.keys(kelasMapSelesai).length > 0;
+        // Cetak daftar yang sudah digabung
+        for (let kls in kelasMap) {
+            pesan += `🏫 *${kls}*\n`;
+            pesan += kelasMap[kls].join('\n') + `\n\n`;
+        }
 
-        // Cetak daftar yang belum selesai (Prioritas)
         if (adaBelum) {
-            pesan += `*🚨 DAFTAR BELUM SELESAI:*\n\n`;
-            for (let kls in kelasMapBelum) {
-                pesan += `🏫 *${kls}*\n`;
-                pesan += kelasMapBelum[kls].join('\n') + `\n\n`;
-            }
             pesan += `_Mohon perkenan Ustadz/Ustadzah pengampu untuk dapat segera melengkapi nilainya._\n\n`;
-        }
-
-        // Cetak daftar yang sudah selesai
-        if (adaSelesai) {
-            pesan += `*🌟 DAFTAR SELESAI (100%):*\n\n`;
-            for (let kls in kelasMapSelesai) {
-                pesan += `🏫 *${kls}*\n`;
-                pesan += kelasMapSelesai[kls].join('\n') + `\n\n`;
-            }
-        }
-        
-        if (!adaBelum && adaSelesai) {
+        } else {
              pesan += `_Alhamdulillah, seluruh data pada ${teksKelasTarget} telah selesai diinput 100%._\n\n`;
         }
 
     } else {
-        // JIKA HANYA MEMILIH 1 KELAS SPESIFIK (Tampilan Biasa)
-        let mapelSelesai = [];
-        let mapelBelum = [];
+        // JIKA HANYA MEMILIH 1 KELAS SPESIFIK
+        let daftarMapel = [];
+        let adaBelum = false;
 
         data.rekap.forEach(item => {
             if (item.isHeader) return;
             if (item.persen === 100) {
-                mapelSelesai.push(`✅ ${item.mapel}`);
+                daftarMapel.push(`✅ ${item.mapel}`);
             } else {
-                mapelBelum.push(`⏳ ${item.mapel} _(${item.terisi}/${item.total} Santri)_`);
+                adaBelum = true;
+                daftarMapel.push(`⏳ ${item.mapel} _(${item.terisi}/${item.total} Santri)_`);
             }
         });
 
-        if (mapelBelum.length > 0) {
-            pesan += `*🚨 DAFTAR MAPEL BELUM SELESAI:*\n`;
-            pesan += mapelBelum.join('\n') + `\n\n`;
+        pesan += daftarMapel.join('\n') + `\n\n`;
+
+        if (adaBelum) {
             pesan += `_Mohon perkenan Ustadz/Ustadzah pengampu untuk dapat segera melengkapi nilainya._\n\n`;
-        }
-
-        if (mapelSelesai.length > 0) {
-            pesan += `*🌟 DAFTAR MAPEL SELESAI (100%):*\n`;
-            pesan += mapelSelesai.join('\n') + `\n\n`;
-        }
-
-        if (mapelBelum.length === 0 && mapelSelesai.length > 0) {
+        } else {
             pesan += `_Alhamdulillah, seluruh data pada ${teksKelasTarget} telah selesai diinput 100%._\n\n`;
         }
     }
@@ -4317,4 +4316,66 @@ function cetakSKResmi(semester) {
         </body></html>
     `);
     printWindow.document.close();
+}
+
+
+// =========================================================
+// FUNGSI BAGIKAN DATA SANTRI BELUM LENGKAP KE WHATSAPP
+// =========================================================
+function bagikanDataBelumLengkapWA() {
+    // 1. Ambil dan filter data dari database global
+    const dataBelumLengkap = GLOBAL_DATA_SANTRI.filter(s => {
+        const checkValid = (val) => {
+            if (!val) return false;
+            const str = val.toString().trim();
+            if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
+            return true;
+        };
+        
+        let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && 
+                        checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
+        
+        // Saring juga agar yang sudah Lulus/DO tidak ikut masuk
+        let isAktif = !s.kelas.toLowerCase().includes('lulus') && 
+                      !s.kelas.toLowerCase().includes('alumni') && 
+                      !s.kelas.toLowerCase().includes('diberhentikan');
+                      
+        return !isLengkap && isAktif;
+    });
+
+    // 2. Jika semua data sudah lengkap
+    if (dataBelumLengkap.length === 0) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Alhamdulillah',
+            text: 'Semua biodata santri aktif sudah lengkap!'
+        });
+        return;
+    }
+
+    // 3. Kelompokkan nama santri berdasarkan Kelas
+    let santriPerKelas = {};
+    dataBelumLengkap.forEach(s => {
+        if (!santriPerKelas[s.kelas]) santriPerKelas[s.kelas] = [];
+        santriPerKelas[s.kelas].push(s.nama);
+    });
+
+    // 4. Susun Format Pesan WhatsApp
+    let pesan = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\n`;
+    pesan += `Afwan Ustadz/Ustadzah, berikut adalah daftar santri yang *Biodatanya Belum Lengkap* di sistem Madrasah Darussalam:\n\n`;
+
+    for (let kelas in santriPerKelas) {
+        pesan += `🏫 *${kelas}*\n`;
+        santriPerKelas[kelas].forEach((nama, idx) => {
+            pesan += `  ${idx + 1}. ${nama}\n`;
+        });
+        pesan += `\n`;
+    }
+
+    pesan += `Mohon bantuan Ustadz/Ustadzah Wali Kelas untuk dapat melengkapi data tersebut (TTL, Nama Ortu, Alamat, dll) di menu *Data Santri*.\n\n`;
+    pesan += `Syukron jazakumullah khairan.`;
+
+    // 5. Buka tab baru ke WhatsApp Web/App
+    const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
+    window.open(urlWA, '_blank');
 }

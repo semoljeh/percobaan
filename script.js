@@ -4360,9 +4360,9 @@ function bagikanDataBelumLengkapWA() {
         santriPerKelas[s.kelas].push(s.nama);
     });
 
-    // 4. Susun Format Pesan WhatsApp
+    // 4. Susun Format Pesan WhatsApp (DENGAN BAHASA LEBIH SOPAN)
     let pesan = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\n`;
-    pesan += `Afwan Ustadz/Ustadzah, berikut adalah daftar santri yang *Biodatanya Belum Lengkap* di sistem Madrasah Darussalam:\n\n`;
+    pesan += `Bapak/Ibu Wali Santri yang dirahmati Allah, memohon izin menyampaikan informasi. Berikut adalah daftar santri yang *Biodatanya Masih Belum Lengkap* di sistem pendataan MADASA:\n\n`;
 
     for (let kelas in santriPerKelas) {
         pesan += `🏫 *${kelas}*\n`;
@@ -4372,8 +4372,12 @@ function bagikanDataBelumLengkapWA() {
         pesan += `\n`;
     }
 
-    pesan += `Mohon bantuan Ustadz/Ustadzah Wali Kelas untuk dapat melengkapi data tersebut (TTL, Nama Ortu, Alamat, dll) di menu *Data Santri*.\n\n`;
-    pesan += `Syukron jazakumullah khairan.`;
+    // --- DESKRIPSI YANG LEBIH SOPAN DAN RAMAH ---
+    pesan += `Demi kelancaran proses pencetakan Rapor Ananda, kami memohon perkenan Bapak/Ibu Wali Santri yang nama putra/putrinya tercantum di atas untuk dapat segera melengkapi kekurangan data tersebut.\n\n`;
+    pesan += `Bapak/Ibu dapat melakukan pembaruan data secara mandiri melalui website resmi kami di:\n🌐 *http://madasa.web.id*\n\n`;
+    pesan += `Apabila Bapak/Ibu menemui kendala atau membutuhkan bantuan, silakan menghubungi admin dengan mengklik ikon WhatsApp yang berada di pojok kanan bawah pada halaman website tersebut.\n\n`;
+    pesan += `Atas perhatian dan kerja sama Bapak/Ibu, kami sampaikan terima kasih yang sebesar-besarnya. *Jazakumullah khairan katsiran*.\n\n`;
+    pesan += `*Tim Admin MADASA*`;
 
     // 5. Buka tab baru ke WhatsApp Web/App
     const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;

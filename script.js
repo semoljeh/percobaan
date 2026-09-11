@@ -1659,7 +1659,7 @@ function loadBintangPelajar() {
     if (GLOBAL_DATA_SANTRI.length === 0) {
         const wadah = document.getElementById('wadahBintangPelajar');
         if (wadah) {
-            wadah.innerHTML = '<div class="col-span-full text-center text-white p-6"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Menyiapkan foto santri...</div>';
+            wadah.innerHTML = '<div class="col-span-full text-center text-emerald-700 p-6"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Menyiapkan foto santri...</div>';
         }
         setTimeout(loadBintangPelajar, 500);
         return;
@@ -1667,8 +1667,8 @@ function loadBintangPelajar() {
 
     const wadah = document.getElementById('wadahBintangPelajar');
     wadah.innerHTML =
-        '<div class="bg-white/20 backdrop-blur-md border border-white/30 rounded-xl p-6 text-center text-white col-span-full">' +
-        '<i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>' +
+        '<div class="bg-white border border-gray-100 rounded-xl p-6 text-center text-emerald-700 font-bold col-span-full shadow-sm">' +
+        '<i class="fas fa-spinner fa-spin text-3xl mb-3 block"></i>' +
         'Memuat kandidat juara...' +
         '</div>';
 
@@ -1692,25 +1692,25 @@ function loadBintangPelajar() {
 
             if (dataTK.length === 0 && dataIBT.length === 0 && dataSANA.length === 0) {
                 wadah.innerHTML =
-                    '<div class="bg-white/20 backdrop-blur-md border border-white/30 rounded-xl p-8 text-center text-white col-span-full shadow-lg">' +
-                    '<i class="fas fa-folder-open text-4xl mb-3 block text-white/80"></i>' +
-                    '<p class="font-bold text-lg mb-1">Belum Ada Bintang Pelajar</p>' +
-                    '<p class="text-sm text-white/80">Papan peringkat masih kosong. Silakan input nilai santri terlebih dahulu.</p>' +
+                    '<div class="bg-white border border-gray-100 rounded-xl p-8 text-center col-span-full shadow-sm">' +
+                    '<i class="fas fa-folder-open text-4xl mb-3 block text-gray-300"></i>' +
+                    '<p class="font-bold text-lg mb-1 text-gray-800">Belum Ada Bintang Pelajar</p>' +
+                    '<p class="text-sm text-gray-500">Papan peringkat masih kosong. Silakan input nilai santri terlebih dahulu.</p>' +
                     '</div>';
                 return;
             }
 
-const urutkanJuaraUmum = arr => {
-    arr.sort((a, b) => {
-        const rataB = parseFloat(b.rata_asli ?? b.rata ?? 0);
-        const rataA = parseFloat(a.rata_asli ?? a.rata ?? 0);
-        if (rataB !== rataA) return rataB - rataA; // Urutkan berdasarkan rata-rata terlebih dahulu
-        
-        const totalB = parseFloat(b.total || 0);
-        const totalA = parseFloat(a.total || 0);
-        return totalB - totalA; // Gunakan total sebagai penentu jika rata-rata seri
-    });
-};
+            const urutkanJuaraUmum = arr => {
+                arr.sort((a, b) => {
+                    const rataB = parseFloat(b.rata_asli ?? b.rata ?? 0);
+                    const rataA = parseFloat(a.rata_asli ?? a.rata ?? 0);
+                    if (rataB !== rataA) return rataB - rataA; // Urutkan berdasarkan rata-rata terlebih dahulu
+                    
+                    const totalB = parseFloat(b.total || 0);
+                    const totalA = parseFloat(a.total || 0);
+                    return totalB - totalA; // Gunakan total sebagai penentu jika rata-rata seri
+                });
+            };
             urutkanJuaraUmum(dataTK);
             urutkanJuaraUmum(dataIBT);
             urutkanJuaraUmum(dataSANA);
@@ -1747,7 +1747,7 @@ const urutkanJuaraUmum = arr => {
                 if (juaraPerKelas.length === 0) return;
 
                 wadah.innerHTML += `
-                    <div class="col-span-full text-white font-bold text-lg mt-4 mb-2 border-b border-white/30 pb-2 shadow-sm">
+                    <div class="col-span-full text-emerald-800 font-bold text-lg mt-4 mb-2 border-b border-emerald-200 pb-2">
                         <i class="${icon} mr-2"></i> ${judul}
                     </div>
                 `;
@@ -1857,7 +1857,7 @@ const urutkanJuaraUmum = arr => {
         }
         else if (res.status === 'success') {
             wadah.innerHTML =
-                '<div class="bg-white/20 backdrop-blur-md border border-white/30 rounded-xl p-6 text-center text-white col-span-full">' +
+                '<div class="bg-white border border-gray-100 rounded-xl p-6 text-center text-gray-500 col-span-full">' +
                 '<i class="fas fa-info-circle text-2xl mb-2 block"></i>' +
                 'Belum ada data nilai yang diinput di kelas mana pun.' +
                 '</div>';
@@ -1869,7 +1869,7 @@ const urutkanJuaraUmum = arr => {
     .catch(e => {
         console.error('[RANKING] Gagal memuat Bintang Pelajar:', e);
         wadah.innerHTML =
-            '<div class="text-white text-center col-span-full mt-4">' +
+            '<div class="text-red-500 text-center col-span-full mt-4 font-bold">' +
             'Gagal memuat data ranking. Silakan refresh lalu coba lagi.' +
             '</div>';
     });
@@ -4129,11 +4129,41 @@ function cetakSKResmi(semester) {
         return Swal.fire({ icon: 'error', title: 'Data Kosong', text: 'Tidak ada data juara untuk dicetak.' });
     }
 
-    const isGanjil = semester === 'Ganjil';
-    const teksSemester = isGanjil ? "SEMESTER GANJIL TAHUN AJARAN 2026/2027" : "SEMESTER GENAP TAHUN AJARAN 2026/2027";
+  const isGanjil = semester === 'Ganjil';
+    
+    // 1. Ambil Waktu Saat Ini
+    const sekarang = new Date();
+    const bulanIni = sekarang.getMonth(); // 0 (Jan) sampai 11 (Des)
+    const tahunIni = sekarang.getFullYear();
+    
+    // 2. Kalkulasi Tahun Ajaran Masehi
+    const tahunAjaranAwal = bulanIni >= 6 ? tahunIni : tahunIni - 1;
+    const tahunAjaranAkhir = tahunAjaranAwal + 1;
+    const teksTahunAjaranMasehi = `${tahunAjaranAwal}/${tahunAjaranAkhir}`;
+    
+    // 3. Kalkulasi Tahun Ajaran Hijriyah (Menggunakan rumus standar sistem Madasa)
+    const tahunHijriyahAwal = Math.round((tahunAjaranAwal - 622) * (33 / 32));
+    const tahunHijriyahAkhir = tahunHijriyahAwal + 1;
+    const teksTahunAjaranHijriyah = `${tahunHijriyahAwal}/${tahunHijriyahAkhir}`;
+    
+    // 4. Gabungkan Format Tahun Ajaran Lengkap (Hijriyah & Masehi)
+    const teksTahunLengkap = `${teksTahunAjaranHijriyah} H / ${teksTahunAjaranMasehi} M`;
+    
+    // 5. Kalkulasi Nomor SK Otomatis
+    const tahunBerdiri = 1984;
+    const selisihTahun = tahunAjaranAwal - tahunBerdiri;
+    const nomorUrut = (selisihTahun * 2) + (isGanjil ? 1 : 2); 
+    const nomorUrutFormat = nomorUrut.toString().padStart(3, '0');
+    
+    // 6. Kalkulasi Bulan Romawi Otomatis
+    const bulanRomawi = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+    const bulanSK = bulanRomawi[bulanIni];
+    
+    // 7. Format Akhir
+    const nomorSK = `${nomorUrutFormat}/SK/MD/${bulanSK}/${tahunIni}`;
+    const teksSemester = isGanjil ? `SEMESTER GANJIL TAHUN AJARAN ${teksTahunLengkap}` : `SEMESTER GENAP TAHUN AJARAN ${teksTahunLengkap}`;
     const teksTentang = isGanjil ? "PENETAPAN BINTANG KELAS" : "PENETAPAN BINTANG KELAS DAN BINTANG PELAJAR";
     
-    // Variabel dinamis untuk membedakan teks deskripsi di dalam SK
     const teksPredikat = isGanjil ? "Bintang Kelas" : "Bintang Kelas dan Bintang Pelajar (Juara Umum)";
     const teksKeputusan = isGanjil ? "Penetapan Bintang Kelas" : "Penetapan Bintang Kelas dan Bintang Pelajar";
 
@@ -4177,7 +4207,7 @@ function cetakSKResmi(semester) {
 
             <div style="text-align: center; margin-bottom: 15px; line-height: 1.3;">
                 <h3 style="font-size: 14px; font-weight: bold; text-decoration: underline; margin: 0 0 5px 0;">SURAT KEPUTUSAN KEPALA MADRASAH</h3>
-                <p style="font-size: 12px; margin: 0; font-weight: bold;">Nomor: 085/SK/MD/IX/2026</p>
+              <p style="font-size: 12px; margin: 0; font-weight: bold;">Nomor: ${nomorSK}</p>
                 <br>
                 <p style="font-size: 12px; margin: 0; font-weight: bold;">TENTANG</p>
                 <p style="font-size: 12px; margin: 0; font-weight: bold;">${teksTentang}</p>
@@ -4192,7 +4222,7 @@ function cetakSKResmi(semester) {
                         <ol type="a" style="margin: 0; padding-left: 15px;">
                             <li>Bahwa dalam rangka memberikan apresiasi dan motivasi bagi santri yang menunjukkan prestasi akademik terbaik, perlu ditetapkan santri penerima predikat ${teksPredikat};</li>
                             <li>Bahwa santri yang namanya tercantum dalam lampiran surat keputusan ini dipandang memenuhi syarat, kriteria, dan kompetensi untuk menyandang predikat tersebut;</li>
-                            <li>Bahwa berdasarkan pertimbangan sebagaimana dimaksud pada poin a dan b, perlu menetapkan Surat Keputusan Kepala Madrasah tentang ${teksKeputusan} Tahun Ajaran 2026/2027.</li>
+                          <li>Bahwa berdasarkan pertimbangan sebagaimana dimaksud pada poin a dan b, perlu menetapkan Surat Keputusan Kepala Madrasah tentang ${teksKeputusan} Tahun Ajaran ${teksTahunLengkap}.</li>
                         </ol>
                     </td>
                 </tr>
@@ -4204,7 +4234,7 @@ function cetakSKResmi(semester) {
                             <li>Undang-Undang Nomor 18 Tahun 2019 tentang Pesantren;</li>
                             <li>Peraturan Menteri Agama Republik Indonesia Nomor 31 Tahun 2020 tentang Pendidikan Pesantren;</li>
                             <li>Anggaran Dasar dan Anggaran Rumah Tangga (AD/ART) Yayasan Pendidikan Islam Madrasah Darussalam;</li>
-                            <li>Program Kerja Madrasah Darussalam Tahun Ajaran 2026/2027.</li>
+                          <li>Program Kerja Madrasah Darussalam Tahun Ajaran ${teksTahunLengkap}.</li>
                         </ol>
                     </td>
                 </tr>
@@ -4226,7 +4256,7 @@ function cetakSKResmi(semester) {
                 <tr>
                     <td style="width: 120px; font-weight: bold; vertical-align: top;">PERTAMA</td>
                     <td style="width: 10px; text-align: center; vertical-align: top;">:</td>
-                    <td style="vertical-align: top; padding-bottom: 5px;">Menetapkan nama-nama santri yang tercantum dalam <b>Lampiran I</b> Surat Keputusan ini sebagai <b>${teksPredikat}</b> pada masing-masing tingkatan kelas Madrasah Darussalam Semester ${isGanjil ? 'Ganjil' : 'Genap'} Tahun Ajaran 2026/2027.</td>
+                 <td style="vertical-align: top; padding-bottom: 5px;">Menetapkan nama-nama santri yang tercantum dalam <b>Lampiran I</b> Surat Keputusan ini sebagai <b>${teksPredikat}</b> pada masing-masing tingkatan kelas Madrasah Darussalam Semester ${isGanjil ? 'Ganjil' : 'Genap'} Tahun Ajaran ${teksTahunLengkap}.</td>
                 </tr>
                 <tr>
                     <td style="width: 120px; font-weight: bold; vertical-align: top;">KEDUA</td>
@@ -4260,8 +4290,9 @@ function cetakSKResmi(semester) {
         <div>
             <div style="text-align: left; font-size: 11px; margin-bottom: 20px; line-height: 1.5; font-weight: bold;">
                 LAMPIRAN I SURAT KEPUTUSAN KEPALA MADRASAH<br>
-                NOMOR: 085/SK/MD/IX/2026<br>
-                TENTANG: ${teksTentang} SEMESTER ${isGanjil ? 'GANJIL' : 'GENAP'} TAHUN AJARAN 2026/2027
+             // Ganti menjadi:
+NOMOR: ${nomorSK}<br>
+TENTANG: ${teksTentang} SEMESTER ${isGanjil ? 'GANJIL' : 'GENAP'} TAHUN AJARAN ${teksTahunLengkap}
             </div>
             
             <h3 style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 15px;">DAFTAR PENERIMA PENGHARGAAN</h3>

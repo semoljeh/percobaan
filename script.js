@@ -1076,8 +1076,7 @@ if (kelas.includes('TK')) {
         if (resStatus.warning) console.warn('[STATUS NILAI]', resStatus.warning);
     } catch (statusError) {
         console.warn('[STATUS NILAI] JSONP gagal, mencoba pembacaan lama sebagai fallback.', statusError);
-
-        // Fallback untuk deployment Apps Script lama yang belum memiliki getStatusNilai.
+// Fallback untuk deployment Apps Script lama yang belum memiliki getStatusNilai.
         try {
             const formData = new URLSearchParams();
             formData.append('action', 'getDataNilai');
@@ -1093,12 +1092,17 @@ if (kelas.includes('TK')) {
                 const dataRows = res.data;
 
                 if (kelas.includes('TK')) {
-					
-					
                     const idxNis = headers.findIndex(h => bersihTeks(h) === 'nis');
                     const idxHari = headers.findIndex(h => bersihTeks(h) === 'hari');
                     const idxN1 = headers.findIndex(h => bersihTeks(h).includes('nilai 1') || bersihTeks(h) === 'n1');
                     const idxN2 = headers.findIndex(h => bersihTeks(h).includes('nilai 2') || bersihTeks(h) === 'n2');
+                    
+                    // TAMBAHAN: Indeks pencarian untuk kolom Mapel 1 dan Mapel 2
+                    const idxM1 = headers.findIndex(h => bersihTeks(h).includes('mapel 1') || bersihTeks(h) === 'm1');
+                    const idxM2 = headers.findIndex(h => bersihTeks(h).includes('mapel 2') || bersihTeks(h) === 'm2');
+
+                    let mapel1Ditemukan = "";
+                    let mapel2Ditemukan = "";
 
                     dataRows.forEach(row => {
                         if (idxNis > -1 && idxHari > -1 && bersihTeks(row[idxHari]) === bersihTeks(subFilterValue)) {
@@ -1107,8 +1111,16 @@ if (kelas.includes('TK')) {
                                 n1: (idxN1 > -1 && row[idxN1] !== '' && row[idxN1] !== null) ? true : '',
                                 n2: (idxN2 > -1 && row[idxN2] !== '' && row[idxN2] !== null) ? true : ''
                             };
+                            
+                            // TAMBAHAN: Menangkap nama mapel dari baris data
+                            if (mapel1Ditemukan === "" && idxM1 > -1 && row[idxM1]) mapel1Ditemukan = row[idxM1];
+                            if (mapel2Ditemukan === "" && idxM2 > -1 && row[idxM2]) mapel2Ditemukan = row[idxM2];
                         }
                     });
+                    
+                    // TAMBAHAN: Memasukkan nama mapel yang ditemukan ke kotak input UI
+                    document.getElementById('global_tk_m1').value = mapel1Ditemukan;
+                    document.getElementById('global_tk_m2').value = mapel2Ditemukan;
                 } else {
                     const idxNis = headers.findIndex(h => bersihTeks(h) === 'nis');
                     const idxMapel = headers.findIndex(h => bersihTeks(h) === bersihTeks(subFilterValue));

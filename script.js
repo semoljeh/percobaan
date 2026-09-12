@@ -811,7 +811,9 @@ function filterSantri() {
         const nis = row.cells[1].innerText.toLowerCase(); 
         const nama = row.cells[2].innerText.toLowerCase(); 
         const kelas = row.getAttribute('data-kelas'); 
-        const matchSearch = nama.includes(searchText) || nis.includes(searchText); 
+        
+        // Memungkinkan pencarian berdasarkan asal kelas alumni juga
+        const matchSearch = nama.includes(searchText) || nis.includes(searchText) || kelas.toLowerCase().includes(searchText); 
         
         let matchKelas = false;
         let isLengkap = row.getAttribute('data-lengkap');
@@ -826,6 +828,11 @@ function filterSantri() {
             // Hanya tampilkan data yang belum lengkap (kecuali Alumni/DO)
             if (!kelasLower.includes('lulus') && !kelasLower.includes('alumni') && !kelasLower.includes('diberhentikan')) {
                 matchKelas = (isLengkap === "false");
+            }
+        } else if (selectedKelas === 'SemuaAlumni') {
+            // FITUR BARU: Khusus tampilkan semua yang Lulus atau DO
+            if (kelasLower.includes('lulus') || kelasLower.includes('alumni') || kelasLower.includes('diberhentikan')) {
+                matchKelas = true;
             }
         } else {
             matchKelas = (kelas === selectedKelas);
@@ -2584,18 +2591,26 @@ function toggleSemuaMutasi(source) {
 // FUNGSI PROSES MUTASI (DIPERBAIKI DENGAN PENGAMANAN FETCH)
 // =========================================================
 function prosesMutasi() {
-    const kelasTujuan = document.getElementById('mutasiKelasTujuan').value;
+    const kelasTujuanInput = document.getElementById('mutasiKelasTujuan').value;
+    const kelasAsal = document.getElementById('mutasiKelasAsal').value;
     const checkboxes = document.querySelectorAll('.cek-mutasi:checked');
     
     if (checkboxes.length === 0) return Swal.fire('Pilih Santri', 'Silakan centang minimal satu santri yang akan dimutasi.', 'warning');
-    if (!kelasTujuan) return Swal.fire('Pilih Tujuan', 'Silakan pilih kelas tujuan mutasi atau status Lulus.', 'warning');
+    if (!kelasTujuanInput) return Swal.fire('Pilih Tujuan', 'Silakan pilih kelas tujuan mutasi atau status Lulus.', 'warning');
+
+    // --- FITUR BARU: Otomatis sisipkan kelas terakhir jika statusnya Lulus / DO ---
+    let kelasTujuanFinal = kelasTujuanInput;
+    if (kelasTujuanInput === 'Lulus / Alumni' || kelasTujuanInput === 'Diberhentikan') {
+        kelasTujuanFinal = `${kelasTujuanInput} (dari ${kelasAsal})`;
+    }
+    // -----------------------------------------------------------------------------
 
     let nisList = [];
     checkboxes.forEach(cb => nisList.push(cb.value));
 
     Swal.fire({
         title: 'Peringatan Mutasi!',
-        html: `Anda akan memindahkan <b>${nisList.length} santri</b> ke: <b class="text-indigo-600">${kelasTujuan}</b><br><br>
+        html: `Anda akan memindahkan <b>${nisList.length} santri</b> ke: <b class="text-indigo-600">${kelasTujuanFinal}</b><br><br>
                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-800 text-sm text-left shadow-inner">
                    <i class="fas fa-exclamation-triangle text-amber-600 mr-2 text-lg"></i> <b>PERHATIAN PENTING:</b><br>
                    Pastikan semua <b>Rapor</b> kelas asal sudah dicetak! Setelah dimutasi, nama santri tidak akan muncul lagi di menu cetak kelas sebelumnya.
@@ -2614,13 +2629,11 @@ function prosesMutasi() {
                 const formData = new URLSearchParams();
                 formData.append('action', 'mutasiSantri');
                 formData.append('token', sessionStorage.getItem('tokenMadasa')); 
-                formData.append('kelas_tujuan', kelasTujuan);
+                formData.append('kelas_tujuan', kelasTujuanFinal);
                 formData.append('nis_list', JSON.stringify(nisList));
 
-                // Menggunakan asyc/await untuk fetch yang lebih stabil
                 const response = await gasFetch( { method: 'POST', body: formData });
                 
-                // PENGAMANAN UTAMA: Blokir jika server Google me-redirect ke halaman error HTML
                 if (!response.ok) throw new Error("Respons server tidak valid (Bukan 200 OK)");
                 
                 const res = await response.json();
@@ -2629,7 +2642,6 @@ function prosesMutasi() {
                     showLoading(false); 
                     Swal.fire('Berhasil!', res.message, 'success');
 
-                    // Reset form Mutasi setelah sukses
                     document.getElementById('mutasiKelasAsal').value = '';
                     document.getElementById('text_mutasiKelasAsal').innerText = '-- Pilih Kelas Asal --'; 
                     document.getElementById('mutasiKelasTujuan').value = '';
@@ -2640,7 +2652,6 @@ function prosesMutasi() {
                         tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-400"><i class="fas fa-check-circle text-4xl mb-2 text-emerald-400 block"></i>Mutasi selesai.</td></tr>';
                     }
                     
-                    // Tarik data santri terbaru di latar belakang (mode senyap)
                     loadDataSantri(true); 
                 } else {
                     showLoading(false);
@@ -2862,13 +2873,14 @@ function buatOpsiSemuaKelasOtomatis() {
         const listEl = document.getElementById('list_' + dropdown.id);
         if (listEl) {
             
-let specificHtml = `<li class="custom-option-item text-gray-400 text-center !pl-3 whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', '${dropdown.defaultValue}', '${dropdown.defaultText}', '${dropdown.callback}')">-- Reset / ${dropdown.defaultText} --</li>`;
+            let specificHtml = `<li class="custom-option-item text-gray-400 text-center !pl-3 whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', '${dropdown.defaultValue}', '${dropdown.defaultText}', '${dropdown.callback}')">-- Reset / ${dropdown.defaultText} --</li>`;
 
-// OPSI DATA BELUM LENGKAP
-if (dropdown.id === 'filterKelasSantri') {
-    specificHtml += `
-    <li class="custom-option-item text-amber-500 font-bold whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', 'BelumLengkap', '⚠️ Data Belum Lengkap', 'filterSantri')">⚠️ BELUM LENGKAP</li>`;
-}
+            // OPSI KHUSUS DATA SANTRI
+            if (dropdown.id === 'filterKelasSantri') {
+                specificHtml += `
+                <li class="custom-option-item text-amber-500 font-bold whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', 'BelumLengkap', '⚠️ Data Belum Lengkap', 'filterSantri')">⚠️ BELUM LENGKAP</li>
+                <li class="custom-option-item text-green-600 font-bold whitespace-nowrap" onclick="pilihKelasCustomGlobal('${dropdown.id}', 'SemuaAlumni', '🎓 Lihat Semua Alumni/DO', 'filterSantri')">🎓 ALUMNI/DO</li>`;
+            }
 
             // OPSI MUTASI
             if (dropdown.id === 'mutasiKelasTujuan') {

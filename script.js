@@ -1038,7 +1038,11 @@ async function generateTabelAbsen() {
             throw new Error((resStatus && resStatus.message) || 'Status nilai tidak dapat dibaca.');
         }
 
-        if (kelas.includes('TK')) {
+if (kelas.includes('TK')) {
+            // TAMPILKAN NAMA MAPEL OTOMATIS KE KOTAK INPUT
+            document.getElementById('global_tk_m1').value = resStatus.mapel1 || '';
+            document.getElementById('global_tk_m2').value = resStatus.mapel2 || '';
+            
             const setN1 = new Set((resStatus.savedN1 || []).map(bersihNis));
             const setN2 = new Set((resStatus.savedN2 || []).map(bersihNis));
             santriKelasIni.forEach(s => {
@@ -1085,6 +1089,8 @@ async function generateTabelAbsen() {
                 const dataRows = res.data;
 
                 if (kelas.includes('TK')) {
+					
+					
                     const idxNis = headers.findIndex(h => bersihTeks(h) === 'nis');
                     const idxHari = headers.findIndex(h => bersihTeks(h) === 'hari');
                     const idxN1 = headers.findIndex(h => bersihTeks(h).includes('nilai 1') || bersihTeks(h) === 'n1');
@@ -1263,7 +1269,11 @@ if (kelasPilih.includes('TK')) {
         });
     }
     
-    if (paketBulk.length === 0 && paketStatus.length === 0) { Swal.fire({ icon: 'warning', title: 'Belum Ada Perubahan', text: 'Masukkan nilai atau pilih status santri terlebih dahulu.'}); return; } 
+let isTkMode = kelasPilih.includes('TK');
+    if (paketBulk.length === 0 && paketStatus.length === 0 && !isTkMode) { 
+        Swal.fire({ icon: 'warning', title: 'Belum Ada Perubahan', text: 'Masukkan nilai atau pilih status santri terlebih dahulu.'}); 
+        return; 
+    }
     
     const btnSubmit = this.querySelector('button[type="submit"]'); 
     const originalText = btnSubmit.innerHTML; 
@@ -1279,15 +1289,17 @@ if (kelasPilih.includes('TK')) {
     formData.append('kelas', kelasPilih);
     formData.append('list_nilai', JSON.stringify(paketBulk)); 
     
-    if (kelasPilih.includes('TK')) { 
+   if (kelasPilih.includes('TK')) { 
         formData.append('hari', filterKedua); 
+        formData.append('m1', document.getElementById('global_tk_m1').value); 
+        formData.append('m2', document.getElementById('global_tk_m2').value); 
     } else { 
         formData.append('mapel', filterKedua); 
         formData.append('semua_mapel', JSON.stringify(JADWAL_MAPEL[kelasPilih].semua)); 
     }
     
     const requests = [];
-    if (paketBulk.length > 0) {
+    if (paketBulk.length > 0 || isTkMode) {
         requests.push(
             gasFetch({ method: 'POST', body: formData })
                 .then(res => res.json())
@@ -4298,7 +4310,7 @@ function cetakSKResmi(semester) {
     `;
 
     // Halaman 2: Lampiran Nama
-    let lampiranHtml = `
+let lampiranHtml = `
         <div>
             <div style="text-align: left; font-size: 11px; margin-bottom: 20px; line-height: 1.5; font-weight: bold;">
                 LAMPIRAN I SURAT KEPUTUSAN KEPALA MADRASAH<br>

@@ -239,6 +239,10 @@ if (viewName === 'dataSantri' || viewName === 'inputNilai' || viewName === 'data
     if (GLOBAL_DATA_SANTRI.length === 0) {
         loadDataSantri(); 
     }
+    // Tambahkan baris ini agar mapel selalu dipastikan termuat saat masuk menu Input Nilai
+    if (Object.keys(JADWAL_MAPEL).length === 0) {
+        muatSemuaMapel();
+    }
 }
     
     if (viewName === 'ranking') { 

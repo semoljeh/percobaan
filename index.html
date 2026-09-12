@@ -221,7 +221,7 @@ OneSignalDeferred.push(async function(OneSignal) {
     <i class="fas fa-edit w-5"></i> Input Nilai
 </button>
 
-<button onclick="showView('pantauNilai')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+<button onclick="showView('pantauNilai')" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
     <i class="fas fa-chart-pie w-5"></i> Pantau Nilai
 </button>
 
@@ -386,6 +386,15 @@ OneSignalDeferred.push(async function(OneSignal) {
     <h3 class="font-bold text-gray-800 text-sm sm:text-base">Data Nilai</h3>
 </div>
 
+
+<div onclick="showView('pantauNilai')" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-orange-50 text-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+        <i class="fas fa-chart-pie"></i>
+    </div>
+    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Pantau Nilai</h3>
+</div>
+
+
 <div onclick="showView('ranking')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
     <div class="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
         <i class="fas fa-trophy"></i>
@@ -409,8 +418,8 @@ OneSignalDeferred.push(async function(OneSignal) {
 
 
 <!-- PORTAL WALI SANTRI -->
-<div onclick="window.location.href='informasi/'" class="bg-gradient-to-br from-emerald-50 to-white p-4 sm:p-6 rounded-2xl shadow-sm border border-emerald-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
-    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-100 text-emerald-700 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+<div onclick="window.location.href='informasi/'" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
         <i class="fas fa-user-check"></i>
     </div>
     <h3 class="font-bold text-gray-800 text-sm sm:text-base">Portal Wali Santri</h3>

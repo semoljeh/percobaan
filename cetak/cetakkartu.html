@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Ujian - Madrasah Darussalam</title>
+    <title>Sistem Ujian & Akun Wali - Madrasah Darussalam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     
@@ -15,6 +15,7 @@
 	<!-- Favicon -->
     <link rel="icon" type="image/png" href="../asset/logoweb.png">
     <link rel="shortcut icon" href="../asset/logoweb.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         /* Memastikan full-width mutlak di layar HP tanpa jarak */
@@ -50,7 +51,7 @@
             body { padding: 0 !important; background-color: white !important; }
             .no-print { display: none !important; }
             
-            body.print-kartu #areaDaftarHadir, body.print-kartu #areaDenah { display: none !important; }
+            body.print-kartu #areaDaftarHadir, body.print-kartu #areaDenah, body.print-kartu #gridKartuWali { display: none !important; }
             body.print-kartu #gridKartu {
                 display: block !important;
                 text-align: center !important;
@@ -59,10 +60,19 @@
                 width: 100% !important;
             }
             
-            body.print-absen #gridKartu, body.print-absen #areaDenah { display: none !important; }
+            body.print-wali #areaDaftarHadir, body.print-wali #areaDenah, body.print-wali #gridKartu { display: none !important; }
+            body.print-wali #gridKartuWali {
+                display: block !important;
+                text-align: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+
+            body.print-absen #gridKartu, body.print-absen #areaDenah, body.print-absen #gridKartuWali { display: none !important; }
             body.print-absen #areaDaftarHadir { display: block !important; width: 100% !important; }
 
-            body.print-denah #gridKartu, body.print-denah #areaDaftarHadir { display: none !important; }
+            body.print-denah #gridKartu, body.print-denah #areaDaftarHadir, body.print-denah #gridKartuWali { display: none !important; }
             body.print-denah #areaDenah { display: block !important; width: 100% !important; }
 
             .kartu-page { 
@@ -73,6 +83,16 @@
                 -webkit-column-break-inside: avoid !important;
                 vertical-align: top !important;
                 border: 1.5px solid #064e3b !important; 
+            }
+            
+            .kartu-wali-page { 
+                display: inline-block !important;
+                margin: 1.5mm !important; 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important; 
+                -webkit-column-break-inside: avoid !important;
+                vertical-align: top !important;
+                border: 1.5px solid #0f766e !important; 
             }
 
             .halaman-absen, .halaman-denah {
@@ -98,7 +118,10 @@
                 filter: none !important;
             }
             
-            .bg-gradient-to-r { background-image: none !important; background-color: #064e3b !important; }
+            .bg-gradient-to-r, .bg-gradient-to-b { background-image: none !important; }
+            .from-\[\#0a5c40\] { background-color: #064e3b !important; }
+            .from-teal-900 { background-color: #134e4a !important; }
+            
             .opacity-10 { 
                 display: block !important; 
                 opacity: 0.15 !important; 
@@ -110,7 +133,8 @@
             .bg-emerald-50\/60, .bg-emerald-50\/50 { background-color: #ecfdf5 !important; }
             .bg-emerald-700\/50 { background-color: #047857 !important; }
             .border-emerald-700\/70 { border-color: #047857 !important; }
-            .bg-teal-50\/30 { background-color: #f0fdfa !important; }
+            .bg-teal-50\/30, .bg-teal-50 { background-color: #f0fdfa !important; }
+            .bg-slate-50\/80 { background-color: #f8fafc !important; }
 			
 			#areaDaftarHadir, #areaDenah { height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
             #kertasAbsenWrapper, #kertasDenahWrapper { transform: none !important; margin: 0 auto !important; width: 215.9mm !important; min-width: auto !important; }
@@ -119,6 +143,7 @@
         .tabel-absen { border-collapse: collapse !important; width: 100% !important; }
         .tabel-absen, .tabel-absen th, .tabel-absen td { border: 1.5px solid #000000 !important; }
         .kartu-b2 { width: 55mm; height: 85mm; }
+        .kartu-wali-size { width: 85mm; height: 55mm; }
         
         .loader {
             border: 3px solid rgba(255,255,255,0.3);
@@ -133,16 +158,12 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
 		
-		
 		@font-face {
-    font-family: 'Diwani Jali';
-    src: url('../asset/DiwaniJali.ttf') format('truetype'); /* Sesuaikan path dan nama file font Anda */
-    font-weight: normal;
-    font-style: normal;
-}
-		
-		
-		
+            font-family: 'Diwani Jali';
+            src: url('../asset/DiwaniJali.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
     </style>
 </head>
 <body class="bg-[#FDFBF3] md:bg-slate-50 font-sans antialiased text-slate-800">
@@ -161,10 +182,10 @@
                 </div>
                 
                 <div class="relative z-10 flex flex-col items-center md:items-start w-full mt-1">
-                    <h2 class="text-3xl md:text-3xl font-bold text-white tracking-wide drop-shadow-md">Panel Cetak Ujian</h2>
+                    <h2 class="text-3xl md:text-3xl font-bold text-white tracking-wide drop-shadow-md">Panel Cetak Lanjutan</h2>
                     <p class="text-[10px] md:text-xs text-emerald-100 font-bold mt-2 uppercase tracking-[0.1em] flex justify-center md:justify-start items-center gap-1.5 drop-shadow-sm w-full">
                         <span class="w-1.5 h-1.5 rounded-full bg-[#F2C94C] inline-block animate-pulse shadow-[0_0_4px_#F2C94C]"></span>
-                        Kartu Peserta & Daftar Hadir Otomatis
+                        Kartu Ujian & Akun Login Wali Santri
                     </p>
                 </div>
             </div>
@@ -258,7 +279,7 @@
                         </div>
                     </div>
 
-                    <div class="lg:col-span-12 md:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-2 md:gap-3 mt-4 pt-5 border-t border-emerald-100/60 w-full">
+                    <div class="lg:col-span-12 md:col-span-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 mt-4 pt-5 border-t border-emerald-100/60 w-full">
                         <button onclick="tarikDataSantri()" id="btnTarik" class="bg-white border-2 border-emerald-700 text-emerald-800 hover:bg-emerald-50 py-3.5 px-2 rounded-xl font-bold shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2">
                             <svg class="w-4 h-4 flex-none text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             <span id="txtTarik" class="whitespace-nowrap text-xs md:text-sm">Tarik Data</span>
@@ -273,7 +294,7 @@
                         
                         <button onclick="cetakKartu()" id="btnCetakKartu" class="bg-[#D4AF37] text-yellow-950 border border-[#b8952b] py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-[#F2C94C] transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
                             <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
-                            <span class="whitespace-nowrap text-xs md:text-sm">Kartu</span>
+                            <span class="whitespace-nowrap text-xs md:text-sm">Kartu Ujian</span>
                         </button>
 
                         <button onclick="cetakAbsen()" id="btnCetakAbsen" class="bg-indigo-600 text-white border border-indigo-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-indigo-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
@@ -281,10 +302,15 @@
                             <span class="whitespace-nowrap text-xs md:text-sm">Absen</span>
                         </button>
 
-                        <!-- TOMBOL CETAK DENAH -->
-                        <button onclick="cetakDenah()" id="btnCetakDenah" class="bg-teal-600 text-white border border-teal-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-teal-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
+                        <button onclick="cetakDenah()" id="btnCetakDenah" class="bg-blue-600 text-white border border-blue-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-blue-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
                             <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                             <span class="whitespace-nowrap text-xs md:text-sm">Denah</span>
+                        </button>
+                        
+                        <!-- TOMBOL BARU: CETAK KARTU WALI -->
+                        <button onclick="cetakKartuWali()" id="btnCetakWali" class="bg-teal-600 text-white border border-teal-700 py-3.5 px-2 rounded-xl font-black shadow-lg hover:bg-teal-500 transition-all hover:-translate-y-0.5 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:active:scale-100" disabled>
+                            <svg class="w-4 h-4 md:w-5 md:h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.252a1 1 0 01.293-.707l8.96-8.96A6 6 0 0115 7z"></path></svg>
+                            <span class="whitespace-nowrap text-xs md:text-sm">Akun Wali</span>
                         </button>
                     </div>
                 </div>
@@ -304,6 +330,9 @@
             <p class="text-slate-400 text-[11px] mt-1">Silakan tarik data dari server dan klik "Proses"</p>
         </div>
     </div>
+
+    <!-- AREA KARTU WALI SANTRI (BARU) -->
+    <div id="gridKartuWali" class="hidden max-w-6xl mx-auto flex-wrap gap-5 justify-center relative z-10 pb-10 px-4 md:px-0 mt-6 md:mt-0 flex"></div>
 
     <div id="areaDaftarHadir" class="hidden relative z-10 pb-10 mt-6 md:mt-0 w-full overflow-visible">
         <div id="kertasAbsenWrapper" class="flex flex-col transition-transform duration-300 shrink-0" style="width: 215.9mm; min-width: 215.9mm;">
@@ -517,8 +546,6 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
                 }); 
                 siapkanFilterKelas(semuaSantri);
 				
-				
-				
                 document.getElementById('btnGenerate').disabled = false;
                 showToast(`Sukses! ${semuaSantri.length} data ditarik.`, "success");
                 berhasil = true; // Menandai sukses agar keluar dari loop
@@ -686,10 +713,12 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
                 document.getElementById('btnCetakKartu').disabled = false;
                 document.getElementById('btnCetakAbsen').disabled = false;
                 document.getElementById('btnCetakDenah').disabled = false;
+                document.getElementById('btnCetakWali').disabled = false;
 
                 renderKartuHTML();
                 renderAbsenHTML();
                 renderDenahHTML();
+                renderKartuWaliHTML();
 
                 txtGenerate.textContent = "Proses";
                 iconGenerate.classList.remove('hidden');
@@ -712,38 +741,54 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
             document.getElementById('gridKartu').classList.remove('hidden');
             document.getElementById('areaDaftarHadir').classList.add('hidden');
             document.getElementById('areaDenah').classList.add('hidden');
+            document.getElementById('gridKartuWali').classList.add('hidden');
         }
         function switchToAbsen() {
             document.getElementById('gridKartu').classList.add('hidden');
             document.getElementById('areaDenah').classList.add('hidden');
+            document.getElementById('gridKartuWali').classList.add('hidden');
             document.getElementById('areaDaftarHadir').classList.remove('hidden');
 			setTimeout(sesuaikanSkalaCetak, 100);
         }
         function switchToDenah() {
             document.getElementById('gridKartu').classList.add('hidden');
             document.getElementById('areaDaftarHadir').classList.add('hidden');
+            document.getElementById('gridKartuWali').classList.add('hidden');
             document.getElementById('areaDenah').classList.remove('hidden');
 			setTimeout(sesuaikanSkalaCetak, 100);
+        }
+        function switchToWali() {
+            document.getElementById('gridKartu').classList.add('hidden');
+            document.getElementById('areaDaftarHadir').classList.add('hidden');
+            document.getElementById('areaDenah').classList.add('hidden');
+            document.getElementById('gridKartuWali').classList.remove('hidden');
         }
 
         function cetakKartu() {
             switchToKartu();
-            document.body.classList.remove('print-absen', 'print-denah');
+            document.body.classList.remove('print-absen', 'print-denah', 'print-wali');
             document.body.classList.add('print-kartu');
             setTimeout(() => window.print(), 150);
         }
         
         function cetakAbsen() {
             switchToAbsen();
-            document.body.classList.remove('print-kartu', 'print-denah');
+            document.body.classList.remove('print-kartu', 'print-denah', 'print-wali');
             document.body.classList.add('print-absen');
             setTimeout(() => window.print(), 150);
         }
 
         function cetakDenah() {
             switchToDenah();
-            document.body.classList.remove('print-kartu', 'print-absen');
+            document.body.classList.remove('print-kartu', 'print-absen', 'print-wali');
             document.body.classList.add('print-denah');
+            setTimeout(() => window.print(), 150);
+        }
+
+        function cetakKartuWali() {
+            switchToWali();
+            document.body.classList.remove('print-kartu', 'print-absen', 'print-denah');
+            document.body.classList.add('print-wali');
             setTimeout(() => window.print(), 150);
         }
 
@@ -827,6 +872,141 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
             });
             JsBarcode(".barcode-ujian").init();
         }
+
+
+
+// FUNGSI RENDER KARTU WALI (DESAIN MODERN, SPASI NAMA DIRAPATKAN)
+        function renderKartuWaliHTML() {
+            const grid = document.getElementById('gridKartuWali');
+            grid.innerHTML = ''; 
+            
+            dataGlobalCetak.forEach((santri) => {
+                // Ekstrak tanggal lahir dari field TTL secara lebih cerdas
+                let tglLahir = "BELUM DIATUR";
+                
+                if (santri.ttl && santri.ttl.trim() !== '' && santri.ttl.trim() !== '-') {
+                    if (santri.ttl.includes(',')) {
+                        tglLahir = santri.ttl.split(',')[1].trim();
+                    } else {
+                        let cekAngka = santri.ttl.match(/\d/);
+                        if (cekAngka) {
+                            tglLahir = santri.ttl.substring(santri.ttl.indexOf(cekAngka[0])).trim();
+                        } else {
+                            tglLahir = santri.ttl.trim();
+                        }
+                    }
+                }
+
+                // Konversi Nama Bulan Menjadi Angka (Format DD-MM-YYYY)
+                if (tglLahir !== "BELUM DIATUR") {
+                    const bulanMap = {
+                        'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
+                        'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
+                        'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
+                    };
+                    
+                    let parts = tglLahir.split(/\s+/);
+                    if (parts.length >= 3) {
+                        let hari = parts[0].padStart(2, '0');
+                        let namaBulan = parts[1].toLowerCase();
+                        let tahun = parts[2];
+                        let angkaBulan = bulanMap[namaBulan] || parts[1];
+                        tglLahir = `${hari}-${angkaBulan}-${tahun}`;
+                    }
+                }
+
+                // Ambil Nama Ayah & Ibu (Jika kosong diisi tanda strip)
+                let namaAyah = santri.ayah ? santri.ayah.trim() : '-';
+                let namaIbu = santri.ibu ? santri.ibu.trim() : '-';
+
+                grid.innerHTML += `
+                <div class="kartu-wali-page kartu-wali-size relative bg-[#FAFAFA] font-sans shadow-md flex flex-col border-[1.5px] border-teal-700 overflow-hidden rounded-xl" style="box-sizing: border-box;">
+                    
+                    <!-- Ornamen Background (Modern Pattern) -->
+                    <div class="absolute inset-0 opacity-[0.04] pointer-events-none z-0" style="background-image: linear-gradient(#0f766e 1px, transparent 1px), linear-gradient(90deg, #0f766e 1px, transparent 1px); background-size: 10px 10px;"></div>
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-teal-600 rounded-full opacity-10 blur-xl pointer-events-none z-0"></div>
+                    <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-amber-400 rounded-full opacity-10 blur-xl pointer-events-none z-0"></div>
+
+                    <!-- Header Section -->
+                    <div class="relative bg-gradient-to-r from-teal-900 via-emerald-800 to-teal-900 flex items-center px-3 py-1.5 flex-none border-b-[2.5px] border-amber-400 z-10 shadow-sm">
+                        <div class="bg-white p-[3px] rounded-full mr-2 shadow-sm">
+                            <img src="../asset/logo.png" alt="Logo" class="h-[20px] w-[20px] object-contain">
+                        </div>
+                        <div class="flex-1 text-left pt-0.5">
+                            <h2 class="text-[11px] font-black uppercase tracking-[0.1em] text-white leading-none drop-shadow-sm">KARTU AKSES WALI</h2>
+                            <p class="text-[5.5px] font-bold tracking-[0.15em] text-teal-100 mt-[2.5px] uppercase leading-none drop-shadow-sm">Madrasah Diniyah Darussalam</p>
+                        </div>
+                    </div>
+
+                    <!-- Body Content -->
+                    <div class="flex-1 flex flex-col justify-center px-3 pb-1 relative z-10 w-full">
+                        
+                        <!-- Nama Santri & Keterangan Wali -->
+                        <!-- PERUBAHAN: Menambahkan pt-[4px] untuk menurunkan nama, dan mb-[4px] disesuaikan -->
+                        <div class="text-center pt-[4px] mb-[4px]">
+                            <h3 class="text-[11.5px] font-black text-slate-800 uppercase leading-tight line-clamp-1" title="${santri.nama}">${santri.nama}</h3>
+                            
+                            <!-- PERUBAHAN: mt-[4px] diubah menjadi mt-[1.5px] agar lebih merapat ke atas (ke nama santri) -->
+                            <div class="inline-flex items-center justify-center gap-1.5 bg-teal-50/80 px-2.5 py-[3px] max-w-[95%] rounded-full border border-teal-100/80 mt-[1.5px]" title="Wali: ${namaAyah} & ${namaIbu}">
+                                <i class="fas fa-users text-teal-600 text-[7px] shrink-0"></i>
+                                <p class="text-[7px] font-bold text-teal-800 uppercase tracking-[0.05em] truncate">WALI: ${namaAyah} & ${namaIbu}</p>
+                            </div>
+                        </div>
+
+                        <!-- Box Kredensial Login (Modern Card-in-Card) -->
+                        <div class="w-[96%] mx-auto bg-white rounded-lg border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col relative z-10">
+                            <!-- Garis dekorasi kiri -->
+                            <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal-500 to-rose-400"></div>
+                            
+                            <!-- Username Row -->
+                            <div class="flex items-center justify-between border-b border-slate-100 px-2 py-1 pl-3 bg-slate-50/50">
+                                <div class="flex items-center gap-1.5 w-[45%]">
+                                    <div class="w-[14px] h-[14px] rounded bg-teal-100 flex items-center justify-center shadow-inner">
+                                        <i class="fas fa-user-circle text-teal-600 text-[7.5px]"></i>
+                                    </div>
+                                    <span class="text-[6.5px] font-black text-slate-500 uppercase tracking-widest">Username</span>
+                                </div>
+                                <div class="w-[55%] text-right flex justify-end">
+                                    <div class="bg-white border border-slate-200 px-2 py-[2px] rounded-[4px] shadow-sm min-w-[75px] text-center">
+                                        <span class="text-[9.5px] font-black text-slate-800 tracking-widest leading-none">${santri.nis}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Password Row -->
+                            <div class="flex items-center justify-between px-2 py-1 pl-3 bg-white">
+                                <div class="flex items-center gap-1.5 w-[45%]">
+                                    <div class="w-[14px] h-[14px] rounded bg-rose-100 flex items-center justify-center shadow-inner">
+                                        <i class="fas fa-unlock-alt text-rose-500 text-[7.5px]"></i>
+                                    </div>
+                                    <span class="text-[6.5px] font-black text-slate-500 uppercase tracking-widest">Password</span>
+                                </div>
+                                <div class="w-[55%] text-right flex justify-end">
+                                    <div class="bg-white border border-slate-200 px-2 py-[2px] rounded-[4px] shadow-sm min-w-[75px] text-center">
+                                        <span class="text-[9.5px] font-black leading-none ${tglLahir === 'BELUM DIATUR' ? 'text-gray-400 italic' : 'text-rose-600'} tracking-wider">${tglLahir}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Petunjuk Singkat -->
+                        <div class="text-center mt-[6px]">
+                            <p class="text-[6.5px] leading-[1.3] text-gray-500 font-medium">
+                                <i class="fas fa-info-circle text-teal-600 text-[7px] mr-[1px]"></i> Gunakan akses di atas untuk memantau rapor & absensi.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Footer Link -->
+                    <div class="mt-auto w-full bg-teal-900 text-center py-1.5 flex items-center justify-center z-20">
+                        <p class="text-[9px] font-black text-amber-400 tracking-widest flex items-center gap-1.5 leading-none drop-shadow-md">
+                            <i class="fas fa-globe text-white/90 text-[10px]"></i> wali.madasa.ponpes.id
+                        </p>
+                    </div>
+                </div>`;
+            });
+        }
+
 
        function renderAbsenHTML() {
             const area = document.getElementById('kertasAbsenWrapper');

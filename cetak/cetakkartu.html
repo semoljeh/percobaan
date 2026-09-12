@@ -515,7 +515,9 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
 
     // Loop akan berjalan selama belum berhasil dan belum mencapai batas maksimal
     while (percobaan < maksimalPercobaan && !berhasil) {
-        try {
+      
+
+try {
             percobaan++;
             
             // Ubah teks tombol jika ini adalah percobaan ulang
@@ -523,12 +525,19 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
                 txtTarik.textContent = `Menarik... (Coba ke-${percobaan})`;
             }
 
-            // Membangun form data
-            let f = new FormData(); 
+            // PERBAIKAN: Gunakan URLSearchParams alih-alih FormData
+            let f = new URLSearchParams(); 
             f.append('action', 'getSantri');
             
-            // Mengirim request
-            const response = await fetch(urlGAS, { method: 'POST', body: f });
+            // PERBAIKAN: Tambahkan header Content-Type dan pastikan redirect diikuti
+            const response = await fetch(urlGAS, { 
+                method: 'POST', 
+                body: f,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                redirect: 'follow'
+            });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

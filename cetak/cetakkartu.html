@@ -507,10 +507,18 @@ async function tarikDataSantri(maksimalPercobaan = 3) {
             
             const result = await response.json();
 
-            // Jika respons dari GAS menyatakan sukses
+           // Jika respons dari GAS menyatakan sukses
             if (result.status === 'success') {
-                semuaSantri = result.data.filter(santri => santri.nama && santri.kelas); 
+                semuaSantri = result.data.filter(santri => {
+                    if (!santri.nama || !santri.kelas) return false;
+                    let kUpper = String(santri.kelas).toUpperCase();
+                    let isAlumni = kUpper.includes('LULUS') || kUpper.includes('ALUMNI') || kUpper.includes('DIBERHENTIKAN');
+                    return !isAlumni; // Memblokir kelas yang mengandung kata Lulus/Alumni/DO
+                }); 
                 siapkanFilterKelas(semuaSantri);
+				
+				
+				
                 document.getElementById('btnGenerate').disabled = false;
                 showToast(`Sukses! ${semuaSantri.length} data ditarik.`, "success");
                 berhasil = true; // Menandai sukses agar keluar dari loop

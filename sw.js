@@ -5,7 +5,7 @@ try {
   console.warn('[SW] OneSignal worker tidak dimuat:', e);
 }
 
-const CACHE_NAME = 'madasa-pwa-v17';
+const CACHE_NAME = 'madasa-pwa-v16';
 const PRECACHE = [
   './',
   './index.html',

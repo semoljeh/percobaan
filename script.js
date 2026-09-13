@@ -111,22 +111,30 @@ function muatSemuaMapel() {
     fdMapel.append('action', 'getAllMapel');
     fdMapel.append('token', sessionStorage.getItem('tokenMadasa'));
     
-    // Fungsi khusus untuk mencoba ulang jika server Google 404
+// Fungsi khusus untuk mencoba ulang jika server Google 404
     const tarikMapel = async (retry = 3) => {
         for (let i = 0; i < retry; i++) {
             try {
                 let req = await gasFetch( { method: 'POST', body: fdMapel });
+                // --- DETEKSI LINK MATI ---
+                if (req.status === 404 || req.status === 401 || req.status === 403) {
+                    throw new Error("FATAL: Link Database Salah/Mati.");
+                }
                 if (!req.ok) throw new Error("Server Sibuk");
                 let res = await req.json();
                 if (res.status === 'success') JADWAL_MAPEL = res.data;
                 return; // Berhenti mencoba jika sukses
             } catch (e) {
-                if (i === retry - 1) console.log("Gagal memuat Master Mapel setelah 3 percobaan.");
-                // Tunggu 1 detik sebelum mencoba lagi
+                if (e.message.includes("FATAL") || i === retry - 1) {
+                    console.log("Gagal memuat Master Mapel: Link Mati.");
+                    return;
+                }
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
     };
+	
+	
     tarikMapel();
 }
 
@@ -139,100 +147,107 @@ function loadDataSantri(silent = false) {
     formData.append('action', 'getSantri'); 
     formData.append('token', sessionStorage.getItem('tokenMadasa'));
     
-    // Fungsi khusus untuk mencoba ulang jika server Google 404
+// Fungsi khusus untuk mencoba ulang, TAPI akan langsung berhenti jika URL salah (404)
     const tarikSantri = async (retry = 3) => {
         for (let i = 0; i < retry; i++) {
             try {
-                let req = await gasFetch( { method: 'POST', body: formData });
+                let req = await gasFetch({ method: 'POST', body: formData });
+                
+                // --- KODE BARU: Deteksi Error Permanen (404 Not Found / 403 Forbidden) ---
+                if (req.status === 404 || req.status === 403 || req.status === 401) {
+                    throw new Error("FATAL_ERROR: URL Apps Script salah atau Izin Akses tertutup.");
+                }
+                
                 if (!req.ok) throw new Error("Server Sibuk");
+                
                 let res = await req.json();
                 return res; // Kembalikan data jika sukses
+                
             } catch (e) {
-                if (i === retry - 1) throw e; // Lempar error jika percobaan habis
-                console.warn(`Server Google merespons 404/Error, mencoba ulang... (Percobaan ${i + 1})`);
+                // Jika errornya FATAL (salah URL/404), langsung hentikan proses tanpa menunggu/diulang!
+                if (e.message.includes("FATAL_ERROR") || i === retry - 1) {
+                    throw e; 
+                }
+                
+                console.warn(`Gangguan sinyal, mencoba ulang... (Percobaan ${i + 1})`);
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
     };
 
-    tarikSantri().then(res => { 
+tarikSantri().then(res => { 
+        // 1. Langsung matikan loading agar layar HP tidak tertahan
+        if (!silent) showLoading(false); 
+        
         if(res.status === 'success') { 
             GLOBAL_DATA_SANTRI = res.data; 
             
-            // 1. Eksekusi pembuatan dropdown terlebih dahulu agar Input Nilai bisa langsung dipakai
+            // 2. Eksekusi pembuatan dropdown
             buatOpsiSemuaKelasOtomatis();
             
-            // 2. Langsung matikan loading agar layar HP tidak tertahan
-            if (!silent) showLoading(false); 
+            // 3. Render tabel langsung tanpa setTimeout
+            const tbody = document.getElementById('bodyTabelSantri'); 
+            if(tbody) { 
+                if(res.data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 sm:p-6 text-center text-gray-500">Belum ada data santri di database.</td></tr>'; 
+                    return; 
+                } 
 
-            // 3. TUNDA proses render tabel Data Santri yang sangat berat menggunakan setTimeout
-            // Ini memberi jeda pada browser HP agar tidak freeze (lemot)
-            setTimeout(() => {
-                const tbody = document.getElementById('bodyTabelSantri'); 
-                if(tbody) { 
-                    if(res.data.length === 0) { 
-                        tbody.innerHTML = '<tr><td colspan="6" class="p-4 sm:p-6 text-center text-gray-500">Belum ada data santri di database.</td></tr>'; 
-                        return; 
-                    } 
+                let barisHTML = [];
+                const roleSaatIni = sessionStorage.getItem('roleMadasa') || '';
 
-                    let barisHTML = [];
-                    const roleSaatIni = sessionStorage.getItem('roleMadasa') || '';
+                res.data.forEach(s => { 
+                    let amanTampilNama = escapeHTML(s.nama);
+                    let amanTampilKelas = escapeHTML(s.kelas);
+                    let amanNama = s.nama ? s.nama.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+                    let amanAlamat = s.alamat ? s.alamat.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                    let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                    let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                    let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                    let amanFoto = s.foto ? s.foto.toString() : '';
 
-                    res.data.forEach(s => { 
-                        // ... (Biarkan logika escapeHTML dan checkValid tetap persis sama seperti kode asli Anda) ...
-                        let amanTampilNama = escapeHTML(s.nama);
-                        let amanTampilKelas = escapeHTML(s.kelas);
-                        let amanNama = s.nama ? s.nama.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
-                        let amanAlamat = s.alamat ? s.alamat.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                        let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                        let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                        let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                        let amanFoto = s.foto ? s.foto.toString() : '';
-
-                        const checkValid = (val) => {
-                            if (!val) return false;
-                            const str = val.toString().trim();
-                            if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
-                            return true;
-                        };
-                        
-                        let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
-                        let statusLengkap = isLengkap ? "true" : "false";
-                        let iconPeringatan = !isLengkap ? `<i class="fas fa-exclamation-triangle text-amber-500 ml-2 text-[10px]" title="Biodata Belum Lengkap"></i>` : "";
-
-                        const tombolHapus = (!roleSaatIni.includes('Guru')) 
-                            ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
-
-                        barisHTML.push(`
-                        <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}" data-lengkap="${statusLengkap}">
-                            <td class="p-3 sm:p-4 text-center font-bold text-gray-500 urut-nomor"></td>
-                            <td class="p-3 sm:p-4 font-medium">${escapeHTML(s.nis)}</td>
-                            <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}${iconPeringatan}</td>
-                            <td class="p-3 sm:p-4 text-center whitespace-nowrap">${escapeHTML(s.jk)}</td>
-                            <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
-                            <td class="p-3 sm:p-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`, \`${amanFoto}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
-                                    ${tombolHapus}
-                                </div>
-                            </td>
-                        </tr>`);
-                    });
+                    const checkValid = (val) => {
+                        if (!val) return false;
+                        const str = val.toString().trim();
+                        if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
+                        return true;
+                    };
                     
-                    tbody.innerHTML = barisHTML.join('');
-                    filterSantri();
-                }
-            }, 50); // Eksekusi dengan jeda 50 milidetik
+                    let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
+                    let statusLengkap = isLengkap ? "true" : "false";
+                    let iconPeringatan = !isLengkap ? `<i class="fas fa-exclamation-triangle text-amber-500 ml-2 text-[10px]" title="Biodata Belum Lengkap"></i>` : "";
+
+                    const tombolHapus = (!roleSaatIni.includes('Guru')) 
+                        ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
+
+                    barisHTML.push(`
+                    <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}" data-lengkap="${statusLengkap}">
+                        <td class="p-3 sm:p-4 text-center font-bold text-gray-500 urut-nomor"></td>
+                        <td class="p-3 sm:p-4 font-medium">${escapeHTML(s.nis)}</td>
+                        <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}${iconPeringatan}</td>
+                        <td class="p-3 sm:p-4 text-center whitespace-nowrap">${escapeHTML(s.jk)}</td>
+                        <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
+                        <td class="p-3 sm:p-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`, \`${amanFoto}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
+                                ${tombolHapus}
+                            </div>
+                        </td>
+                    </tr>`);
+                });
+                
+                tbody.innerHTML = barisHTML.join('');
+                filterSantri();
+            }
         } 
     }).catch(err => { 
         if (!silent) showLoading(false); 
         console.error("Detail Error JS:", err); 
         
-        // PENTING: Ubah teks dropdown jika gagal, agar user tidak bingung kenapa kosong
         document.getElementById('text_pilihKelasNilai').innerText = "⚠️ Gagal memuat, cek koneksi & ulangi";
         
         if (!silent) Swal.fire('Error', 'Server Google sedang sibuk. Silakan coba klik menunya sekali lagi.', 'error'); 
-    }); 
+    });
 }
 
 // ---------------------------------------------------------
@@ -971,7 +986,7 @@ function aktifkanFilterKedua() {
         } else {
             labelFilter2.innerHTML = '<i class="fas fa-book text-blue-600 mr-2"></i> Untuk Pelajaran Apa?';
             
-            const dataMapel = JADWAL_MAPEL[kelas] || { tulis: [], praktek: [], baca: [] };
+           const dataMapel = JADWAL_MAPEL[kelas] || { semua: [], tulis: [], praktek: [], baca: [] };
             
             let htmlTulis = ''; let htmlPraktek = ''; let htmlMembaca = '';
             
@@ -1030,7 +1045,7 @@ async function generateTabelAbsen() {
     }
     // --------------------------------------------------------
 
-    showLoading(true, "Memeriksa Data Tersimpan...");
+  showLoading(true, "Menyiapkan Input Nilai...");
 
     let mapNilaiLama = {};
     let mapStatusNilai = {};
@@ -1046,12 +1061,10 @@ async function generateTabelAbsen() {
     // V16: untuk menentukan tanda centang, kita hanya membutuhkan STATUS
     try {
         const token = sessionStorage.getItem('tokenMadasa') || '';
-        const paramsStatus = {
-            token: token,
-            kelas: kelas,
-            // TAMBAHAN ANTI CACHE PWA: Memaksa PWA selalu meminta data terbaru ke server Google
-            _t: new Date().getTime() 
-        };
+       const paramsStatus = {
+    token: token,
+    kelas: kelas
+};
 
         if (kelas.includes('TK')) {
             paramsStatus.hari = subFilterValue;
@@ -1059,7 +1072,37 @@ async function generateTabelAbsen() {
             paramsStatus.mapel = subFilterValue;
         }
 
-        const resStatus = await gasJsonp('getStatusNilai', paramsStatus, 15000);
+      let cacheKey = "statusNilai_" + kelas + "_" + subFilterValue;
+
+let cacheStatus = sessionStorage.getItem(cacheKey);
+
+let resStatus;
+
+
+if(cacheStatus){
+
+    console.log("Menggunakan cache status nilai");
+
+    resStatus = JSON.parse(cacheStatus);
+
+}else{
+
+    resStatus = await gasJsonp(
+        'getStatusNilai',
+        paramsStatus,
+        15000
+    );
+
+    if(resStatus && resStatus.status==="success"){
+
+        sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify(resStatus)
+        );
+
+    }
+
+}
 
         if (!resStatus || resStatus.status !== 'success') {
             throw new Error((resStatus && resStatus.message) || 'Status nilai tidak dapat dibaca.');
@@ -1165,17 +1208,19 @@ if (kelas.includes('TK')) {
                     }
                 }
             }
-       } catch (fallbackError) {
-            console.error('[STATUS NILAI] Tidak dapat membaca status nilai tersimpan.', fallbackError);
-            
-            // --- PERBAIKAN 3: JIKA OFFLINE/GAGAL, TETAP BACA DARI MEMORI HP ---
-            if (kelas.includes('TK')) {
-                let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
-                let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
-                document.getElementById('global_tk_m1').value = memoriM1 || '';
-                document.getElementById('global_tk_m2').value = memoriM2 || '';
-            }
-        }
+      } catch (fallbackError) {
+    console.error('[STATUS NILAI] Tidak dapat membaca status nilai tersimpan.', fallbackError);
+    // Tambahkan inisialisasi kosong agar tidak memicu error lanjutan
+    if (!mapNilaiLama) mapNilaiLama = {};
+    if (!mapStatusNilai) mapStatusNilai = {};
+    
+    if (kelas.includes('TK')) {
+        let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
+        let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
+        document.getElementById('global_tk_m1').value = memoriM1 || '';
+        document.getElementById('global_tk_m2').value = memoriM2 || '';
+    }
+}
     }
 
     showLoading(false); 
@@ -1235,7 +1280,12 @@ if (kelas.includes('TK')) {
             barisHTML.push(html);
         }); 
         
-        tbody.innerHTML = barisHTML.join('');
+  const temp = document.createElement('tbody');
+
+temp.innerHTML = barisHTML.join('');
+
+tbody.replaceChildren(...temp.children);
+
     } 
     
     // Setup Visual Header & Footer (Tetap dipertahankan)
@@ -1422,18 +1472,22 @@ function loadDataNilaiKelas(silent = false) {
     formData.append('token', sessionStorage.getItem('tokenMadasa')); 
     formData.append('kelas', kelasPilih); 
     
-    // Mekanisme Auto-Retry (Coba lagi otomatis jika Google 404)
+// Mekanisme Auto-Retry (Coba lagi otomatis jika Google 404)
     const tarikDataNilai = async (retry = 3) => {
         for (let i = 0; i < retry; i++) {
             try {
                 let req = await gasFetch( { method: 'POST', body: formData });
+                // --- DETEKSI LINK MATI ---
+                if (req.status === 404 || req.status === 401 || req.status === 403) {
+                    throw new Error("FATAL: Link Database Salah/Mati.");
+                }
                 if (!req.ok) throw new Error("Server Sibuk");
                 let res = await req.json();
                 return res; // Kembalikan data jika sukses
             } catch (e) {
-                if (i === retry - 1) throw e; // Lempar error jika percobaan habis
+                // --- JIKA LINK MATI, LANGSUNG BERHENTI ---
+                if (e.message.includes("FATAL") || i === retry - 1) throw e; 
                 console.warn(`Server Google merespons 404/Error saat memuat nilai, mencoba ulang... (Percobaan ${i + 1})`);
-                // Tunggu 1 detik sebelum mencoba lagi
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
@@ -2967,6 +3021,15 @@ function buatOpsiSemuaKelasOtomatis() {
             
             listEl.innerHTML = specificHtml + finalHtml;
         }
+		// ==========================================
+        // TAMBAHKAN KODE PERBAIKAN INI DI SINI
+        // Kembalikan teks ke default jika sebelumnya sedang loading
+        // ==========================================
+        const textEl = document.getElementById('text_' + dropdown.id);
+        if (textEl && textEl.innerHTML.includes('fa-spinner')) {
+            textEl.innerText = dropdown.defaultText;
+        }
+        // ==========================================
     });
 
     const wadahFilterKedua = document.getElementById('wadahFilterKedua');

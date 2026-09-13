@@ -1,85 +1,43 @@
-// OneSignal worker hanya akan berfungsi penuh pada domain yang dikonfigurasi.
+// 1. TETAP PERTAHANKAN PUSH NOTIFICATION ONESIGNAL
 try {
   importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 } catch (e) {
   console.warn('[SW] OneSignal worker tidak dimuat:', e);
 }
 
-const CACHE_NAME = 'madasa-pwa-v16';
-const PRECACHE = [
-  './',
-  './index.html',
-  './style.css?v=16',
-  './manifest.json',
-  './asset/logo.png',
-  './asset/logo-192.png',
-  './asset/logo-512.png',
-  './informasi/index.html',
-  './administrasi/spp.html',
-  './rapor/rapor_tpq.html',
-  './rapor/rapor_ibtidaiyah.html',
-  './rapor/rapor_sanawiyah.html'
-];
-
+// 2. SAAT SW TERINSTAL: Langsung paksa aktif
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      Promise.allSettled(PRECACHE.map(url => cache.add(url)))
-    )
-  );
 });
 
+// 3. SAAT SW AKTIF: Langsung HAPUS SEMUA CACHE LAMA yang pernah ada di HP pengguna
 self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          return caches.delete(cacheName); // Membunuh semua memori hantu
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
+// 4. SAAT APLIKASI MEMINTA DATA: Mode "Opera Mini" (Network Only)
 self.addEventListener('fetch', event => {
   const req = event.request;
-  const url = new URL(req.url);
 
-  // Jangan pernah intervensi request non-GET atau request Google Apps Script.
-  if (req.method !== 'GET' ||
-      url.hostname.includes('script.google.com') ||
-      url.hostname.includes('script.googleusercontent.com') ||
-      url.hostname.includes('google.com')) {
+  // Biarkan request POST (Simpan Data) berjalan normal ke Google
+  if (req.method !== 'GET') {
     return;
   }
 
-  // Hanya cache resource origin aplikasi sendiri.
-  if (url.origin !== self.location.origin) return;
-
-  const isCodeOrDocument =
-    req.destination === 'document' ||
-    req.destination === 'script' ||
-    req.destination === 'style' ||
-    /\.(html|js|css)$/i.test(url.pathname);
-
-if (isCodeOrDocument) {
-    // ALWAYS FRESH: Tarik dari server, jangan simpan di cache agar HP pengguna tidak penuh
-    event.respondWith((async () => {
-      try {
-        return await fetch(req, { cache: 'no-store' });
-      } catch (e) {
-        // Jika sedang offline / tidak ada sinyal, gunakan fallback
-        const cache = await caches.open(CACHE_NAME);
-        return (await cache.match(req)) || (req.mode === 'navigate' ? cache.match('./index.html') : Response.error());
-      }
-    })());
-    return;
-  }
-
-  // Aset gambar/font: cache first, lalu jaringan.
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(req);
-    if (cached) return cached;
-    const fresh = await fetch(req);
-    if (fresh && fresh.ok) await cache.put(req, fresh.clone());
-    return fresh;
-  })());
+  // Tarik data langsung dari server jaringan dengan perintah dilarang cache (no-store)
+  event.respondWith(
+    fetch(req, { cache: 'no-store' }).catch(err => {
+      // Jika HP benar-benar tidak ada sinyal internet, kembalikan error standar
+      console.warn('Anda sedang offline atau server tidak merespons.');
+    })
+  );
 });

@@ -1021,13 +1021,13 @@ async function generateTabelAbsen() {
         .trim();
 
     // V16: untuk menentukan tanda centang, kita hanya membutuhkan STATUS
-    // apakah nilai sudah tersimpan. Pembacaan status memakai JSONP read-only,
-    // sehingga tidak terganggu CORS redirect ContentService Apps Script.
     try {
         const token = sessionStorage.getItem('tokenMadasa') || '';
         const paramsStatus = {
             token: token,
-            kelas: kelas
+            kelas: kelas,
+            // TAMBAHAN ANTI CACHE PWA: Memaksa PWA selalu meminta data terbaru ke server Google
+            _t: new Date().getTime() 
         };
 
         if (kelas.includes('TK')) {

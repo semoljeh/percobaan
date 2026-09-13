@@ -806,35 +806,27 @@ const opsiTanggal = { day: 'numeric', month: 'long', year: 'numeric' };
 		
 		
 		
-function buatOpsiKelasOtomatis() {
-            const selectKelas = document.getElementById('raporKelas');
-            if (!selectKelas) return;
-            
-            // 1. Ambil semua data kelas dari GLOBAL_DATA_SANTRI, 
-            //    filter yang mengandung kata "TK", lalu hapus duplikat (unik), dan urutkan.
-            const kelasTKUnik = [...new Set(GLOBAL_DATA_SANTRI.map(s => s.kelas))]
-                                  .filter(kelas => {
-                                      const k = String(kelas || '').toUpperCase();
-                                      
-                                      // Cek apakah ini kelas TK
-                                      let isTK = k.includes('TPQ') || k.includes('TK') || k.includes('RA');
-                                      
-                                      // Cek apakah ini alumni/DO
-                                      let isAlumni = k.includes('LULUS') || k.includes('ALUMNI') || k.includes('DIBERHENTIKAN');
-                                      
-                                      // Tampilkan JIKA kelas TK DAN BUKAN alumni
-                                      return isTK && !isAlumni;
-                                  })
-                                  .sort();
+		function buatOpsiKelasOtomatis() {
+    const selectKelas = document.getElementById('raporKelas');
+    if (!selectKelas) return;
+    
+    // 1. Ambil semua data kelas dari GLOBAL_DATA_SANTRI, 
+    //    filter yang mengandung kata "TK", lalu hapus duplikat (unik), dan urutkan.
+    const kelasTKUnik = [...new Set(GLOBAL_DATA_SANTRI.map(s => s.kelas))]
+                          .filter(kelas => {
+                              const k = String(kelas || '').toUpperCase();
+                              return k.includes('TPQ') || k.includes('TK') || k.includes('RA');
+                          })
+                          .sort();
 
-            // 2. Kosongkan pilihan yang ada dan setel ulang defaultnya
-            selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas TK --</option>';
+    // 2. Kosongkan pilihan yang ada dan setel ulang defaultnya
+    selectKelas.innerHTML = '<option value="" disabled selected>-- Pilih Kelas TK --</option>';
 
-            // 3. Masukkan kelas unik tersebut ke dalam elemen <select> secara otomatis
-            kelasTKUnik.forEach(kelas => {
-                selectKelas.innerHTML += `<option value="${kelas}">${kelas}</option>`;
-            });
-        }
+    // 3. Masukkan kelas unik tersebut ke dalam elemen <select> secara otomatis
+    kelasTKUnik.forEach(kelas => {
+        selectKelas.innerHTML += `<option value="${kelas}">${kelas}</option>`;
+    });
+}
 		
 		
 </script>

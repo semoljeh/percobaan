@@ -115,7 +115,7 @@
             }
         };
 
-function buatOsciKelasOtomatis() {
+        function buatOsciKelasOtomatis() {
             const selectKelas = document.getElementById('raporKelas');
             if (!selectKelas) return;
             
@@ -123,15 +123,7 @@ function buatOsciKelasOtomatis() {
                                   .filter(kelas => {
                                       if (!kelas) return false;
                                       let kUpper = kelas.toUpperCase();
-                                      
-                                      // Cek apakah ini kelas IBT
-                                      let isIbt = kUpper.includes('IBT') || kUpper.includes('MI') || kUpper.includes('SD');
-                                      
-                                      // Cek apakah ini alumni/DO
-                                      let isAlumni = kUpper.includes('LULUS') || kUpper.includes('ALUMNI') || kUpper.includes('DIBERHENTIKAN');
-                                      
-                                      // Tampilkan JIKA kelas IBT DAN BUKAN alumni
-                                      return isIbt && !isAlumni;
+                                      return kUpper.includes('IBT') || kUpper.includes('MI') || kUpper.includes('SD');
                                   })
                                   .sort();
 

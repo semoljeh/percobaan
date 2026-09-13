@@ -116,7 +116,7 @@
             }
         };
 
-function buatOsciKelasOtomatis() {
+        function buatOsciKelasOtomatis() {
             const selectKelas = document.getElementById('raporKelas');
             if (!selectKelas) return;
             
@@ -124,15 +124,7 @@ function buatOsciKelasOtomatis() {
                                   .filter(kelas => {
                                       if (!kelas) return false;
                                       let kUpper = kelas.toUpperCase();
-                                      
-                                      // Cek apakah ini kelas Sana/Aliyah
-                                      let isSana = kUpper.includes('SANA') || kUpper.includes('ALIYAH') || kUpper.includes('MTS') || kUpper.includes('MA');
-                                      
-                                      // Cek apakah ini alumni/DO
-                                      let isAlumni = kUpper.includes('LULUS') || kUpper.includes('ALUMNI') || kUpper.includes('DIBERHENTIKAN');
-                                      
-                                      // Tampilkan JIKA kelas Sana/Aliyah DAN BUKAN alumni
-                                      return isSana && !isAlumni;
+                                      return kUpper.includes('SANA') || kUpper.includes('ALIYAH') || kUpper.includes('MTS') || kUpper.includes('MA');
                                   })
                                   .sort();
 

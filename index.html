@@ -221,8 +221,7 @@ OneSignalDeferred.push(async function(OneSignal) {
     <i class="fas fa-edit w-5"></i> Input Nilai
 </button>
 
-
-<button onclick="showView('pantauNilai')" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
+<button onclick="showView('pantauNilai')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
     <i class="fas fa-chart-pie w-5"></i> Pantau Nilai
 </button>
 
@@ -240,7 +239,7 @@ OneSignalDeferred.push(async function(OneSignal) {
 
 <button onclick="window.location.href='cetak/cetakkartu.html'" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
     <i class="fas fa-id-card w-5 text-emerald-300"></i>
-    Cetak Kartu Ujian
+    Cetak Kartu
 </button>
 
 <button onclick="showView('mutasi')" class="admin-only nav-link w-full flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700/50 rounded-xl transition-all text-sm">
@@ -387,15 +386,6 @@ OneSignalDeferred.push(async function(OneSignal) {
     <h3 class="font-bold text-gray-800 text-sm sm:text-base">Data Nilai</h3>
 </div>
 
-
-<div onclick="showView('pantauNilai')" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
-    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-orange-50 text-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
-        <i class="fas fa-chart-pie"></i>
-    </div>
-    <h3 class="font-bold text-gray-800 text-sm sm:text-base">Pantau Nilai</h3>
-</div>
-
-
 <div onclick="showView('ranking')" class="admin-only bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
     <div class="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 text-amber-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
         <i class="fas fa-trophy"></i>
@@ -419,8 +409,8 @@ OneSignalDeferred.push(async function(OneSignal) {
 
 
 <!-- PORTAL WALI SANTRI -->
-<div onclick="window.location.href='informasi/'" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
-    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
+<div onclick="window.location.href='informasi/'" class="bg-gradient-to-br from-emerald-50 to-white p-4 sm:p-6 rounded-2xl shadow-sm border border-emerald-100 text-center cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all">
+    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-100 text-emerald-700 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl mx-auto mb-3 sm:mb-4">
         <i class="fas fa-user-check"></i>
     </div>
     <h3 class="font-bold text-gray-800 text-sm sm:text-base">Portal Wali Santri</h3>
@@ -459,10 +449,9 @@ OneSignalDeferred.push(async function(OneSignal) {
                                 <button onclick="showView('home')" class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-teal-100 hover:text-teal-600 transition-all shadow-sm shrink-0"><i class="fas fa-arrow-left"></i></button>
                                 <div><h3 class="text-lg sm:text-xl font-heading font-bold text-gray-800">Data Induk Santri</h3><p class="text-xs text-gray-500 mt-0.5 sm:mt-1">Manajemen biodata seluruh santri aktif</p></div>
                             </div>
-							
-					<div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-    <!-- TOMBOL BARU: Download Template -->
 
+<div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+    <!-- TOMBOL BARU: Download Template -->
     <button onclick="downloadTemplateExcel()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-gray-500 text-white rounded-xl hover:bg-gray-600 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
         <i class="fas fa-file-excel"></i> Template XLSX
     </button>
@@ -475,16 +464,13 @@ OneSignalDeferred.push(async function(OneSignal) {
         <i class="fas fa-user-plus"></i> Tambah
     </button>
 	
-	<button onclick="cetakDataSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
+    <button onclick="cetakDataSantri()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
         <i class="fas fa-print"></i> Cetak
     </button>
 
-    <!-- TOMBOL WHATSAPP (BARU DITAMBAHKAN) -->
-    <button onclick="bagikanDataBelumLengkapWA()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 shadow-sm transition-all flex items-center justify-center gap-2 text-sm font-bold">
-        <i class="fab fa-whatsapp text-lg"></i> Share
-    </button>
-	
 </div>
+
+
                         </div>
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-5 sm:mb-6">
                             <div class="relative flex-1">
@@ -690,48 +676,46 @@ OneSignalDeferred.push(async function(OneSignal) {
                     </div>
                 </div>
 
-<div id="view-ranking" class="view-section hidden">
+                <div id="view-ranking" class="view-section hidden">
 				
-                    <!-- HEADER KOTAK HIJAU -->
-                    <div class="relative bg-emerald-900 rounded-3xl shadow-2xl border border-emerald-700/50 p-6 sm:p-8 mb-6 overflow-hidden">
-                        <!-- Overlay Pola Islami yang Halus & Modern -->
-                        <div class="absolute inset-0 pola-islami opacity-20 mix-blend-overlay"></div>
-                        
-                        <!-- Ornamen Lingkaran Abstrak di Sudut -->
-                        <div class="absolute -right-20 -bottom-20 w-64 h-64 border-[30px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
-                        <div class="absolute -left-10 -top-10 w-32 h-32 border-[15px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
-                        
-                        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                            <div class="flex items-center gap-4">
-                                <!-- Ikon Bintang dengan Style Modern 3D -->
-                                <div class="w-14 h-14 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-2xl flex items-center justify-center text-emerald-900 text-2xl shadow-lg transform rotate-3">
-                                    <i class="fas fa-star"></i>
-                                </div>
-                                <div>
-                                    <!-- Teks Gradient Emas -->
-                                    <h2 class="text-2xl sm:text-3xl font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 drop-shadow-sm">
-                                        Bintang Pelajar
-                                    </h2>
-                                    <p class="text-emerald-100/90 font-medium mt-1 text-sm sm:text-base tracking-wide">Kumpulan santri peraih Peringkat 1 dari seluruh kelas.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex flex-row gap-3 w-full sm:w-auto">
-                                <button onclick="loadBintangPelajar()" class="flex-1 sm:w-12 h-12 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 rounded-xl transition-all shadow-inner flex items-center justify-center gap-2 font-bold backdrop-blur-sm border border-emerald-600/50" title="Refresh Data">
-                                    <i class="fas fa-sync-alt"></i><span class="sm:hidden">Refresh</span>
-                                </button>
-                                <!-- Tombol Cetak Emas -->
-                                <button onclick="cetakBintangPelajar()" class="flex-1 sm:w-auto px-6 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-emerald-900 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 font-bold whitespace-nowrap">
-                                    <i class="fas fa-print"></i><span>Cetak / Print</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+<div class="relative bg-emerald-900 rounded-3xl shadow-2xl border border-emerald-700/50 p-6 sm:p-8 mb-8 overflow-hidden">
+    <!-- Overlay Pola Islami yang Halus & Modern -->
+    <div class="absolute inset-0 pola-islami opacity-20 mix-blend-overlay"></div>
+    
+    <!-- Ornamen Lingkaran Abstrak di Sudut -->
+    <div class="absolute -right-20 -bottom-20 w-64 h-64 border-[30px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
+    <div class="absolute -left-10 -top-10 w-32 h-32 border-[15px] border-emerald-800/40 rounded-full opacity-60 pointer-events-none"></div>
+    
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-5 border-b border-emerald-800/60 pb-6">
+        <div class="flex items-center gap-4">
+            <!-- Ikon Bintang dengan Style Modern 3D -->
+            <div class="w-14 h-14 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-2xl flex items-center justify-center text-emerald-900 text-2xl shadow-lg transform rotate-3">
+                <i class="fas fa-star"></i>
+            </div>
+            <div>
+                <!-- Teks Gradient Emas -->
+                <h2 class="text-2xl sm:text-3xl font-heading font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 drop-shadow-sm">
+                    Bintang Pelajar
+                </h2>
+                <p class="text-emerald-100/90 font-medium mt-1 text-sm sm:text-base tracking-wide">Kumpulan santri peraih Peringkat 1 dari seluruh kelas.</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-row gap-3 w-full sm:w-auto">
+            <button onclick="loadBintangPelajar()" class="flex-1 sm:w-12 h-12 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 rounded-xl transition-all shadow-inner flex items-center justify-center gap-2 font-bold backdrop-blur-sm border border-emerald-600/50" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i><span class="sm:hidden">Refresh</span>
+            </button>
+            <!-- Tombol Cetak Emas -->
+            <button onclick="cetakBintangPelajar()" class="flex-1 sm:w-auto px-6 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-emerald-900 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 font-bold whitespace-nowrap">
+                <i class="fas fa-print"></i><span>Cetak / Print</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Wadah Data -->
+    <div id="wadahBintangPelajar" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10"></div>
+</div>
 
-                    <!-- DAFTAR BINTANG PELAJAR DI BAWAH KOTAK HIJAU -->
-                    <div id="wadahBintangPelajar" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 relative z-10"></div>
-
-                    <!-- RANKING PER KELAS -->
                     <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5 sm:mb-6">
                             <button onclick="showView('home')" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600 transition-all shrink-0"><i class="fas fa-arrow-left"></i></button>
@@ -739,30 +723,32 @@ OneSignalDeferred.push(async function(OneSignal) {
                         </div>
                         <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 mb-6 flex flex-col sm:flex-row gap-3">
 						
-                            <div class="relative w-full sm:flex-1 custom-select-wrapper">
-                                <div onclick="toggleCustomSelectGlobal('filterKelasRanking')" class="w-full p-3 border border-emerald-200 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-emerald-400 transition-all shadow-sm">
-                                    <span id="text_filterKelasRanking" class="truncate">-- Pilih Kelas Untuk Melihat Ranking --</span>
-                                    <i class="fas fa-chevron-down text-emerald-600 transition-transform duration-300 ml-2 shrink-0" id="icon_filterKelasRanking"></i>
-                                </div>
-                                <input type="hidden" id="filterKelasRanking" value="">
-                                <ul id="list_filterKelasRanking" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
-                            </div>
+<div class="relative w-full sm:flex-1 custom-select-wrapper">
+    <div onclick="toggleCustomSelectGlobal('filterKelasRanking')" class="w-full p-3 border border-emerald-200 rounded-xl bg-white text-sm font-medium text-gray-700 flex justify-between items-center cursor-pointer hover:border-emerald-400 transition-all shadow-sm">
+        <span id="text_filterKelasRanking" class="truncate">-- Pilih Kelas Untuk Melihat Ranking --</span>
+        <i class="fas fa-chevron-down text-emerald-600 transition-transform duration-300 ml-2 shrink-0" id="icon_filterKelasRanking"></i>
+    </div>
+    <input type="hidden" id="filterKelasRanking" value="">
+    <ul id="list_filterKelasRanking" class="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto hidden"></ul>
+</div>
 							
-                            <div class="flex flex-wrap gap-2 w-full sm:w-auto mt-3 sm:mt-0">
-                                <button onclick="loadRankingKelas()" class="flex-1 sm:flex-none px-5 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
-                                    <i class="fas fa-trophy"></i> Ranking Kelas
-                                </button>
-                                <button onclick="cetakRanking()" class="flex-1 sm:flex-none px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
-                                    <i class="fas fa-print"></i> Cetak Kelas
-                                </button>
-                                <button onclick="openModalRekapTop3()" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-900 rounded-xl hover:from-yellow-500 hover:to-amber-600 font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all">
-                                    <i class="fas fa-medal text-lg"></i> Rekap Top 3
-                                </button>
-                            </div>
+							
+<div class="flex flex-wrap gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+    <button onclick="loadRankingKelas()" class="flex-1 sm:flex-none px-5 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-trophy"></i> Ranking Kelas
+    </button>
+    <button onclick="cetakRanking()" class="flex-1 sm:flex-none px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-print"></i> Cetak Kelas
+    </button>
+    <button onclick="openModalRekapTop3()" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-900 rounded-xl hover:from-yellow-500 hover:to-amber-600 font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-medal text-lg"></i> Rekap Top 3
+    </button>
+</div>
+
 
                         </div>
 						
-                        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm w-full">
+                       <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm w-full">
                             <table class="w-full text-left border-collapse min-w-max">
                                 <thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b border-gray-200 whitespace-nowrap">
                                     <tr>

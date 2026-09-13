@@ -1023,6 +1023,13 @@ async function generateTabelAbsen() {
     
     if (!kelas || !subFilterValue) return;
 
+    // --- PERBAIKAN 1: BERSIHKAN KOTAK MAPEL SAAT LOADING ---
+    if (kelas.includes('TK')) {
+        document.getElementById('global_tk_m1').value = 'Memuat...';
+        document.getElementById('global_tk_m2').value = 'Memuat...';
+    }
+    // --------------------------------------------------------
+
     showLoading(true, "Memeriksa Data Tersimpan...");
 
     let mapNilaiLama = {};
@@ -1059,11 +1066,11 @@ async function generateTabelAbsen() {
         }
 
 if (kelas.includes('TK')) {
-            // --- [KODE BARU] BACA MEMORI LOKAL HP GURU ---
+            // --- PERBAIKAN 2: BACA DARI MEMORI HP GURU ---
             let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
             let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
-            
-            // Prioritas: 1. Server, 2. Memori HP, 3. Kosong
+
+            // TAMPILKAN NAMA MAPEL (Prioritas: Server -> Memori HP -> Kosong)
             document.getElementById('global_tk_m1').value = resStatus.mapel1 || memoriM1 || '';
             document.getElementById('global_tk_m2').value = resStatus.mapel2 || memoriM2 || '';
             
@@ -1158,8 +1165,16 @@ if (kelas.includes('TK')) {
                     }
                 }
             }
-        } catch (fallbackError) {
+       } catch (fallbackError) {
             console.error('[STATUS NILAI] Tidak dapat membaca status nilai tersimpan.', fallbackError);
+            
+            // --- PERBAIKAN 3: JIKA OFFLINE/GAGAL, TETAP BACA DARI MEMORI HP ---
+            if (kelas.includes('TK')) {
+                let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
+                let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
+                document.getElementById('global_tk_m1').value = memoriM1 || '';
+                document.getElementById('global_tk_m2').value = memoriM2 || '';
+            }
         }
     }
 
@@ -1251,14 +1266,14 @@ document.getElementById('formInputNilaiBulk').addEventListener('submit', functio
     const filterKedua = document.getElementById('pilihFilterKedua').value; // Ini berisi Hari untuk TK
     let paketBulk = []; 
     
-    if (kelasPilih.includes('TK')) { 
+   if (kelasPilih.includes('TK')) { 
         const globalM1 = document.getElementById('global_tk_m1').value; 
         const globalM2 = document.getElementById('global_tk_m2').value; 
         
-        // --- [KODE BARU] SIMPAN MAPEL KE MEMORI HP GURU ---
+        // --- PERBAIKAN 4: SIMPAN NAMA MAPEL KE MEMORI HP SAAT DISIMPAN ---
         localStorage.setItem(`jadwal_tk_${kelasPilih}_${filterKedua}_m1`, globalM1);
         localStorage.setItem(`jadwal_tk_${kelasPilih}_${filterKedua}_m2`, globalM2);
-        // --------------------------------------------------
+        // -----------------------------------------------------------------
 
         let adaIsianNilai = false; 
         

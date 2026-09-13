@@ -156,70 +156,81 @@ function loadDataSantri(silent = false) {
     };
 
     tarikSantri().then(res => { 
-        if (!silent) showLoading(false); 
         if(res.status === 'success') { 
             GLOBAL_DATA_SANTRI = res.data; 
+            
+            // 1. Eksekusi pembuatan dropdown terlebih dahulu agar Input Nilai bisa langsung dipakai
             buatOpsiSemuaKelasOtomatis();
             
-            const tbody = document.getElementById('bodyTabelSantri'); 
-            if(tbody) { 
-                if(res.data.length === 0) { 
-                    tbody.innerHTML = '<tr><td colspan=\"6\" class=\"p-4 sm:p-6 text-center text-gray-500\">Belum ada data santri di database.</td></tr>'; 
-                    return; 
-                } 
+            // 2. Langsung matikan loading agar layar HP tidak tertahan
+            if (!silent) showLoading(false); 
 
-                let barisHTML = [];
-                const roleSaatIni = sessionStorage.getItem('roleMadasa') || '';
+            // 3. TUNDA proses render tabel Data Santri yang sangat berat menggunakan setTimeout
+            // Ini memberi jeda pada browser HP agar tidak freeze (lemot)
+            setTimeout(() => {
+                const tbody = document.getElementById('bodyTabelSantri'); 
+                if(tbody) { 
+                    if(res.data.length === 0) { 
+                        tbody.innerHTML = '<tr><td colspan="6" class="p-4 sm:p-6 text-center text-gray-500">Belum ada data santri di database.</td></tr>'; 
+                        return; 
+                    } 
 
-               res.data.forEach(s => { 
-                    let amanTampilNama = escapeHTML(s.nama);
-                    let amanTampilKelas = escapeHTML(s.kelas);
-                    let amanNama = s.nama ? s.nama.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
-                    let amanAlamat = s.alamat ? s.alamat.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                    let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                    let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                    let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
-                    let amanFoto = s.foto ? s.foto.toString() : '';
+                    let barisHTML = [];
+                    const roleSaatIni = sessionStorage.getItem('roleMadasa') || '';
 
-                    // VALIDASI DATA KOSONG YANG LEBIH AMAN (Mencegah salah deteksi)
-                    const checkValid = (val) => {
-                        if (!val) return false;
-                        const str = val.toString().trim();
-                        if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
-                        return true;
-                    };
+                    res.data.forEach(s => { 
+                        // ... (Biarkan logika escapeHTML dan checkValid tetap persis sama seperti kode asli Anda) ...
+                        let amanTampilNama = escapeHTML(s.nama);
+                        let amanTampilKelas = escapeHTML(s.kelas);
+                        let amanNama = s.nama ? s.nama.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+                        let amanAlamat = s.alamat ? s.alamat.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                        let amanAyah = s.ayah ? s.ayah.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                        let amanIbu = s.ibu ? s.ibu.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                        let amanTtl = s.ttl ? s.ttl.toString().replace(/\\/g, '\\\\').replace(/`/g, "\\`").replace(/'/g, "\\'") : '';
+                        let amanFoto = s.foto ? s.foto.toString() : '';
+
+                        const checkValid = (val) => {
+                            if (!val) return false;
+                            const str = val.toString().trim();
+                            if (str === "" || str === "-" || str === "'" || str === "," || str === ", ") return false;
+                            return true;
+                        };
+                        
+                        let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
+                        let statusLengkap = isLengkap ? "true" : "false";
+                        let iconPeringatan = !isLengkap ? `<i class="fas fa-exclamation-triangle text-amber-500 ml-2 text-[10px]" title="Biodata Belum Lengkap"></i>` : "";
+
+                        const tombolHapus = (!roleSaatIni.includes('Guru')) 
+                            ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
+
+                        barisHTML.push(`
+                        <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}" data-lengkap="${statusLengkap}">
+                            <td class="p-3 sm:p-4 text-center font-bold text-gray-500 urut-nomor"></td>
+                            <td class="p-3 sm:p-4 font-medium">${escapeHTML(s.nis)}</td>
+                            <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}${iconPeringatan}</td>
+                            <td class="p-3 sm:p-4 text-center whitespace-nowrap">${escapeHTML(s.jk)}</td>
+                            <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
+                            <td class="p-3 sm:p-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`, \`${amanFoto}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
+                                    ${tombolHapus}
+                                </div>
+                            </td>
+                        </tr>`);
+                    });
                     
-                    let isLengkap = checkValid(s.jk) && checkValid(s.alamat) && checkValid(s.ayah) && checkValid(s.ibu) && checkValid(s.ttl) && checkValid(s.hp);
-                    let statusLengkap = isLengkap ? "true" : "false";
-                    let iconPeringatan = !isLengkap ? `<i class="fas fa-exclamation-triangle text-amber-500 ml-2 text-[10px]" title="Biodata Belum Lengkap"></i>` : "";
-
-                    const tombolHapus = (!roleSaatIni.includes('Guru')) 
-                        ? `<button onclick="hapusDataSantri('${s.nis}', '${amanNama}')" class="text-red-500 hover:bg-red-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Hapus Data"><i class="fas fa-trash-alt"></i></button>` : '';
-
-                    barisHTML.push(`
-                    <tr class="hover:bg-teal-50 transition-all santri-row" data-kelas="${amanTampilKelas}" data-lengkap="${statusLengkap}">
-                        <td class="p-3 sm:p-4 text-center font-bold text-gray-500 urut-nomor"></td>
-                        <td class="p-3 sm:p-4 font-medium">${escapeHTML(s.nis)}</td>
-                        <td class="p-3 sm:p-4 font-bold text-gray-800 whitespace-nowrap">${amanTampilNama}${iconPeringatan}</td>
-                        <td class="p-3 sm:p-4 text-center whitespace-nowrap">${escapeHTML(s.jk)}</td>
-                        <td class="p-3 sm:p-4 whitespace-nowrap"><span class="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap">${amanTampilKelas}</span></td>
-                        <td class="p-3 sm:p-4 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="openModalEditSantri('${s.nis}', '${amanNama}', '${s.jk}', '${s.kelas}', \`${amanAlamat}\`, \`${amanAyah}\`, \`${amanIbu}\`, '${s.hp}', \`${amanTtl}\`, \`${amanFoto}\`)" class="text-blue-500 hover:bg-blue-100 p-2 sm:p-2.5 rounded-lg transition-all" title="Edit Data"><i class="fas fa-edit"></i></button>
-                                ${tombolHapus}
-                            </div>
-                        </td>
-                    </tr>`);
-                });
-                
-                tbody.innerHTML = barisHTML.join('');
-                filterSantri();
-				
-			}
+                    tbody.innerHTML = barisHTML.join('');
+                    filterSantri();
+                }
+            }, 50); // Eksekusi dengan jeda 50 milidetik
         } 
     }).catch(err => { 
         if (!silent) showLoading(false); 
         console.error("Detail Error JS:", err); 
+        
+        // PENTING: Ubah teks dropdown jika gagal, agar user tidak bingung kenapa kosong
+        document.getElementById('text_pilihKelasNilai').innerText = "⚠️ Gagal memuat, cek koneksi & ulangi";
+        
         if (!silent) Swal.fire('Error', 'Server Google sedang sibuk. Silakan coba klik menunya sekali lagi.', 'error'); 
     }); 
 }
@@ -236,14 +247,19 @@ function showView(viewName, pushToHistory = true) {
     if (targetView) targetView.classList.remove('hidden');
     
 if (viewName === 'dataSantri' || viewName === 'inputNilai' || viewName === 'dataNilai' || viewName === 'ranking' || viewName === 'pengaturan' || viewName === 'mutasi' || viewName === 'pantauNilai') { 
-    if (GLOBAL_DATA_SANTRI.length === 0) {
-        loadDataSantri(); 
+        if (GLOBAL_DATA_SANTRI.length === 0) {
+            // BERI TAHU USER BAHWA KELAS SEDANG DIMUAT
+            const txtPilihKelas = document.getElementById('text_pilihKelasNilai');
+            if(txtPilihKelas && txtPilihKelas.innerText.includes('Pilih Kelas')) {
+                txtPilihKelas.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengambil Data Kelas...';
+            }
+            
+            loadDataSantri(); 
+        }
+        if (Object.keys(JADWAL_MAPEL).length === 0) {
+            muatSemuaMapel();
+        }
     }
-    // Tambahkan baris ini agar mapel selalu dipastikan termuat saat masuk menu Input Nilai
-    if (Object.keys(JADWAL_MAPEL).length === 0) {
-        muatSemuaMapel();
-    }
-}
     
     if (viewName === 'ranking') { 
         loadBintangPelajar(); 
@@ -1043,9 +1059,13 @@ async function generateTabelAbsen() {
         }
 
 if (kelas.includes('TK')) {
-            // TAMPILKAN NAMA MAPEL OTOMATIS KE KOTAK INPUT
-            document.getElementById('global_tk_m1').value = resStatus.mapel1 || '';
-            document.getElementById('global_tk_m2').value = resStatus.mapel2 || '';
+            // --- [KODE BARU] BACA MEMORI LOKAL HP GURU ---
+            let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
+            let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
+            
+            // Prioritas: 1. Server, 2. Memori HP, 3. Kosong
+            document.getElementById('global_tk_m1').value = resStatus.mapel1 || memoriM1 || '';
+            document.getElementById('global_tk_m2').value = resStatus.mapel2 || memoriM2 || '';
             
             const setN1 = new Set((resStatus.savedN1 || []).map(bersihNis));
             const setN2 = new Set((resStatus.savedN2 || []).map(bersihNis));
@@ -1118,9 +1138,12 @@ if (kelas.includes('TK')) {
                         }
                     });
                     
-                    // TAMBAHAN: Memasukkan nama mapel yang ditemukan ke kotak input UI
-                    document.getElementById('global_tk_m1').value = mapel1Ditemukan;
-                    document.getElementById('global_tk_m2').value = mapel2Ditemukan;
+                   // --- [KODE BARU] BACA MEMORI LOKAL HP GURU ---
+                    let memoriM1 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m1`) || '';
+                    let memoriM2 = localStorage.getItem(`jadwal_tk_${kelas}_${subFilterValue}_m2`) || '';
+                    
+                    document.getElementById('global_tk_m1').value = mapel1Ditemukan || memoriM1 || '';
+                    document.getElementById('global_tk_m2').value = mapel2Ditemukan || memoriM2 || '';
                 } else {
                     const idxNis = headers.findIndex(h => bersihTeks(h) === 'nis');
                     const idxMapel = headers.findIndex(h => bersihTeks(h) === bersihTeks(subFilterValue));
@@ -1225,15 +1248,21 @@ document.getElementById('formInputNilaiBulk').addEventListener('submit', functio
     } 
     
     const kelasPilih = document.getElementById('pilihKelasNilai').value; 
-    const filterKedua = document.getElementById('pilihFilterKedua').value; 
+    const filterKedua = document.getElementById('pilihFilterKedua').value; // Ini berisi Hari untuk TK
     let paketBulk = []; 
     
-if (kelasPilih.includes('TK')) { 
+    if (kelasPilih.includes('TK')) { 
         const globalM1 = document.getElementById('global_tk_m1').value; 
         const globalM2 = document.getElementById('global_tk_m2').value; 
+        
+        // --- [KODE BARU] SIMPAN MAPEL KE MEMORI HP GURU ---
+        localStorage.setItem(`jadwal_tk_${kelasPilih}_${filterKedua}_m1`, globalM1);
+        localStorage.setItem(`jadwal_tk_${kelasPilih}_${filterKedua}_m2`, globalM2);
+        // --------------------------------------------------
+
         let adaIsianNilai = false; 
         
-        document.querySelectorAll('#bodyTabelAbsen tr.santri-absen-row').forEach(tr => { 
+        document.querySelectorAll('#bodyTabelAbsen tr.santri-absen-row').forEach(tr => {
             const n1Input = tr.querySelector('.input-tk-n1'); 
             const n2Input = tr.querySelector('.input-tk-n2'); 
             
